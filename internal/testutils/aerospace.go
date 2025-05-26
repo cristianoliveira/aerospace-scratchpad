@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 )
 
 type AeroSpaceTree struct {
@@ -51,6 +52,15 @@ func ExtractFocusedWindow(tree []AeroSpaceTree) *aerospacecli.Window {
 					return &window
 				}
 			}
+		}
+	}
+	return nil
+}
+
+func ExtractScratchpadWindows(tree []AeroSpaceTree) *AeroSpaceTree {
+	for _, t := range tree {
+		if t.Workspace != nil && t.Workspace.Workspace == constants.DefaultScratchpadWorkspaceName {
+			return &t
 		}
 	}
 	return nil

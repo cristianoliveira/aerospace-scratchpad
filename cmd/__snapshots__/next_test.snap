@@ -1,0 +1,28 @@
+
+[TestNextCmd/summon_next_window_from_scratchpad - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1234, WindowTitle:"", AppName:"Notepad"},
+            {WindowID:5678, WindowTitle:"", AppName:"Finder"},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        FocusedWindowId: 5678,
+    },
+    {
+        Windows: {
+            {WindowID:9999, WindowTitle:"", AppName:"Scratchpad Window"},
+            {WindowID:8888, WindowTitle:"", AppName:"Another Scratchpad Window"},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:".scratchpad"},
+        FocusedWindowId: 0,
+    },
+}
+aerospace-scratchpad next
+
+Output
+Next scratchpad window 'Scratchpad Window' focused in workspace 'ws1'
+
+Error
+<nil>
+---

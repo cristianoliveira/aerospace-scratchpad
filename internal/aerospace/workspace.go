@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 )
 
 type AerospaceWorkspace interface {
@@ -21,6 +22,9 @@ type AerospaceWorkspace interface {
 	//
 	// Returns true if the window is focused
 	IsWindowFocused(windowID int) (bool, error)
+
+	// GetNextScratchpadWindow returns the next scratchpad window in the workspace
+	GetNextScratchpadWindow() (*aerospacecli.Window, error)
 }
 
 type AeroSpaceWM struct {
@@ -64,6 +68,22 @@ func (a *AeroSpaceWM) IsWindowFocused(windowID int) (bool, error) {
 
 	// Check if the window is focused
 	return focusedWindow.WindowID == windowID, nil
+}
+
+func (a *AeroSpaceWM) GetNextScratchpadWindow() (*aerospacecli.Window, error) {
+	// Get all windows from the workspace
+	windows, err := a.cli.GetAllWindowsByWorkspace(
+		constants.DefaultScratchpadWorkspaceName,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(windows) == 0 {
+		return nil, fmt.Errorf("no scratchpad windows found")
+	}
+
+	return &windows[0], nil
 }
 
 // NewAerospaceQuerier creates a new AerospaceQuerier
