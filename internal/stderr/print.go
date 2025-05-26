@@ -25,6 +25,8 @@ func Writef(tmpl string, a ...any) {
 	}
 }
 
+// Println prints an error message to stderr and exits the program if ShouldExit is true.
+// Why not use log.Fatalf? Because we want to control the exit behavior.
 func Println(tmpl string, a ...any) {
 	errorMessage := fmt.Errorf(tmpl, a...)
 	_, err := fmt.Fprintln(os.Stderr, errorMessage)

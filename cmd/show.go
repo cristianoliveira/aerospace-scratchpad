@@ -39,13 +39,8 @@ Similar to SwayWM it will toggle show/hide the window if called multiple times.
 			windowNamePattern := args[0]
 			windowNamePattern = strings.TrimSpace(windowNamePattern)
 			if windowNamePattern == "" {
-				focusedWindow, err := aerospaceClient.GetFocusedWindow()
-				if err != nil {
-					stderr.Println("Error: unable to get focused window: %v", err)
-					return
-				}
-
-				windowNamePattern = fmt.Sprintf("^%s$", focusedWindow.AppName)
+				stderr.Println("Error: <pattern> cannot be empty")
+				return
 			}
 
 			windows, err := aerospaceClient.GetAllWindows()

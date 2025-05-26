@@ -35,6 +35,7 @@ func CaptureStdOut(f func() error) (string, error) {
 	// Redirect stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
+	os.Stderr = w // Redirect stderr to the same pipe
 
 	// Run the function that prints to stdout
 	err := f()

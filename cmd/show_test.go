@@ -8,18 +8,21 @@ import (
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/mocks/aerospacecli"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 	"github.com/gkampitakis/go-snaps/snaps"
 	"go.uber.org/mock/gomock"
 )
 
 func TestShowCmd(t *testing.T) {
-	t.Run("moves the current focused window to scratchpad when empty", func(t *testing.T) {
+	t.Run("fails when pattern is empty", func(t *testing.T) {
 		command := "show"
 		args := []string{command, ""}
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
+
+		stderr.SetBehavior(false)
 
 		tree := []testutils.AeroSpaceTree{
 			{
@@ -41,48 +44,7 @@ func TestShowCmd(t *testing.T) {
 			},
 		}
 
-		allWindows := testutils.ExtractAllWindows(tree)
-		focusedTree := testutils.ExtractFocusedTree(tree)
-		focusedWindow := testutils.ExtractFocusedWindow(tree)
-
 		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-		gomock.InOrder(
-			aerospaceClient.EXPECT().
-				GetFocusedWindow().
-				Return(focusedWindow, nil).
-				Times(1),
-
-			aerospaceClient.EXPECT().
-				GetAllWindows().
-				Return(allWindows, nil).
-				Times(1),
-
-			aerospaceClient.EXPECT().
-				GetFocusedWorkspace().
-				Return(focusedTree.Workspace, nil).
-				Times(1),
-
-			aerospaceClient.EXPECT().
-				GetAllWindowsByWorkspace(focusedTree.Workspace.Workspace).
-				Return(focusedTree.Windows, nil).
-				Times(1),
-
-			aerospaceClient.EXPECT().
-				GetFocusedWindow().
-				Return(focusedWindow, nil).
-				Times(1),
-
-			aerospaceClient.EXPECT().
-				MoveWindowToWorkspace(focusedWindow.WindowID, constants.DefaultScratchpadWorkspaceName).
-				Return(nil).
-				Times(1),
-
-			aerospaceClient.EXPECT().
-				SetLayout(focusedWindow.WindowID, "floating").
-				Return(nil).
-				Times(1),
-		)
-
 		cmd := RootCmd(aerospaceClient)
 		out, err := testutils.CmdExecute(cmd, args...)
 		if err != nil {
