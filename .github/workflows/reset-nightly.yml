@@ -21,7 +21,9 @@ jobs:
 
       - name: Generate new hashes
         run: |
-          bash scripts/update-nightly-hash.sh nix/package-nightly.nix ".#nightly"
+          # This script should be run with correct path
+          echo "path: $PWD"
+          $PWD/scripts/update-nightly-hash.sh nix/package-nightly.nix ".#nightly"
           echo "testing" > foobar.txt
 
       - name: Create Pull Request
