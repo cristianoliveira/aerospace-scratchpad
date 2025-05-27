@@ -12,11 +12,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Reset nightly branch
-        run: |
-          git checkout nightly
-          git reset --hard main
-          git push origin nightly --force
+      - name: reset nightly branch
+        uses: nicksnell/action-reset-repo@main
+        with:
+          reset_branch: nightly
 
       - uses: cachix/install-nix-action@v27
         with:
