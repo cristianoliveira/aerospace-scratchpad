@@ -19,7 +19,8 @@
     ldflags = [
       "-s" "-w"
       # "-mod=mod" # FIXME: go forces vendoring some dependencies
-      "-X main.VERSION=${version}"
+      # Change the cli version
+      "-X github.com/cristianoliveira/aerospace-scratchpad/cmd.VERSION=${version}"
     ];
 
     meta = with pkgs.lib; {

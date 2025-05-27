@@ -16,7 +16,8 @@
 
     ldflags = [
       "-s" "-w"
-      "-X main.VERSION=${version}"
+      # Change the cli version
+      "-X github.com/cristianoliveira/aerospace-scratchpad/cmd.VERSION=${version}"
     ];
 
     meta = with pkgs.lib; {
