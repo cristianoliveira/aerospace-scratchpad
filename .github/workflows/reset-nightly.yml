@@ -23,11 +23,7 @@ jobs:
 
       - name: Generate new hashes
         run: |
-          # This script should be run with correct path
-          ls -la scripts/
-          echo "path: $PWD"
           bash scripts/update-nix-hash.sh nix/package-nightly.nix ".#nightly"
-          echo "testing" > foobar.txt
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
