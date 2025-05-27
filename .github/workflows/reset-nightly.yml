@@ -15,7 +15,7 @@ jobs:
       - name: Reset nightly branch
         run: |
           git checkout -B nightly
-          git reset --hard origin/main
+          git reset --hard main
           git push origin nightly --force
 
       - uses: cachix/install-nix-action@v27
