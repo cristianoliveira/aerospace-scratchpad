@@ -22,6 +22,7 @@ jobs:
       - name: Generate new hashes
         run: |
           # This script should be run with correct path
+          ls -la
           echo "path: $PWD"
           $PWD/scripts/update-nightly-hash.sh nix/package-nightly.nix ".#nightly"
           echo "testing" > foobar.txt
