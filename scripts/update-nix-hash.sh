@@ -31,6 +31,12 @@ nix build $FLAKE_TASK
 
 rm -f build.log
 
+if [ -z "$CI" ]; then
+  echo "Not in CI, committing changes"
+else
+  echo "In CI, skipping commit"
+  exit 0
+fi
+
 git add "$NIX_FILE"
 git commit -m "chore(nix): bump nightly ($VERSION)"
-
