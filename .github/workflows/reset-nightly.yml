@@ -11,8 +11,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: main
 
       - name: Reset nightly branch
         run: |
@@ -24,7 +22,7 @@ jobs:
           # This script should be run with correct path
           ls -la scripts/
           echo "path: $PWD"
-          bash scripts/update-nightly-hash.sh nix/package-nightly.nix ".#nightly"
+          bash scripts/update-nix-hash.sh nix/package-nightly.nix ".#nightly"
           echo "testing" > foobar.txt
 
       - name: Create Pull Request
