@@ -1,0 +1,20 @@
+name: Reset Nightly Branch
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'  # Runs every day at midnight UTC
+
+jobs:
+  reset-nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Reset nightly branch
+        run: |
+          git checkout -B nightly
+          git push origin nightly --force
