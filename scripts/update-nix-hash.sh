@@ -18,12 +18,22 @@ echo "aaaaa"
 SHA256=$(grep "got:" build.log | grep -o "sha256-.*=" | cut -d'-' -f2)
 echo "nix hash SHA256: $SHA256"
 
-echo "git hash SHA256: $SHA256"
+if [ -z "$SHA256" ]; then
+  echo "Failed to extract SHA256 from build.log"
+  exit 1
+fi
+
 sed -i "s# sha256 = \".*\";# sha256 = \"sha256-$SHA256\";#" "$NIX_FILE"
 nix build $FLAKE_TASK 2> build.log
 
 SHA256=$(grep "got:" build.log | grep -o "sha256-.*=" | cut -d'-' -f2)
+
 echo "vendorHash hash SHA256: $SHA256"
+if [ -z "$SHA256" ]; then
+  echo "Failed to extract 2nd SHA256 from build.log"
+  exit 1
+fi
+
 sed -i "s#vendorHash = \".*\";#vendorHash = \"sha256-$SHA256\";#" "$NIX_FILE"
 
 echo "Building nix derivation"
