@@ -9,7 +9,7 @@
       owner = "cristianoliveira";
       repo = "aerospace-scratchpad";
       rev = version;
-      sha256 = "sha256-lkcb5O0ySYBAsDu5XnWWDO6R4Mw38z7iPG3K5NzAUQo=";
+      sha256 = "sha256-NuuVpcBM6XL7KS6S+j44pUc8g3LomSm/UwBxouOYH8w=";
     };
 
     vendorHash = "sha256-h/GtBDJOOyVXfSv/o4hozZAcHPlg2uJLApy5r3WP9aE=";
