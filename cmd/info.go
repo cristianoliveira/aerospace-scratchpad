@@ -18,7 +18,7 @@ func InfoCmd(
 	infoCmd := &cobra.Command{
 		Use:   "info",
 		Short: "Shows relevant info about aerospace-scratchpad",
-		Long: `The info command provides information about the aerospace-scratchpad and aerospace.
+		Long: `This command provides information about the aerospace-scratchpad and aerospace.
 
 Checks the compatibility of the installed version of Aerospace with the current version of aerospace-scratchpad.
 As well as other relevant information.
