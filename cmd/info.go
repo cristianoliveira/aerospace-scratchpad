@@ -29,7 +29,7 @@ As well as other relevant information.
 				return fmt.Errorf("failed to get socket path: %w", err)
 			}
 
-		  res, err := aerospaceClient.Client().SendCommand("config", []string{"--config-path"})
+			res, err := aerospaceClient.Client().SendCommand("config", []string{"--config-path"})
 			if err != nil {
 				return fmt.Errorf("failed to get aerospace's config. %w", err)
 			}
@@ -40,7 +40,7 @@ As well as other relevant information.
 			} else {
 				validationInfo = "Compatible."
 			}
-			
+
 			cmd.Println(fmt.Sprintf(`Aerospace Scratchpad
 
 [Aerospace]
