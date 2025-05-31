@@ -43,3 +43,8 @@ nix-build: ## Build the cli using Nix
 .PHONY: nix-build-all
 nix-build-all: nix-build-source nix-build-nightly nix-build ## Build all using Nix
 	@echo "Building all using Nix..."
+
+.PHONY: git-hooks-pre-push
+git-hooks-pre-push: ## Set up git hooks and run
+	echo "Pre-push git hooks set up"
+	bash scripts/git-hooks/pre-push

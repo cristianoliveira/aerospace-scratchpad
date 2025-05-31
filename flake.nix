@@ -15,6 +15,8 @@
           packages = with pkgs; [
             go
 
+            golint
+
             # To create new subcommands, run:
             # cobra-cli add <subcommand-name>
             cobra-cli

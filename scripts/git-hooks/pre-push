@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Function to check and set up the environment
+setup_environment() {
+    # Link the pre-push hook if not already linked
+    if [ ! -L .git/hooks/pre-push ]; then
+        echo "Linking pre-push hook..."
+        ln -sf ../../scripts/git-hooks/pre-push .git/hooks/pre-push
+        echo "Pre-push hook linked."
+    else
+        echo "Pre-push hook already linked."
+    fi
+
+    echo "Environment setup complete."
+}
+
+# Check for new commits
+echo "Checking for new commits..."
+LOCAL=$(git rev-parse @)
+REMOTE=$(git rev-parse @{u})
+
+if [ "$LOCAL" = "$REMOTE" ]; then
+    echo "No new commits to push."
+    exit 0
+fi
+
+# Run environment setup
+setup_environment
+
+# Run tests
+echo "Running tests..."
+go test ./...
+
+# Run format check
+echo "Running format check..."
+go fmt ./...
+
+# Run lint check
+echo "Running lint check..."
+golint ./...
+
+remote="$1"
+url="$2"
+
+exit 0
