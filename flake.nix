@@ -15,7 +15,7 @@
           packages = with pkgs; [
             go
 
-            golint
+            golangci-lint
 
             # To create new subcommands, run:
             # cobra-cli add <subcommand-name>

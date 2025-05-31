@@ -31,15 +31,15 @@ setup_environment
 
 # Run tests
 echo "Running tests..."
-go test ./...
+make test
 
 # Run format check
 echo "Running format check..."
-go fmt ./...
+make fmt
 
 # Run lint check
 echo "Running lint check..."
-golint ./...
+make lint
 
 remote="$1"
 url="$2"

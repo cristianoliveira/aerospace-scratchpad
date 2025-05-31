@@ -55,7 +55,6 @@ Output
 
 Error
 unable to move window '5678 | Finder ' to scratchpad
-
 ---
 
 [TestMoveCmd/moves_current_focused_window_to_scratchpad_when_empty - 1]

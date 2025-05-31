@@ -24,6 +24,13 @@ It does not send the windows back to the scratchpad, but rather focuses the next
 		`,
 		Run: func(cmd *cobra.Command, args []string) {
 			focusedWorkspace, err := aerospaceClient.GetFocusedWorkspace()
+			if err != nil {
+				stderr.Println(
+					"Error: unable to get focused workspace\n%s",
+					err,
+				)
+				return
+			}
 
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient)
 			window, err := querier.GetNextScratchpadWindow()
@@ -51,7 +58,6 @@ It does not send the windows back to the scratchpad, but rather focuses the next
 				window.AppName,
 				focusedWorkspace.Workspace,
 			)
-			return
 		},
 	}
 

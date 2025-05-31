@@ -52,7 +52,7 @@ func (a *AeroSpaceWM) IsWindowInFocusedWorkspace(windowID int) (bool, error) {
 	// Get the focused workspace
 	focusedWorkspace, err := a.cli.GetFocusedWorkspace()
 	if err != nil {
-		return false, fmt.Errorf("Error: unable to get focused workspace: %v", err)
+		return false, fmt.Errorf("unable to get focused workspace, reason %v", err)
 	}
 
 	// Check if the window is in the focused workspace
@@ -63,7 +63,7 @@ func (a *AeroSpaceWM) IsWindowFocused(windowID int) (bool, error) {
 	// Get the focused window
 	focusedWindow, err := a.cli.GetFocusedWindow()
 	if err != nil {
-		return false, fmt.Errorf("Error: unable to get focused window: %v", err)
+		return false, fmt.Errorf("unable to get focused window, reason %v", err)
 	}
 
 	// Check if the window is focused

@@ -15,6 +15,17 @@ test: ## Run the tests
 	@echo "Running the tests..."
 	@go test ./... -v
 
+.PHONY: fmt
+fmt: ## Format the code
+	@echo "Formatting the code..."
+	@gofmt -s -w .
+	@golangci-lint run --fix
+
+.PHONY: lint
+lint: ## Run the linter
+	@echo "Running the linter..."
+	@golangci-lint run 
+
 .PHONY: update-snap-all
 update-snap-all: ## Update all the snaps
 	@echo "Updating the snaps..."

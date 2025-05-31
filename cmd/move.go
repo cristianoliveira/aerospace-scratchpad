@@ -71,16 +71,19 @@ If no pattern is provided, it moves the currently focused window.
 				)
 				if err != nil {
 					if strings.Contains(err.Error(), "already belongs to workspace") {
-						return fmt.Errorf("Window '%+v' already belongs to scratchpad\n", window)
+						return fmt.Errorf("window '%+v' already belongs to scratchpad", window)
 					}
 
-					return fmt.Errorf("unable to move window '%+v' to scratchpad\n", window)
+					return fmt.Errorf("unable to move window '%+v' to scratchpad", window)
 				}
 
-				aerospaceClient.SetLayout(
+				err = aerospaceClient.SetLayout(
 					window.WindowID,
 					"floating",
 				)
+				if err != nil {
+					return fmt.Errorf("unable to set layout for window '%+v'\n%v", window, err)
+				}
 
 				movedCount++
 			}

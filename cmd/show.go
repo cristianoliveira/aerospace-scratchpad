@@ -93,16 +93,33 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 							return
 						}
 
-						aerospaceClient.SetLayout(
+						err = aerospaceClient.SetLayout(
 							window.WindowID,
 							"floating",
 						)
+						if err != nil {
+							fmt.Printf(
+								"Error: unable to set layout for window '%+v' to floating\n%s",
+								window,
+								err,
+							)
+							return
+						}
 
 						fmt.Printf("Window '%+v' hidden to scratchpad\n", window)
 						return
 					}
 
-					aerospaceClient.SetFocusByWindowID(window.WindowID)
+					err = aerospaceClient.SetFocusByWindowID(window.WindowID)
+					if err != nil {
+						stderr.Printf(
+							"Error: unable to set focus to window '%+v'\n%s",
+							window,
+							err,
+						)
+						return
+					}
+
 					fmt.Printf("Window '%+v' is showed\n", window)
 					return
 				}

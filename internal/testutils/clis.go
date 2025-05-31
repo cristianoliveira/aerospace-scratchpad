@@ -44,11 +44,17 @@ func CaptureStdOut(f func() error) (string, error) {
 	}
 
 	// Close writer and restore stdout
-	w.Close()
+	err = w.Close()
+	if err != nil {
+		return "", fmt.Errorf("failed to close writer: %w", err)
+	}
 	os.Stdout = old
 
 	// Read output
-	io.Copy(&buf, r)
+	_, err = io.Copy(&buf, r)
+	if err != nil {
+		return "", fmt.Errorf("failed to read output: %w", err)
+	}
 	return buf.String(), nil
 }
 

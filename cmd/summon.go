@@ -49,7 +49,7 @@ If no pattern is provided, it summons the first window in the scratchpad.
 			// instantiate the regex
 			windowPattern, err := regexp.Compile(windowNamePattern)
 			if err != nil {
-				stderr.Println("Error: invalid window-name-pattern")
+				stderr.Println("Error: invalid app-name-pattern")
 				return
 			}
 
@@ -58,10 +58,19 @@ If no pattern is provided, it summons the first window in the scratchpad.
 					continue
 				}
 
-				aerospaceClient.MoveWindowToWorkspace(
+				err := aerospaceClient.MoveWindowToWorkspace(
 					window.WindowID,
 					focusedWorkspace.Workspace,
 				)
+				if err != nil {
+					stderr.Println(
+						"Error: unable to move window '%+v' to workspace '%s': %v\n",
+						window,
+						focusedWorkspace.Workspace,
+						err,
+					)
+					return
+				}
 
 				if err = aerospaceClient.SetFocusByWindowID(window.WindowID); err != nil {
 					stderr.Printf("Error: unable to set focus to window '%+v'\n", window)
