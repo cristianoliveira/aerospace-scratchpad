@@ -13,7 +13,7 @@
 aerospace-scratchpad show Finder
 
 Output
-Setting focus to window 'Finder'
+Window '5678 | Finder ' is showed
 
 Error
 <nil>
@@ -80,7 +80,7 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Setting focus to window 'Finder'
+Window '5678 | Finder ' is showed
 
 Error
 <nil>
