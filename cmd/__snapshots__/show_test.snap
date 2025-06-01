@@ -80,7 +80,7 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder ' is showed
+Window '5678 | Finder ' is focused
 
 Error
 <nil>
@@ -168,6 +168,62 @@ aerospace-scratchpad show
 
 Output
 Error: <pattern> cannot be empty
+
+Error
+<nil>
+---
+
+[TestShowCmd/MultipleWindows/brings_all_windows_to_focused_workspace - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:5678, WindowTitle:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:5679, WindowTitle:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws1"},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        FocusedWindowId: 0,
+    },
+    {
+        Windows: {
+            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws2"},
+        FocusedWindowId: 91011,
+    },
+}
+aerospace-scratchpad show Finder
+
+Output
+Window '5678 | Finder1  | ws1' is summoned
+Window '5679 | Finder2  | ws1' is summoned
+
+Error
+<nil>
+---
+
+[TestShowCmd/MultipleWindows/sends_all_windows_to_scratchpad_if_at_least_one_window_is_focused - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        FocusedWindowId: 0,
+    },
+    {
+        Windows: {
+            {WindowID:5678, WindowTitle:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws2"},
+            {WindowID:5679, WindowTitle:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws2"},
+            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws2"},
+        FocusedWindowId: 5678,
+    },
+}
+aerospace-scratchpad show Finder
+
+Output
+Window '5678 | Finder1  | ws2' is focused
+Window '5679 | Finder2  | ws2' is focused
 
 Error
 <nil>

@@ -57,6 +57,9 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				return
 			}
 
+			var windowsOutsideView []aerospacecli.Window
+			var windowsInFocusedWorkspace []aerospacecli.Window
+			var shouldSendToScratchpad bool
 			for _, window := range windows {
 				if !windowPattern.MatchString(window.AppName) {
 					continue
@@ -79,37 +82,50 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				}
 
 				if isWindowInFocusedWorkspace {
+					windowsInFocusedWorkspace = append(windowsInFocusedWorkspace, window)
+
 					isWindowFocused, err := querier.IsWindowFocused(window.WindowID)
 					if err != nil {
 						stderr.Printf("Error: unable to check if window '%+v' is focused\n", window)
 						return
 					}
-					if isWindowFocused {
-						if err = aerospaceClient.MoveWindowToWorkspace(
-							window.WindowID,
-							constants.DefaultScratchpadWorkspaceName,
-						); err != nil {
-							stderr.Printf("Error: unable to move window '%+v' to scratchpad\n", window)
-							return
-						}
 
-						err = aerospaceClient.SetLayout(
-							window.WindowID,
-							"floating",
+					shouldSendToScratchpad = isWindowFocused
+				} else {
+					windowsOutsideView = append(windowsOutsideView, window)
+
+				}
+			}
+
+			for _, window := range windowsOutsideView {
+				err := sendToFocusedWorkspace(aerospaceClient, window, focusedWorkspace)
+				if err != nil {
+					stderr.Printf(
+						"Error: unable to move window '%+v' to scratchpad\n%s",
+						window,
+						err,
+					)
+					return
+				}
+			}
+
+			// NOTE: To avoid the ping pong of windows, so priority is
+			// for bringing windows to the focused workspace
+			if len(windowsOutsideView) > 0 {
+				return
+			}
+
+			for _, window := range windowsInFocusedWorkspace {
+				if shouldSendToScratchpad {
+					if err = sendToScratchpad(aerospaceClient, window); err != nil {
+						stderr.Printf(
+							"Error: unable to move window '%+v' to scratchpad\n%s",
+							window,
+							err,
 						)
-						if err != nil {
-							fmt.Printf(
-								"Error: unable to set layout for window '%+v' to floating\n%s",
-								window,
-								err,
-							)
-							return
-						}
-
-						fmt.Printf("Window '%+v' hidden to scratchpad\n", window)
 						return
 					}
-
+				} else {
 					err = aerospaceClient.SetFocusByWindowID(window.WindowID)
 					if err != nil {
 						stderr.Printf(
@@ -119,28 +135,62 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 						)
 						return
 					}
-
-					fmt.Printf("Window '%+v' is showed\n", window)
-					return
+					fmt.Printf("Window '%+v' is focused\n", window)
 				}
-
-				if err = aerospaceClient.MoveWindowToWorkspace(
-					window.WindowID,
-					focusedWorkspace.Workspace,
-				); err != nil {
-					stderr.Printf("Error: unable to move window '%+v' to workspace '%s'\n", window, focusedWorkspace.Workspace)
-					return
-				}
-
-				if err = aerospaceClient.SetFocusByWindowID(window.WindowID); err != nil {
-					stderr.Printf("Error: unable to set focus to window '%+v'\n", window)
-					return
-				}
-
-				fmt.Printf("Window '%+v' is summoned\n", window)
 			}
 		},
 	}
 
 	return showCmd
+}
+
+func sendToScratchpad(
+	aerospaceClient aerospacecli.AeroSpaceClient,
+	window aerospacecli.Window,
+) error {
+	if err := aerospaceClient.MoveWindowToWorkspace(
+		window.WindowID,
+		constants.DefaultScratchpadWorkspaceName,
+	); err != nil {
+		return err
+	}
+
+	err := aerospaceClient.SetLayout(
+		window.WindowID,
+		"floating",
+	)
+	if err != nil {
+		fmt.Printf(
+			"Warn: unable to set layout for window '%+v' to floating\n%s",
+			window,
+			err,
+		)
+	}
+
+	fmt.Printf("Window '%+v' hidden to scratchpad\n", window)
+	return nil
+}
+
+func sendToFocusedWorkspace(
+	aerospaceClient aerospacecli.AeroSpaceClient,
+	window aerospacecli.Window,
+	focusedWorkspace *aerospacecli.Workspace,
+) error {
+	if focusedWorkspace == nil {
+		return fmt.Errorf("focused workspace is nil")
+	}
+
+	if err := aerospaceClient.MoveWindowToWorkspace(
+		window.WindowID,
+		focusedWorkspace.Workspace,
+	); err != nil {
+		return fmt.Errorf("unable to move window '%+v' to workspace '%s': %w", window, focusedWorkspace.Workspace, err)
+	}
+
+	if err := aerospaceClient.SetFocusByWindowID(window.WindowID); err != nil {
+		return fmt.Errorf("unable to set focus to window '%+v': %w", window, err)
+	}
+
+	fmt.Printf("Window '%+v' is summoned\n", window)
+	return nil
 }

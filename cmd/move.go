@@ -82,7 +82,11 @@ If no pattern is provided, it moves the currently focused window.
 					"floating",
 				)
 				if err != nil {
-					return fmt.Errorf("unable to set layout for window '%+v'\n%v", window, err)
+					fmt.Printf(
+						"warn: unable to set layout for window '%+v' to floating\n%s",
+						window,
+						err,
+					)
 				}
 
 				movedCount++
