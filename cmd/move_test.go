@@ -7,6 +7,7 @@ import (
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/mocks/aerospacecli"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 	"github.com/gkampitakis/go-snaps/snaps"
@@ -14,6 +15,8 @@ import (
 )
 
 func TestMoveCmd(t *testing.T) {
+	logger.SetDefaultLogger(&logger.EmptyLogger{})
+
 	t.Run("moves current focused window to scratchpad when empty", func(t *testing.T) {
 		command := "move"
 		args := []string{command, ""}

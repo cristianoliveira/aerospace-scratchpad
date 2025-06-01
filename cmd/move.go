@@ -5,12 +5,14 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	_ "net/http/pprof"
 	"regexp"
 	"strings"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -27,6 +29,8 @@ This command moves a window to the scratchpad using a regex to match the app nam
 If no pattern is provided, it moves the currently focused window.
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			logger := logger.GetDefaultLogger()
+			logger.LogDebug("MOVE: start command", "args", args)
 			var windowNamePattern string
 			if len(args) == 0 {
 				windowNamePattern = ""
@@ -36,6 +40,11 @@ If no pattern is provided, it moves the currently focused window.
 
 			if windowNamePattern == "" {
 				focusedWindow, err := aerospaceClient.GetFocusedWindow()
+				logger.LogDebug(
+					"MOVE: retrieving focused window",
+					"focusedWindow", focusedWindow,
+					"error", err,
+				)
 				if err != nil {
 					return fmt.Errorf("unable to get focused window: %v", err)
 				}
@@ -43,16 +52,30 @@ If no pattern is provided, it moves the currently focused window.
 					return fmt.Errorf("no focused window found")
 				}
 				windowNamePattern = fmt.Sprintf("^%s$", focusedWindow.AppName)
+				logger.LogDebug(
+					"MOVE: using focused window app name as pattern",
+					"windowNamePattern", windowNamePattern,
+				)
 			}
 
 			// instantiate the regex
 			regex, err := regexp.Compile(windowNamePattern)
 			if err != nil {
-				fmt.Println("invalid window-name-pattern")
+				logger.LogError(
+					"MOVE: error compiling regex",
+					"windowNamePattern", windowNamePattern,
+					"error", err,
+				)
+				log.Fatalf("Error compiling regex '%s': %v", windowNamePattern, err)
 			}
 
 			// Get all windows
 			windows, err := aerospaceClient.GetAllWindows()
+			logger.LogDebug(
+				"MOVE: retrieved all windows",
+				"windows", windows,
+				"error", err,
+			)
 			if err != nil {
 				return fmt.Errorf("unable to get windows")
 			}
@@ -69,6 +92,12 @@ If no pattern is provided, it moves the currently focused window.
 					window.WindowID,
 					constants.DefaultScratchpadWorkspaceName,
 				)
+				logger.LogDebug(
+					"MOVE: moving window to scratchpad",
+					"window", window,
+					"workspace", constants.DefaultScratchpadWorkspaceName,
+					"error", err,
+				)
 				if err != nil {
 					if strings.Contains(err.Error(), "already belongs to workspace") {
 						return fmt.Errorf("window '%+v' already belongs to scratchpad", window)
@@ -80,6 +109,12 @@ If no pattern is provided, it moves the currently focused window.
 				err = aerospaceClient.SetLayout(
 					window.WindowID,
 					"floating",
+				)
+				logger.LogDebug(
+					"MOVE: setting layout to floating",
+					"window", window,
+					"layout", "floating",
+					"error", err,
 				)
 				if err != nil {
 					fmt.Printf(

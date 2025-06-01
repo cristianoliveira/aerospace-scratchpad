@@ -7,6 +7,7 @@ import (
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/mocks/aerospacecli"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
@@ -15,6 +16,8 @@ import (
 )
 
 func TestShowCmd(t *testing.T) {
+	logger.SetDefaultLogger(&logger.EmptyLogger{})
+
 	t.Run("fails when pattern is empty", func(t *testing.T) {
 		command := "show"
 		args := []string{command, ""}

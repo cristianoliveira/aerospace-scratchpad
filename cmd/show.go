@@ -11,6 +11,7 @@ import (
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 	"github.com/spf13/cobra"
 )
@@ -29,6 +30,8 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 `,
 		Args: cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.GetDefaultLogger()
+			logger.LogDebug("SHOW: start command", "args", args)
 			windowNamePattern := args[0]
 			windowNamePattern = strings.TrimSpace(windowNamePattern)
 			if windowNamePattern == "" {
@@ -38,24 +41,36 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 
 			windows, err := aerospaceClient.GetAllWindows()
 			if err != nil {
+				logger.LogError("SHOW: unable to get windows", "error", err)
 				stderr.Println("Error: unable to get windows")
 				return
 			}
+			logger.LogDebug("SHOW: retrieved windows", "windows", windows)
 
 			focusedWorkspace, err := aerospaceClient.GetFocusedWorkspace()
 			if err != nil {
+				logger.LogError("SHOW: unable to get focused workspace", "error", err)
 				stderr.Println("Error: unable to get focused workspace")
 				return
 			}
+			logger.LogDebug("SHOW: retrieved focused workspace", "workspace", focusedWorkspace)
 
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient)
 
 			// instantiate the regex
 			windowPattern, err := regexp.Compile(windowNamePattern)
 			if err != nil {
+				logger.LogError(
+					"SHOW: unable to compile window pattern",
+					"pattern",
+					windowNamePattern,
+					"error",
+					err,
+				)
 				stderr.Println("Error: invalid window-name-pattern")
 				return
 			}
+			logger.LogDebug("SHOW: compiled window pattern", "pattern", windowPattern)
 
 			var windowsOutsideView []aerospacecli.Window
 			var windowsInFocusedWorkspace []aerospacecli.Window
@@ -80,7 +95,6 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					isWindowInFocusedWorkspace = window.Workspace == focusedWorkspace.Workspace
 
 				}
-
 				if isWindowInFocusedWorkspace {
 					windowsInFocusedWorkspace = append(windowsInFocusedWorkspace, window)
 
@@ -96,6 +110,13 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 
 				}
 			}
+
+			logger.LogDebug(
+				"SHOW: filtered windows",
+				"windowsOutsideView", windowsOutsideView,
+				"windowsInFocusedWorkspace", windowsInFocusedWorkspace,
+				"shouldSendToScratchpad", shouldSendToScratchpad,
+			)
 
 			for _, window := range windowsOutsideView {
 				err := sendToFocusedWorkspace(aerospaceClient, window, focusedWorkspace)
@@ -123,6 +144,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 						)
 						return
 					}
+					logger.LogDebug("SHOW: set focus to window", "window", window)
 					fmt.Printf("Window '%+v' is focused\n", window)
 				}
 
