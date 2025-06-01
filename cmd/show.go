@@ -112,6 +112,20 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			// NOTE: To avoid the ping pong of windows, so priority is
 			// for bringing windows to the focused workspace
 			if len(windowsOutsideView) > 0 {
+				// Make sure to bring the remaining matched windows to the front
+				for _, window := range windowsInFocusedWorkspace {
+					err = aerospaceClient.SetFocusByWindowID(window.WindowID)
+					if err != nil {
+						stderr.Printf(
+							"Error: unable to set focus to window '%+v'\n%s",
+							window,
+							err,
+						)
+						return
+					}
+					fmt.Printf("Window '%+v' is focused\n", window)
+				}
+
 				return
 			}
 
