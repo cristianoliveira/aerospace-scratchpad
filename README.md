@@ -180,9 +180,9 @@ See: `scripts/benchmarks.sh` for details, and test it yourself.
 
 If you encounter issues with `aerospace-scratchpad`, you can use the following environment variables to help diagnose and resolve problems:
 
-- **AEROSPACE_SCRATCHPAD_LOGS_PATH**: Set this environment variable to specify the path for the AeroSpace scratchpad logs. By default, logs are stored at `/tmp/aerospace-scratchpad.log`. Example:
+- **AEROSPACE_SCRATCHPAD_LOGS_PATH**: Set this environment variable to specify the path for the AeroSpace scratchpad logs. By default, logs are stored at `/tmp/aerospace-scratchpad.log`.
 
-- **AEROSPACE_SCRATCHPAD_LOGS_LEVEL**: Use this environment variable to set the logging level for the AeroSpace scratchpad. The default level is `DISABLED`. You can set it to other levels like `DEBUG` to get more detailed logs. Example:
+- **AEROSPACE_SCRATCHPAD_LOGS_LEVEL**: Use this environment variable to set the logging level for the AeroSpace scratchpad. The default level is `DISABLED`. You can set it to other levels like `DEBUG` to get more detailed logs.
 
 These environment variables can be set directly in the AeroSpace configuration file to ensure they are available whenever AeroSpace is running. Add the following to your [AeroSpace config](https://nikitabobko.github.io/AeroSpace/guide#config-location)
 
@@ -191,8 +191,6 @@ These environment variables can be set directly in the AeroSpace configuration f
     AEROSPACE_SCRATCHPAD_LOGS_PATH = "/path/to/your/logfile.log"
     AEROSPACE_SCRATCHPAD_LOGS_LEVEL = "DEBUG"
 ```
-
-Replace the paths and values with your desired settings.
 
 Alternatively, you can export these environment variables in your shell configuration file (e.g., `.bashrc`, `.zshrc`):
 
