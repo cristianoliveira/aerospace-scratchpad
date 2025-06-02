@@ -5,6 +5,16 @@
 
 A I3/Sway like scratchpad extension for [AeroSpace WM](https://github.com/nikitabobko/AeroSpace)
 
+## Summary
+
+- [Demo](#demo)
+- [Basic Usage](#basic-usage)
+- [Advanced Usage](#advanced-usage)
+- [Installation](#installation)
+- [How does it work?](#how-does-it-work)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+
 **Beta**: I use this daily, I'll try my best but there might be breaking changes till the 1.0.0 release. 
 
 Please report any issues or ideas in the [issues](https://github.com/cristianoliveira/aerospace-scratchpad/issues) section.
