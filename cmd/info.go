@@ -13,7 +13,7 @@ import (
 
 // InfoCmd represents the info command
 func InfoCmd(
-	aerospaceClient aerospacecli.AeroSpaceClient,
+	aerospace aerospacecli.AeroSpaceClient,
 ) *cobra.Command {
 	infoCmd := &cobra.Command{
 		Use:   "info",
@@ -29,13 +29,13 @@ As well as other relevant information.
 				return fmt.Errorf("failed to get socket path: %w", err)
 			}
 
-			res, err := aerospaceClient.Client().SendCommand("config", []string{"--config-path"})
+			res, err := aerospace.Client().SendCommand("config", []string{"--config-path"})
 			if err != nil {
 				return fmt.Errorf("failed to get aerospace's config. %w", err)
 			}
 
 			var validationInfo string
-			if err = aerospaceClient.Client().CheckServerVersion(res.ServerVersion); err != nil {
+			if err = aerospace.Client().CheckServerVersion(res.ServerVersion); err != nil {
 				validationInfo = "Incompatible. Reason: " + err.Error()
 			} else {
 				validationInfo = "Compatible."
