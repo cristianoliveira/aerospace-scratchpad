@@ -1,7 +1,1 @@
-# Add a readme file to the project
-
-# Change show to toggle visibility of the scratchpad
-This way it should behave closer to how SwayWM scratchpad works.
-
-# Create a way to cycle through the scratchpads, to retrieve one manually
-in case yous send a window to the scratchpad by mistake.
+- feat: add way to set focus on the next match - next <pattern>
