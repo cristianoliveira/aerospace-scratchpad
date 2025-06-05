@@ -6,14 +6,15 @@ package cmd
 import (
 	"fmt"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	aerospaceipc "github.com/cristianoliveira/aerospace-ipc"
+	aerospacecli "github.com/cristianoliveira/aerospace-ipc/pkg/client"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/spf13/cobra"
 )
 
 // InfoCmd represents the info command
 func InfoCmd(
-	aerospace aerospacecli.AeroSpaceClient,
+	aerospace aerospaceipc.AeroSpaceClient,
 ) *cobra.Command {
 	infoCmd := &cobra.Command{
 		Use:   "info",
