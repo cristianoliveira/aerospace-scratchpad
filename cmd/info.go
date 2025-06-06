@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	aerospaceipc "github.com/cristianoliveira/aerospace-ipc"
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc/pkg/client"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/spf13/cobra"
 )
@@ -25,7 +24,7 @@ Checks the compatibility of the installed version of Aerospace with the current 
 As well as other relevant information.
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			socketPath, err := aerospacecli.GetSocketPath()
+			socketPath, err := aerospace.Client().GetSocketPath()
 			if err != nil {
 				return fmt.Errorf("failed to get socket path: %w", err)
 			}
