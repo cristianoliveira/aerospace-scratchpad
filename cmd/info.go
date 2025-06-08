@@ -24,18 +24,19 @@ Checks the compatibility of the installed version of Aerospace with the current 
 As well as other relevant information.
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			socketPath, err := aerospace.Client().GetSocketPath()
+			socketClient := aerospace.Connection()
+			socketPath, err := socketClient.GetSocketPath()
 			if err != nil {
 				return fmt.Errorf("failed to get socket path: %w", err)
 			}
 
-			res, err := aerospace.Client().SendCommand("config", []string{"--config-path"})
+			res, err := socketClient.SendCommand("config", []string{"--config-path"})
 			if err != nil {
 				return fmt.Errorf("failed to get aerospace's config. %w", err)
 			}
 
 			var validationInfo string
-			if err = aerospace.Client().CheckServerVersion(res.ServerVersion); err != nil {
+			if err = socketClient.CheckServerVersion(res.ServerVersion); err != nil {
 				validationInfo = "Incompatible. Reason: " + err.Error()
 			} else {
 				validationInfo = "Compatible."

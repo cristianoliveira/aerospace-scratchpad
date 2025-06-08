@@ -100,7 +100,7 @@ If no pattern is provided, it moves the currently focused window.
 				)
 				if err != nil {
 					if strings.Contains(err.Error(), "already belongs to workspace") {
-						return fmt.Errorf("window '%+v' already belongs to scratchpad", window)
+						continue
 					}
 
 					return fmt.Errorf("unable to move window '%+v' to scratchpad", window)

@@ -152,14 +152,19 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			}
 
 			for _, window := range windowsInFocusedWorkspace {
+				logger.LogDebug(
+					"SHOW: processing window in focused workspace",
+					"window", window,
+					"shouldSendToScratchpad", shouldSendToScratchpad,
+				)
 				if shouldSendToScratchpad {
 					if err = sendToScratchpad(aerospaceClient, window); err != nil {
-						stderr.Printf(
+						logger.LogDebug(
 							"Error: unable to move window '%+v' to scratchpad\n%s",
-							window,
-							err,
+							"window", window,
+							"error", err,
 						)
-						return
+						continue
 					}
 				} else {
 					err = aerospaceClient.SetFocusByWindowID(window.WindowID)
@@ -184,14 +189,24 @@ func sendToScratchpad(
 	aerospaceClient aerospacecli.AeroSpaceClient,
 	window aerospacecli.Window,
 ) error {
-	if err := aerospaceClient.MoveWindowToWorkspace(
+	logger := logger.GetDefaultLogger()
+	logger.LogDebug("SHOW: sendToScratchpad ", "window", window)
+
+	err := aerospaceClient.MoveWindowToWorkspace(
 		window.WindowID,
 		constants.DefaultScratchpadWorkspaceName,
-	); err != nil {
+	)
+	logger.LogDebug(
+		"SHOW: after aerospaceClient.MoveWindowToWorkspace",
+		"window", window,
+		"to-workspace", constants.DefaultScratchpadWorkspaceName,
+		"error", err,
+	)
+	if err != nil {
 		return err
 	}
 
-	err := aerospaceClient.SetLayout(
+	err = aerospaceClient.SetLayout(
 		window.WindowID,
 		"floating",
 	)

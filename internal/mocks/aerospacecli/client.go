@@ -41,20 +41,6 @@ func (m *MockAeroSpaceClient) EXPECT() *MockAeroSpaceClientMockRecorder {
 	return m.recorder
 }
 
-// Client mocks base method.
-func (m *MockAeroSpaceClient) Client() client.AeroSpaceSocketConn {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Client")
-	ret0, _ := ret[0].(client.AeroSpaceSocketConn)
-	return ret0
-}
-
-// Client indicates an expected call of Client.
-func (mr *MockAeroSpaceClientMockRecorder) Client() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Client", reflect.TypeOf((*MockAeroSpaceClient)(nil).Client))
-}
-
 // CloseConnection mocks base method.
 func (m *MockAeroSpaceClient) CloseConnection() error {
 	m.ctrl.T.Helper()
@@ -67,6 +53,20 @@ func (m *MockAeroSpaceClient) CloseConnection() error {
 func (mr *MockAeroSpaceClientMockRecorder) CloseConnection() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseConnection", reflect.TypeOf((*MockAeroSpaceClient)(nil).CloseConnection))
+}
+
+// Connection mocks base method.
+func (m *MockAeroSpaceClient) Connection() client.AeroSpaceConnection {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Connection")
+	ret0, _ := ret[0].(client.AeroSpaceConnection)
+	return ret0
+}
+
+// Connection indicates an expected call of Connection.
+func (mr *MockAeroSpaceClientMockRecorder) Connection() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Connection", reflect.TypeOf((*MockAeroSpaceClient)(nil).Connection))
 }
 
 // GetAllWindows mocks base method.
