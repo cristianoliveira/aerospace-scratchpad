@@ -30,16 +30,15 @@ As well as other relevant information.
 				return fmt.Errorf("failed to get socket path: %w", err)
 			}
 
-			res, err := socketClient.SendCommand("config", []string{"--config-path"})
-			if err != nil {
-				return fmt.Errorf("failed to get aerospace's config. %w", err)
-			}
-
 			var validationInfo string
-			if err = socketClient.CheckServerVersion(res.ServerVersion); err != nil {
+			if err = socketClient.CheckServerVersion(); err != nil {
 				validationInfo = "Incompatible. Reason: " + err.Error()
 			} else {
 				validationInfo = "Compatible."
+			}
+			serverVersion, err := socketClient.GetServerVersion()
+			if err != nil {
+				return fmt.Errorf("failed to get server version: %w", err)
 			}
 
 			cmd.Println(fmt.Sprintf(`Aerospace Scratchpad
@@ -54,7 +53,7 @@ Workspace: %s
 [Compatibility]
 Status: %s
 			`,
-				res.ServerVersion,
+				serverVersion,
 				socketPath,
 				constants.DefaultScratchpadWorkspaceName,
 				validationInfo,
