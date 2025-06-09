@@ -4,6 +4,15 @@ set -euo pipefail
 
 # Function to check and set up the environment
 setup_environment() {
+    echo "Setting up environment..."
+    # Check if is a worktree, which .git is a file
+    if [ -f .git ]; then
+        echo "Detected a worktree setup."
+        return
+    else
+        echo "Detected a standard git repository."
+    fi
+
     # Link the pre-push hook if not already linked
     if [ ! -L .git/hooks/pre-push ]; then
         echo "Linking pre-push hook..."
@@ -27,7 +36,13 @@ if [ "$LOCAL" = "$REMOTE" ]; then
 fi
 
 # Run environment setup
-setup_environment
+
+# Try and catch any errors during setup
+{
+    setup_environment
+} || {
+    echo "Error setting up environment. Please check your setup."
+}
 
 # Run tests
 echo "Running tests..."
