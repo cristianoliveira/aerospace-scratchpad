@@ -641,5 +641,103 @@ func TestShowCmd(t *testing.T) {
 			expectedError := fmt.Sprintf("Error\n%+v", err)
 			snaps.MatchSnapshot(t, tree, cmdAsString, "Output", out, expectedError)
 		})
+
+		tt.Run("when bringing windows together, it doesnt change focus", func(t *testing.T) {
+			command := "show"
+			args := []string{command, "Finder"}
+
+			ctrl := gomock.NewController(tt)
+			defer ctrl.Finish()
+
+			tree := []testutils.AeroSpaceTree{
+				{
+					Windows: []aerospacecli.Window{
+						{
+							AppName:   "Finder1",
+							WindowID:  5678,
+							Workspace: "ws1",
+						},
+						{
+							AppName:   "Browser",
+							WindowID:  22,
+							Workspace: "ws1",
+						},
+					},
+					Workspace: &aerospacecli.Workspace{
+						Workspace: "ws1",
+					},
+					FocusedWindowId: 0, // Not focused
+				},
+				{
+					Windows: []aerospacecli.Window{
+						{
+							AppName:   "Finder2",
+							WindowID:  5679,
+							Workspace: "ws2",
+						},
+						{
+							AppName:   "Terminal",
+							WindowID:  91011,
+							Workspace: "ws2",
+						},
+					},
+					Workspace: &aerospacecli.Workspace{
+						Workspace: "ws2",
+					},
+					FocusedWindowId: 5679,
+				},
+			}
+
+			allWindows := testutils.ExtractAllWindows(tree)
+			focusedTree := testutils.ExtractFocusedTree(tree)
+			focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+			gomock.InOrder(
+				aerospaceClient.EXPECT().
+					GetAllWindows().
+					Return(allWindows, nil).
+					Times(1),
+
+				aerospaceClient.EXPECT().
+					GetFocusedWorkspace().
+					Return(focusedTree.Workspace, nil).
+					Times(1),
+
+				aerospaceClient.EXPECT().
+					GetFocusedWindow().
+					Return(focusedWindow, nil).
+					Times(1),
+
+				aerospaceClient.EXPECT().
+					MoveWindowToWorkspace(
+						tree[0].Windows[0].WindowID,
+						focusedTree.Workspace.Workspace,
+					).
+					Return(nil).
+					Times(1),
+
+				aerospaceClient.EXPECT().
+					SetFocusByWindowID(
+						tree[1].Windows[0].WindowID,
+					).
+					Return(nil).
+					Times(1),
+			)
+
+			cmd := RootCmd(aerospaceClient)
+			out, err := testutils.CmdExecute(cmd, args...)
+			if err != nil {
+				t.Errorf("Expected no error, got %v", err)
+			}
+
+			if out == "" {
+				t.Errorf("Expected output, got empty string")
+			}
+
+			cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
+			expectedError := fmt.Sprintf("Error\n%+v", err)
+			snaps.MatchSnapshot(t, tree, cmdAsString, "Output", out, expectedError)
+		})
 	})
 }

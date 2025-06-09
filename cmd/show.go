@@ -74,7 +74,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 
 			var windowsOutsideView []aerospacecli.Window
 			var windowsInFocusedWorkspace []aerospacecli.Window
-			var shouldSendToScratchpad bool
+			var hasAtLeastOneWindowFocused bool
 			for _, window := range windows {
 				if !windowPattern.MatchString(window.AppName) {
 					continue
@@ -104,8 +104,8 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 						return
 					}
 
-					// Make sure that once shouldSendToScratchpad is true, it will remain true
-					shouldSendToScratchpad = shouldSendToScratchpad || isWindowFocused
+					// Make sure that once hasAtLeastOneWindowFocused is true, it will remain true
+					hasAtLeastOneWindowFocused = hasAtLeastOneWindowFocused || isWindowFocused
 				} else {
 					windowsOutsideView = append(windowsOutsideView, window)
 
@@ -115,7 +115,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					"SHOW: loop",
 					"windowsOutsideView", windowsOutsideView,
 					"windowsInFocusedWorkspace", windowsInFocusedWorkspace,
-					"shouldSendToScratchpad", shouldSendToScratchpad,
+					"hasAtLeastOneWindowFocused", hasAtLeastOneWindowFocused,
 				)
 			}
 
@@ -123,11 +123,16 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				"SHOW: filtered windows",
 				"windowsOutsideView", windowsOutsideView,
 				"windowsInFocusedWorkspace", windowsInFocusedWorkspace,
-				"shouldSendToScratchpad", shouldSendToScratchpad,
+				"hasAtLeastOneWindowFocused", hasAtLeastOneWindowFocused,
 			)
 
 			for _, window := range windowsOutsideView {
-				err := sendToFocusedWorkspace(aerospaceClient, window, focusedWorkspace)
+				err := sendToFocusedWorkspace(
+					aerospaceClient,
+					window,
+					focusedWorkspace,
+					!hasAtLeastOneWindowFocused,
+				)
 				if err != nil {
 					stderr.Printf(
 						"Error: unable to move window '%+v' to scratchpad\n%s",
@@ -163,9 +168,9 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				logger.LogDebug(
 					"SHOW: processing window in focused workspace",
 					"window", window,
-					"shouldSendToScratchpad", shouldSendToScratchpad,
+					"hasAtLeastOneWindowFocused", hasAtLeastOneWindowFocused,
 				)
-				if shouldSendToScratchpad {
+				if hasAtLeastOneWindowFocused {
 					if err = sendToScratchpad(aerospaceClient, window); err != nil {
 						logger.LogDebug(
 							"Error: unable to move window '%+v' to scratchpad\n%s",
@@ -234,6 +239,7 @@ func sendToFocusedWorkspace(
 	aerospaceClient aerospacecli.AeroSpaceClient,
 	window aerospacecli.Window,
 	focusedWorkspace *aerospacecli.Workspace,
+	shouldSetFocus bool,
 ) error {
 	if focusedWorkspace == nil {
 		return fmt.Errorf("focused workspace is nil")
@@ -246,8 +252,10 @@ func sendToFocusedWorkspace(
 		return fmt.Errorf("unable to move window '%+v' to workspace '%s': %w", window, focusedWorkspace.Workspace, err)
 	}
 
-	if err := aerospaceClient.SetFocusByWindowID(window.WindowID); err != nil {
-		return fmt.Errorf("unable to set focus to window '%+v': %w", window, err)
+	if shouldSetFocus {
+		if err := aerospaceClient.SetFocusByWindowID(window.WindowID); err != nil {
+			return fmt.Errorf("unable to set focus to window '%+v': %w", window, err)
+		}
 	}
 
 	fmt.Printf("Window '%+v' is summoned\n", window)
