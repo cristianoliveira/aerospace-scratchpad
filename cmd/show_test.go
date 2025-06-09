@@ -492,15 +492,31 @@ func TestShowCmd(t *testing.T) {
 					Times(2),
 
 				aerospaceClient.EXPECT().
-					SetFocusByWindowID(
+					MoveWindowToWorkspace(
 						tree[1].Windows[0].WindowID,
+						constants.DefaultScratchpadWorkspaceName,
+					).
+					Return(nil).
+					Times(1),
+				aerospaceClient.EXPECT().
+					SetLayout(
+						tree[1].Windows[0].WindowID,
+						"floating",
 					).
 					Return(nil).
 					Times(1),
 
 				aerospaceClient.EXPECT().
-					SetFocusByWindowID(
+					MoveWindowToWorkspace(
 						tree[1].Windows[1].WindowID,
+						constants.DefaultScratchpadWorkspaceName,
+					).
+					Return(nil).
+					Times(1),
+				aerospaceClient.EXPECT().
+					SetLayout(
+						tree[1].Windows[1].WindowID,
+						"floating",
 					).
 					Return(nil).
 					Times(1),

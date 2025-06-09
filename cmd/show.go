@@ -104,11 +104,19 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 						return
 					}
 
-					shouldSendToScratchpad = isWindowFocused
+					// Make sure that once shouldSendToScratchpad is true, it will remain true
+					shouldSendToScratchpad = shouldSendToScratchpad || isWindowFocused
 				} else {
 					windowsOutsideView = append(windowsOutsideView, window)
 
 				}
+
+				logger.LogDebug(
+					"SHOW: loop",
+					"windowsOutsideView", windowsOutsideView,
+					"windowsInFocusedWorkspace", windowsInFocusedWorkspace,
+					"shouldSendToScratchpad", shouldSendToScratchpad,
+				)
 			}
 
 			logger.LogDebug(

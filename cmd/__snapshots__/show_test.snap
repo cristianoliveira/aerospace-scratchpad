@@ -222,8 +222,8 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder1  | ws2' is focused
-Window '5679 | Finder2  | ws2' is focused
+Window '5678 | Finder1  | ws2' hidden to scratchpad
+Window '5679 | Finder2  | ws2' hidden to scratchpad
 
 Error
 <nil>
