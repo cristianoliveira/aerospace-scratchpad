@@ -22,7 +22,17 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check for changes outside nix/
+        id: changes_check
+        run: |
+          if git diff --name-only HEAD^ HEAD | grep -v '^nix/'; then
+            echo "changes_outside_nix=true" >> $GITHUB_ENV
+          else
+            echo "changes_outside_nix=false" >> $GITHUB_ENV
+          fi
+
       - name: Generate new hashes
+        if: env.changes_outside_nix == 'true'
         run: |
           bash scripts/update-nix-hash.sh nix/package-nightly.nix ".#nightly"
 
