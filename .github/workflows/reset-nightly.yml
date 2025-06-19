@@ -11,6 +11,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # Make sure to clone with at least last and before last commits
+          fetch-depth: 2
 
       - name: reset nightly branch
         uses: nicksnell/action-reset-repo@master
