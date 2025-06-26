@@ -63,6 +63,64 @@ func TestShowCmd(t *testing.T) {
 		snaps.MatchSnapshot(t, tree, cmdAsString, "Output", out, expectedError)
 	})
 
+	t.Run("fails when pattern doesn match any window", func(t *testing.T) {
+		command := "show"
+		args := []string{command, "foo"}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows: []aerospacecli.Window{
+					{
+						AppName:  "Notepad",
+						WindowID: 1234,
+					},
+					{
+						AppName:  "Finder",
+						WindowID: 5678,
+					},
+				},
+				Workspace: &aerospacecli.Workspace{
+					Workspace: "ws1",
+				},
+
+				FocusedWindowId: 1234,
+			},
+		}
+
+		allWindows := testutils.ExtractAllWindows(tree)
+		focusedTree := testutils.ExtractFocusedTree(tree)
+
+		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		gomock.InOrder(
+			aerospaceClient.EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1),
+
+			aerospaceClient.EXPECT().
+				GetFocusedWorkspace().
+				Return(focusedTree.Workspace, nil).
+				Times(1),
+		)
+
+		cmd := RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if out == "" {
+			t.Errorf("Expected output, got empty string")
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
+		expectedError := fmt.Sprintf("Error\n%+v", err)
+		snaps.MatchSnapshot(t, tree, cmdAsString, "Output", out, expectedError)
+	})
+
 	t.Run(
 		"set focus to window if already in the focused workspace but not focused",
 		func(t *testing.T) {

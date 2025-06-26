@@ -286,3 +286,23 @@ Window '5679 | Finder2  | ws2' is focused
 Error
 <nil>
 ---
+
+[TestShowCmd/fails_when_pattern_doesn_match_any_window - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        FocusedWindowId: 1234,
+    },
+}
+aerospace-scratchpad show foo
+
+Output
+Error: no windows found matching the pattern
+
+Error
+<nil>
+---
