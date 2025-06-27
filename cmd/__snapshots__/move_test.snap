@@ -15,7 +15,7 @@ aerospace-scratchpad move foo
 Output
 
 Error
- no windows matched the pattern 'foo'
+ Error: no windows matched the pattern 'foo'
 
 ---
 
@@ -45,7 +45,7 @@ aerospace-scratchpad move test
 Output
 
 Error
- unable to get windows
+ Error: unable to get windows
 
 ---
 
@@ -85,6 +85,6 @@ aerospace-scratchpad move Finder
 Output
 
 Error
-unable to move window '5678 | Finder ' to scratchpad
+Error: unable to move window '5678 | Finder ' to scratchpad
 
 ---

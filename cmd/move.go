@@ -47,11 +47,11 @@ If no pattern is provided, it moves the currently focused window.
 					"error", err,
 				)
 				if err != nil {
-					stderr.Println("unable to get focused window: %v", err)
+					stderr.Println("Error: unable to get focused window: %v", err)
 					return
 				}
 				if focusedWindow == nil {
-					stderr.Println("no focused window found")
+					stderr.Println("Error: no focused window found")
 					return
 				}
 				windowNamePattern = fmt.Sprintf("^%s$", focusedWindow.AppName)
@@ -80,7 +80,7 @@ If no pattern is provided, it moves the currently focused window.
 				"error", err,
 			)
 			if err != nil {
-				stderr.Println("unable to get windows")
+				stderr.Println("Error: unable to get windows")
 				return
 			}
 
@@ -107,7 +107,7 @@ If no pattern is provided, it moves the currently focused window.
 						continue
 					}
 
-					stderr.Println("unable to move window '%+v' to scratchpad", window)
+					stderr.Println("Error: unable to move window '%+v' to scratchpad", window)
 					// exit loop
 					return
 				}
@@ -140,7 +140,7 @@ If no pattern is provided, it moves the currently focused window.
 				)
 
 				stderr.Println(
-					"no windows matched the pattern '%s'",
+					"Error: no windows matched the pattern '%s'",
 					windowNamePattern,
 				)
 				return

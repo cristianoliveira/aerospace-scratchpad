@@ -35,7 +35,7 @@ aerospace-scratchpad show foo
 Output
 
 Error
-Error: no windows found matching the pattern
+Error: no windows matched the pattern 'foo'
 
 ---
 
