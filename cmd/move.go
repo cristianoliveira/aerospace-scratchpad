@@ -13,6 +13,7 @@ import (
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +29,7 @@ func MoveCmd(
 This command moves a window to the scratchpad using a regex to match the app name.
 If no pattern is provided, it moves the currently focused window.
 `,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.GetDefaultLogger()
 			logger.LogDebug("MOVE: start command", "args", args)
 			var windowNamePattern string
@@ -46,10 +47,12 @@ If no pattern is provided, it moves the currently focused window.
 					"error", err,
 				)
 				if err != nil {
-					return fmt.Errorf("unable to get focused window: %v", err)
+					stderr.Println("unable to get focused window: %v", err)
+					return
 				}
 				if focusedWindow == nil {
-					return fmt.Errorf("no focused window found")
+					stderr.Println("no focused window found")
+					return
 				}
 				windowNamePattern = fmt.Sprintf("^%s$", focusedWindow.AppName)
 				logger.LogDebug(
@@ -77,7 +80,8 @@ If no pattern is provided, it moves the currently focused window.
 				"error", err,
 			)
 			if err != nil {
-				return fmt.Errorf("unable to get windows")
+				stderr.Println("unable to get windows")
+				return
 			}
 
 			var movedCount int
@@ -103,7 +107,9 @@ If no pattern is provided, it moves the currently focused window.
 						continue
 					}
 
-					return fmt.Errorf("unable to move window '%+v' to scratchpad", window)
+					stderr.Println("unable to move window '%+v' to scratchpad", window)
+					// exit loop
+					return
 				}
 
 				err = aerospaceClient.SetLayout(
@@ -128,10 +134,17 @@ If no pattern is provided, it moves the currently focused window.
 			}
 
 			if movedCount == 0 {
-				fmt.Println("No windows matched the pattern")
-			}
+				logger.LogDebug(
+					"MOVE: no windows matched the pattern",
+					"pattern", windowNamePattern,
+				)
 
-			return nil
+				stderr.Println(
+					"no windows matched the pattern '%s'",
+					windowNamePattern,
+				)
+				return
+			}
 		},
 	}
 

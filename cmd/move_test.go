@@ -9,6 +9,7 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/mocks/aerospacecli"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 	"github.com/gkampitakis/go-snaps/snaps"
 	"go.uber.org/mock/gomock"
@@ -16,6 +17,64 @@ import (
 
 func TestMoveCmd(t *testing.T) {
 	logger.SetDefaultLogger(&logger.EmptyLogger{})
+	stderr.SetBehavior(false)
+
+	t.Run("fails when pattern doesnt match any window", func(t *testing.T) {
+		logger.SetDefaultLogger(&testutils.TestingLogger{
+			Logger: func(msg string, largs ...any) {
+				t.Logf(msg, largs...)
+			},
+		})
+
+		command := "move"
+		args := []string{command, "foo"}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows: []aerospacecli.Window{
+					{
+						AppName:  "Notepad",
+						WindowID: 1234,
+					},
+					{
+						AppName:  "Finder",
+						WindowID: 5678,
+					},
+				},
+				Workspace: &aerospacecli.Workspace{
+					Workspace: "ws1",
+				},
+
+				FocusedWindowId: 5678,
+			},
+		}
+		allWindows := testutils.ExtractAllWindows(tree)
+		windows := testutils.ExtractWindowsByName(tree, "Notepad")
+		if len(windows) != 1 {
+			t.Fatalf("Expected 1 Notepad window, got %d", len(windows))
+		}
+
+		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		gomock.InOrder(
+			aerospaceClient.EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1),
+		)
+
+		cmd := RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err == nil {
+			t.Errorf("Expected error, got nil")
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
+		errorMessage := fmt.Sprintf("Error\n %+v", err)
+		snaps.MatchSnapshot(t, tree, cmdAsString, "Output", out, errorMessage)
+	})
 
 	t.Run("moves current focused window to scratchpad when empty", func(t *testing.T) {
 		command := "move"
@@ -104,7 +163,8 @@ func TestMoveCmd(t *testing.T) {
 		}
 
 		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
-		snaps.MatchSnapshot(t, cmdAsString, "Output", out, "Error", err.Error())
+		errorMessage := fmt.Sprintf("Error\n %+v", err)
+		snaps.MatchSnapshot(t, cmdAsString, "Output", out, errorMessage)
 	})
 
 	t.Run("moves a window to scratchpad by pattern", func(t *testing.T) {

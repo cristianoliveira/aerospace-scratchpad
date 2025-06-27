@@ -50,12 +50,8 @@ func TestShowCmd(t *testing.T) {
 		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
 		cmd := RootCmd(aerospaceClient)
 		out, err := testutils.CmdExecute(cmd, args...)
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-
-		if out == "" {
-			t.Errorf("Expected output, got empty string")
+		if err == nil {
+			t.Errorf("Expected error, got %v", out)
 		}
 
 		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
@@ -108,12 +104,8 @@ func TestShowCmd(t *testing.T) {
 
 		cmd := RootCmd(aerospaceClient)
 		out, err := testutils.CmdExecute(cmd, args...)
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-
-		if out == "" {
-			t.Errorf("Expected output, got empty string")
+		if err == nil {
+			t.Errorf("Expected error, got %v", out)
 		}
 
 		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"

@@ -32,15 +32,33 @@ func CaptureStdOut(f func() error) (string, error) {
 	var buf bytes.Buffer
 	// Save original stdout
 	old := os.Stdout
+	oldErr := os.Stderr
 	// Redirect stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
-	os.Stderr = w // Redirect stderr to the same pipe
+	errFile, _ := os.CreateTemp("", "aerospace-scratchpad-stdout")
+	os.Stderr = errFile // Redirect stderr to the same pipe
 
 	// Run the function that prints to stdout
 	err := f()
 	if err != nil {
 		return "", err
+	}
+
+	err = errFile.Close()
+	if err != nil {
+		return "", fmt.Errorf("failed to close error file: %w", err)
+	}
+	// Restore stderr to original
+	os.Stderr = oldErr
+
+	// read the error file
+	errFileContent, err := os.ReadFile(errFile.Name())
+	if err != nil {
+		return "", fmt.Errorf("failed to read error file: %w", err)
+	}
+	if len(errFileContent) > 0 {
+		return "", fmt.Errorf("%s", errFileContent)
 	}
 
 	// Close writer and restore stdout
@@ -62,9 +80,4 @@ type MockEmptyAerspaceMarkWindows struct{}
 
 func (d *MockEmptyAerspaceMarkWindows) Client() *aerospacecli.AeroSpaceWM {
 	return &aerospacecli.AeroSpaceWM{}
-}
-
-func (d *MockEmptyAerspaceMarkWindows) GetWindowByID(windowID string) (*aerospacecli.Window, error) {
-	fmt.Println("Mocked GetWindowByID called with windowID:", windowID)
-	return &aerospacecli.Window{}, nil
 }

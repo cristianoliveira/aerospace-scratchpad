@@ -1,11 +1,42 @@
 
-[TestMoveCmd/fails_when_missing_or_empty_arguments - 1]
-aerospace-scratchpad move 
+[TestMoveCmd/fails_when_pattern_doesnt_match_any_window - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        FocusedWindowId: 5678,
+    },
+}
+aerospace-scratchpad move foo
 
 Output
 
 Error
-argument at position 0 is empty or whitespace
+ no windows matched the pattern 'foo'
+
+---
+
+[TestMoveCmd/moves_current_focused_window_to_scratchpad_when_empty - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        FocusedWindowId: 5678,
+    },
+}
+aerospace-scratchpad move 
+
+Output
+Moving window 5678 | Finder  to scratchpad
+
+Error
+ <nil>
 ---
 
 [TestMoveCmd/fails_when_getting_all_windows_return_an_erro - 1]
@@ -14,7 +45,8 @@ aerospace-scratchpad move test
 Output
 
 Error
-unable to get windows
+ unable to get windows
+
 ---
 
 [TestMoveCmd/moves_a_window_to_scratchpad_by_pattern - 1]
@@ -37,7 +69,6 @@ Error
  <nil>
 ---
 
-
 [TestMoveCmd/fails_when_moving_a_window_to_scratchpad - 1]
 []testutils.AeroSpaceTree{
     {
@@ -55,24 +86,5 @@ Output
 
 Error
 unable to move window '5678 | Finder ' to scratchpad
----
 
-[TestMoveCmd/moves_current_focused_window_to_scratchpad_when_empty - 1]
-[]testutils.AeroSpaceTree{
-    {
-        Windows: {
-            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
-            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
-        },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 5678,
-    },
-}
-aerospace-scratchpad move 
-
-Output
-Moving window 5678 | Finder  to scratchpad
-
-Error
- <nil>
 ---

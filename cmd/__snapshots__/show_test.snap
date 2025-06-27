@@ -1,25 +1,5 @@
 
-[TestFunction/set_focus_to_window_if_already_in_the_focused_workspace_but_not_focused - 1]
-[]testutils.AeroSpaceTree{
-    {
-        Windows: {
-            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
-            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
-        },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 1234,
-    },
-}
-aerospace-scratchpad show Finder
-
-Output
-Window '5678 | Finder ' is showed
-
-Error
-<nil>
----
-
-[TestFunction/moves_a_window_to_scratchpad_by_pattern - 1]
+[TestShowCmd/fails_when_pattern_is_empty - 1]
 []testutils.AeroSpaceTree{
     {
         Windows: {
@@ -30,16 +10,16 @@ Error
         FocusedWindowId: 5678,
     },
 }
-aerospace-scratchpad show Finder
+aerospace-scratchpad show 
 
 Output
-Window '5678 | Finder ' hidden to scratchpad
 
 Error
-<nil>
+Error: <pattern> cannot be empty
+
 ---
 
-[TestFunction/summon_the_window_to_the_current_workspace_if_in_another_workspace - 1]
+[TestShowCmd/fails_when_pattern_doesn_match_any_window - 1]
 []testutils.AeroSpaceTree{
     {
         Windows: {
@@ -47,23 +27,16 @@ Error
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 0,
-    },
-    {
-        Windows: {
-            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:""},
-        },
-        Workspace:       &aerospace.Workspace{Workspace:"ws2"},
-        FocusedWindowId: 91011,
+        FocusedWindowId: 1234,
     },
 }
-aerospace-scratchpad show Finder
+aerospace-scratchpad show foo
 
 Output
-Window '5678 | Finder ' is summoned
 
 Error
-<nil>
+Error: no windows found matching the pattern
+
 ---
 
 [TestShowCmd/set_focus_to_window_if_already_in_the_focused_workspace_but_not_focused - 1]
@@ -128,46 +101,6 @@ aerospace-scratchpad show Finder
 
 Output
 Window '5678 | Finder ' is summoned
-
-Error
-<nil>
----
-
-[TestShowCmd/moves_the_current_focused_window_to_scratchpad_when_empty - 1]
-[]testutils.AeroSpaceTree{
-    {
-        Windows: {
-            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
-            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
-        },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 5678,
-    },
-}
-aerospace-scratchpad show 
-
-Output
-
-Error
-<nil>
----
-
-
-[TestShowCmd/fails_when_pattern_is_empty - 1]
-[]testutils.AeroSpaceTree{
-    {
-        Windows: {
-            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
-            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
-        },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 5678,
-    },
-}
-aerospace-scratchpad show 
-
-Output
-Error: <pattern> cannot be empty
 
 Error
 <nil>
@@ -282,26 +215,6 @@ aerospace-scratchpad show Finder
 Output
 Window '5678 | Finder1  | ws1' is summoned
 Window '5679 | Finder2  | ws2' is focused
-
-Error
-<nil>
----
-
-[TestShowCmd/fails_when_pattern_doesn_match_any_window - 1]
-[]testutils.AeroSpaceTree{
-    {
-        Windows: {
-            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
-            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
-        },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 1234,
-    },
-}
-aerospace-scratchpad show foo
-
-Output
-Error: no windows found matching the pattern
 
 Error
 <nil>

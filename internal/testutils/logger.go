@@ -4,8 +4,7 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 )
 
-
-type TestingLogger struct{
+type TestingLogger struct {
 	Logger func(msg string, args ...any)
 }
 
@@ -33,5 +32,3 @@ func (l *TestingLogger) AsJson(data any) string {
 	// No-op
 	return ""
 }
-
-
