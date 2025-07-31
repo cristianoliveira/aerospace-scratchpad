@@ -49,7 +49,7 @@ exec-on-workspace-change = ["aerospace-scratchpad workspace-handler $AEROSPACE_F
 				return
 			}
 
-			logger.LogInfo("WSH: focused window", "window", focusedWindow,)
+			logger.LogInfo("WSH: focused window", "window", focusedWindow)
 
 			if focusedWindow.Workspace == constants.DefaultScratchpadWorkspaceName {
 				_, err := client.SendCommand("workspace-back-and-forth", nil)
@@ -63,6 +63,7 @@ exec-on-workspace-change = ["aerospace-scratchpad workspace-handler $AEROSPACE_F
 				if err != nil {
 					logger.LogError("WSH: unable to get focused workspace after moving window", "error", err)
 					fmt.Println("Error: unable to get focused workspace after moving window", err)
+					return
 				}
 
 				logger.LogInfo(
@@ -89,6 +90,7 @@ exec-on-workspace-change = ["aerospace-scratchpad workspace-handler $AEROSPACE_F
 					[]string{
 						newFocusedWorkspace.Workspace,
 						"--window-id", fmt.Sprintf("%d", focusedWindow.WindowID),
+						"--focus-follows-window",
 					},
 				)
 				if err != nil {
@@ -98,31 +100,6 @@ exec-on-workspace-change = ["aerospace-scratchpad workspace-handler $AEROSPACE_F
 						focusedWorkspace,
 						err,
 					)
-				}
-
-				// Ensure the window moved takes the focus
-				for {
-					newFocusedWindows, err := aerospaceClient.GetFocusedWindow()
-					if err != nil {
-						logger.LogError("WSH: unable to get focused window after moving", "error", err)
-						fmt.Println("Error: unable to get focused window after moving", err)
-						break
-					}
-
-					if newFocusedWindows.WindowID == focusedWindow.WindowID {
-						logger.LogInfo(
-							"WSH: focused window after moving",
-							"window", focusedWindow,
-						)
-						break
-					}
-
-					err = aerospaceClient.SetFocusByWindowID(focusedWindow.WindowID)
-					if err != nil {
-						logger.LogError("WSH: unable to set focus by window ID", "error", err)
-						fmt.Println("Error: unable to set focus by window ID", err)
-						break
-					}
 				}
 			}
 		},
