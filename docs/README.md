@@ -68,6 +68,30 @@ This command will summon the next window from the scratchpad workspace until the
 aerospace-scratchpad next
 ```
 
+## Command: `workspace-handler`
+
+This command handles when the scratchpad workspace gets focused (which shouldn't happen). It will move focus back to the last focused workspace and take the focused window to that workspace too.
+This allow you to use different tools to focus windows in scratchpad, like notifications, external launchers, etc., and behave as "summoning" the window to the current workspace instead of focusing the window
+in the scratchpad workspace.
+
+### USAGE
+
+`aerospace-scratchpad workspace-handler <workspace>`
+
+For more details:
+
+```bash
+aerospace-scratchpad workspace-handler --help
+```
+
+Add this snippet in your `~/.aerospace.toml` config:
+```toml
+exec-on-workspace-change = ['/bin/bash', '-c',
+    'aerospace-scratchpad workspace-handler $AEROSPACE_FOCUSED_WORKSPACE'
+]
+```
+You can also use the short alias `ws-handler` or `wsh`.
+
 ## Flags
 
 ### Filter `--filter|-F <property>=<regex>` 
