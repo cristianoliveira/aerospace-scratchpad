@@ -18,14 +18,16 @@ func WorkspaceHandlerCmd(
 ) *cobra.Command {
 	var wsHandlerCmd = &cobra.Command{
 		Use:   "workspace-handler <workspace>",
-		Short: "This command handles when the scratchpad workspace is focused (which shouldn't happen)",
-		Long: `This command is used to handle when the scratchpad workspace is focused. It will move the focus back to the last focused workspace and take the focused window to that workspace too. USAGE:
-
-Add this snippet in your aerospace.toml config:
-
-exec-on-workspace-change = ["aerospace-scratchpad workspace-handler $AEROSPACE_FOCUSED_WORKSPACE"];
+		Short: "This command handles when a window in scratchpad is focused (which shouldn't happen)",
+		Long: `This command handles when a window within the scratchpad workspace is focused. It'll move the window to the last focused workspace and take the window too, behaving more like "summoning the window".
+Add this snippet in your ~/aerospace.toml config:
+'''toml
+exec-on-workspace-change = ['/bin/bash', '-c',
+    'aerospace-scratchpad workspace-handler $AEROSPACE_FOCUSED_WORKSPACE'
+]
+'''
 `,
-    Aliases: []string{"ws-handler", "wsh"},
+    Aliases: []string{"wsh"},
 		Args: cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.GetDefaultLogger()
