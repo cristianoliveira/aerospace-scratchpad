@@ -34,13 +34,13 @@ exec-on-workspace-change = ["aerospace-scratchpad workspace-handler $AEROSPACE_F
 			focusedWorkspace := args[0]
 			if focusedWorkspace != constants.DefaultScratchpadWorkspaceName {
 				logger.LogDebug(
-					"DAEMON: focused workspace is not scratchpad",
+					"WSH: focused workspace is not scratchpad",
 					"workspace", focusedWorkspace,
 				)
 				return
 			}
 
-			logger.LogInfo("DAEMON: focused workspace is scratchpad")
+			logger.LogInfo("WSH: focused workspace is scratchpad")
 
 			focusedWindow, err := aerospaceClient.GetFocusedWindow()
 			if err != nil {
@@ -49,24 +49,24 @@ exec-on-workspace-change = ["aerospace-scratchpad workspace-handler $AEROSPACE_F
 				return
 			}
 
-			logger.LogInfo("DAEMON: focused window", "window", focusedWindow,)
+			logger.LogInfo("WSH: focused window", "window", focusedWindow,)
 
 			if focusedWindow.Workspace == constants.DefaultScratchpadWorkspaceName {
 				_, err := client.SendCommand("workspace-back-and-forth", nil)
 				if err != nil {
-					logger.LogError("SHOW: unable to get focused window", "error", err)
+					logger.LogError("WSH: unable to get focused window", "error", err)
 					fmt.Println("Error: unable to get focused window")
 					return
 				}
 
 				newFocusedWorkspace, err := aerospaceClient.GetFocusedWorkspace()
 				if err != nil {
-					logger.LogError("SHOW: unable to get focused workspace after moving window", "error", err)
+					logger.LogError("WSH: unable to get focused workspace after moving window", "error", err)
 					fmt.Println("Error: unable to get focused workspace after moving window", err)
 				}
 
 				logger.LogInfo(
-					"DAEMON: new focused workspace after moving window",
+					"WSH: new focused workspace after moving window",
 					"workspace", newFocusedWorkspace.Workspace,
 				)
 
@@ -79,7 +79,7 @@ exec-on-workspace-change = ["aerospace-scratchpad workspace-handler $AEROSPACE_F
 					time.Sleep(100 * time.Microsecond) // Sleep for 5 seconds before the next iteration
 					newFocusedWorkspace, err = aerospaceClient.GetFocusedWorkspace()
 					if err != nil {
-						logger.LogError("SHOW: unable to get focused workspace after moving window", "error", err)
+						logger.LogError("WSH: unable to get focused workspace after moving window", "error", err)
 						fmt.Println("Error: unable to get focused workspace after moving window", err)
 					}
 				}
@@ -104,14 +104,14 @@ exec-on-workspace-change = ["aerospace-scratchpad workspace-handler $AEROSPACE_F
 				for {
 					newFocusedWindows, err := aerospaceClient.GetFocusedWindow()
 					if err != nil {
-						logger.LogError("SHOW: unable to get focused window after moving", "error", err)
+						logger.LogError("WSH: unable to get focused window after moving", "error", err)
 						fmt.Println("Error: unable to get focused window after moving", err)
 						break
 					}
 
 					if newFocusedWindows.WindowID == focusedWindow.WindowID {
 						logger.LogInfo(
-							"DAEMON: focused window after moving",
+							"WSH: focused window after moving",
 							"window", focusedWindow,
 						)
 						break
@@ -119,7 +119,7 @@ exec-on-workspace-change = ["aerospace-scratchpad workspace-handler $AEROSPACE_F
 
 					err = aerospaceClient.SetFocusByWindowID(focusedWindow.WindowID)
 					if err != nil {
-						logger.LogError("DAEMON: unable to set focus by window ID", "error", err)
+						logger.LogError("WSH: unable to set focus by window ID", "error", err)
 						fmt.Println("Error: unable to set focus by window ID", err)
 						break
 					}
