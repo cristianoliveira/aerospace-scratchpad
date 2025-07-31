@@ -135,6 +135,18 @@ exec-and-forget aerospace-scratchpad show \
 """
 ```
 
+### Handling external focus tools (notification, launchers, etc)
+
+The `workspace-handler` command handles when the scratchpad workspace gets focused, which shouldn't happen. It will move focus back to the last focused workspace and take the focused window to that workspace too. When a hidden scratchpad window takes focus it will behave as "summoning" the window to the current workspace instead of focusing the window in the scratchpad workspace.
+
+```toml
+# ~/.config/aerospace/config.toml
+# Add this snippet
+exec-on-workspace-change = ['/bin/bash', '-c',
+    'aerospace-scratchpad workspace-handler $AEROSPACE_FOCUSED_WORKSPACE'
+]
+```
+
 ## Installation
 
 **Min AeroSpace version**: 0.15.x
