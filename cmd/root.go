@@ -34,7 +34,7 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 	rootCmd.AddCommand(SummonCmd(aerospaceClient))
 	rootCmd.AddCommand(NextCmd(aerospaceClient))
 	rootCmd.AddCommand(InfoCmd(aerospaceClient))
-	rootCmd.AddCommand(DaemonCmd(aerospaceClient))
+	rootCmd.AddCommand(WorkspaceHandlerCmd(aerospaceClient))
 
 	return rootCmd
 }
