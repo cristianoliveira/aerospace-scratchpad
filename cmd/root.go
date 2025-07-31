@@ -49,7 +49,7 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 	rootCmd.AddCommand(enableFilterFlag(SummonCmd(customClient)))
 	rootCmd.AddCommand(NextCmd(customClient))
 	rootCmd.AddCommand(InfoCmd(customClient))
-	rootCmd.AddCommand(DaemonCmd(customClient))
+	rootCmd.AddCommand(WorkspaceHandlerCmd(customClient))
 
 	return rootCmd
 }

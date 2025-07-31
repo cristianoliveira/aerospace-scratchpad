@@ -1,0 +1,132 @@
+/*
+Copyright © 2025 Cristian Oliveira licence@cristianoliveira.dev
+*/
+package cmd
+
+import (
+	"fmt"
+	"time"
+
+	aerospaceipc "github.com/cristianoliveira/aerospace-ipc"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
+	"github.com/spf13/cobra"
+)
+
+func WorkspaceHandlerCmd(
+	aerospaceClient aerospaceipc.AeroSpaceClient,
+) *cobra.Command {
+	var wsHandlerCmd = &cobra.Command{
+		Use:   "workspace-handler <workspace>",
+		Short: "This command handles when the scratchpad workspace is focused (which shouldn't happen)",
+		Long: `This command is used to handle when the scratchpad workspace is focused. It will move the focus back to the last focused workspace and take the focused window to that workspace too. USAGE:
+
+Add this snippet in your aerospace.toml config:
+
+exec-on-workspace-change = ["aerospace-scratchpad workspace-handler $AEROSPACE_FOCUSED_WORKSPACE"];
+`,
+    Aliases: []string{"ws-handler", "wsh"},
+		Args: cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.GetDefaultLogger()
+			client := aerospaceClient.Connection()
+
+			focusedWorkspace := args[0]
+			if focusedWorkspace != constants.DefaultScratchpadWorkspaceName {
+				logger.LogDebug(
+					"DAEMON: focused workspace is not scratchpad",
+					"workspace", focusedWorkspace,
+				)
+				return
+			}
+
+			logger.LogInfo("DAEMON: focused workspace is scratchpad")
+
+			focusedWindow, err := aerospaceClient.GetFocusedWindow()
+			if err != nil {
+				logger.LogError("WS: unable to get focused window", "error", err)
+				fmt.Println("Error: unable to get focused window")
+				return
+			}
+
+			logger.LogInfo("DAEMON: focused window", "window", focusedWindow,)
+
+			if focusedWindow.Workspace == constants.DefaultScratchpadWorkspaceName {
+				_, err := client.SendCommand("workspace-back-and-forth", nil)
+				if err != nil {
+					logger.LogError("SHOW: unable to get focused window", "error", err)
+					fmt.Println("Error: unable to get focused window")
+					return
+				}
+
+				newFocusedWorkspace, err := aerospaceClient.GetFocusedWorkspace()
+				if err != nil {
+					logger.LogError("SHOW: unable to get focused workspace after moving window", "error", err)
+					fmt.Println("Error: unable to get focused workspace after moving window", err)
+				}
+
+				logger.LogInfo(
+					"DAEMON: new focused workspace after moving window",
+					"workspace", newFocusedWorkspace.Workspace,
+				)
+
+				for {
+					if newFocusedWorkspace.Workspace != constants.DefaultScratchpadWorkspaceName {
+						break
+					}
+
+					logger.LogInfo("Focused workspace is still scratchpad, waiting for it to change...")
+					time.Sleep(100 * time.Microsecond) // Sleep for 5 seconds before the next iteration
+					newFocusedWorkspace, err = aerospaceClient.GetFocusedWorkspace()
+					if err != nil {
+						logger.LogError("SHOW: unable to get focused workspace after moving window", "error", err)
+						fmt.Println("Error: unable to get focused workspace after moving window", err)
+					}
+				}
+
+				_, err = client.SendCommand(
+					"move-node-to-workspace",
+					[]string{
+						newFocusedWorkspace.Workspace,
+						"--window-id", fmt.Sprintf("%d", focusedWindow.WindowID),
+					},
+				)
+				if err != nil {
+					fmt.Printf(
+						"Error: unable to move window '%+v' to workspace '%s': %v\n",
+						focusedWindow,
+						focusedWorkspace,
+						err,
+					)
+				}
+
+				// Ensure the window moved takes the focus
+				for {
+					newFocusedWindows, err := aerospaceClient.GetFocusedWindow()
+					if err != nil {
+						logger.LogError("SHOW: unable to get focused window after moving", "error", err)
+						fmt.Println("Error: unable to get focused window after moving", err)
+						break
+					}
+
+					if newFocusedWindows.WindowID == focusedWindow.WindowID {
+						logger.LogInfo(
+							"DAEMON: focused window after moving",
+							"window", focusedWindow,
+						)
+						break
+					}
+
+					err = aerospaceClient.SetFocusByWindowID(focusedWindow.WindowID)
+					if err != nil {
+						logger.LogError("DAEMON: unable to set focus by window ID", "error", err)
+						fmt.Println("Error: unable to set focus by window ID", err)
+						break
+					}
+				}
+			}
+		},
+	}
+
+	return wsHandlerCmd
+}
