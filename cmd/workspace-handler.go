@@ -5,7 +5,7 @@ package cmd
 
 import (
 	"fmt"
-	// "time"
+	"time"
 
 	aerospaceipc "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
@@ -27,8 +27,8 @@ exec-on-workspace-change = ['/bin/bash', '-c',
 ]
 '''
 `,
-    Aliases: []string{"wsh"},
-		Args: cobra.ExactArgs(1),
+		Aliases: []string{"wsh"},
+		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.GetDefaultLogger()
 			client := aerospaceClient.Connection()
@@ -43,7 +43,6 @@ exec-on-workspace-change = ['/bin/bash', '-c',
 			}
 
 			logger.LogInfo("WSH: focused workspace is scratchpad")
-
 			focusedWindow, err := aerospaceClient.GetFocusedWindow()
 			if err != nil {
 				logger.LogError("WS: unable to get focused window", "error", err)
@@ -54,6 +53,7 @@ exec-on-workspace-change = ['/bin/bash', '-c',
 			logger.LogInfo("WSH: focused window", "window", focusedWindow)
 
 			if focusedWindow.Workspace == constants.DefaultScratchpadWorkspaceName {
+
 				_, err := client.SendCommand("workspace-back-and-forth", nil)
 				if err != nil {
 					logger.LogError("WSH: unable to get focused window", "error", err)
@@ -73,19 +73,29 @@ exec-on-workspace-change = ['/bin/bash', '-c',
 					"workspace", newFocusedWorkspace.Workspace,
 				)
 
-				// for {
-				// 	if newFocusedWorkspace.Workspace != constants.DefaultScratchpadWorkspaceName {
-				// 		break
-				// 	}
-				//
-				// 	logger.LogInfo("Focused workspace is still scratchpad, waiting for it to change...")
-				// 	time.Sleep(100 * time.Microsecond) // Sleep for 5 seconds before the next iteration
-				// 	newFocusedWorkspace, err = aerospaceClient.GetFocusedWorkspace()
-				// 	if err != nil {
-				// 		logger.LogError("WSH: unable to get focused workspace after moving window", "error", err)
-				// 		fmt.Println("Error: unable to get focused workspace after moving window", err)
-				// 	}
-				// }
+				attempts := 0;
+				for {
+					if newFocusedWorkspace.Workspace != constants.DefaultScratchpadWorkspaceName {
+						break
+					}
+					if attempts >= 5 {
+						logger.LogError("WSH: focused workspace is still scratchpad after 5 attempts, giving up")
+						break
+					}
+
+					logger.LogInfo(
+						"Focused workspace is still scratchpad, retrying...",
+						"attempt:", attempts,
+					)
+					newFocusedWorkspace, err = aerospaceClient.GetFocusedWorkspace()
+					if err != nil {
+						logger.LogError("WSH: unable to get focused workspace after moving window", "error", err)
+						fmt.Println("Error: unable to get focused workspace after moving window", err)
+					}
+
+					time.Sleep(100 * time.Millisecond) // Sleep for 100 milliseconds to ensure the workspace change is processed
+					attempts++
+				}
 
 				_, err = client.SendCommand(
 					"move-node-to-workspace",
@@ -103,6 +113,12 @@ exec-on-workspace-change = ['/bin/bash', '-c',
 						err,
 					)
 				}
+
+				logger.LogInfo(
+					"WSH: [final] moved window to new focused workspace",
+					"workspace", newFocusedWorkspace.Workspace,
+					"window", focusedWindow,
+				);
 			}
 		},
 	}
