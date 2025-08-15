@@ -66,6 +66,11 @@ cmd-ctrl-2 = [
 
 # Bring windows one by one to current workspace
 ctrl-minus = "exec-and-forget aerospace-scratchpad next"
+
+# If you use more than one monitor make sure to assign the `.scratchpad` workspace
+# to a non-main monitor for a better UX
+[workspace-to-monitor-force-assignment]
+   ".scratchpad" = ['secondary', 'main']
 ```
 
 ## Advanced Usage
