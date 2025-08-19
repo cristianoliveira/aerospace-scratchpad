@@ -981,5 +981,60 @@ func TestShowCmd(t *testing.T) {
 			expectedError := fmt.Sprintf("Error\n%+v", err)
 			snaps.MatchSnapshot(ttt, tree, cmdAsString, "Output", out, expectedError)
 		})
+		// Test fail unkonwn filter property
+		tt.Run("Filter flag: fails when unknown filter property is used", func(ttt *testing.T) {
+			command := "show"
+			args := []string{command, "Finder", "--filter", "unknown=foo"}
+
+			ctrl := gomock.NewController(ttt)
+			defer ctrl.Finish()
+
+			tree := []testutils.AeroSpaceTree{
+				{
+					Windows: []aerospacecli.Window{
+						{
+							AppName:   "Finder1",
+							WindowID:  5678,
+							Workspace: "ws1",
+						},
+						{
+							AppName:   "Finder2",
+							WindowID:  5670,
+							Workspace: "ws1",
+						},
+					},
+					Workspace: &aerospacecli.Workspace{
+						Workspace: ".scratchpad",
+					},
+					FocusedWindowId: 5670, // Not focused
+				},
+			}
+
+			allWindows := testutils.ExtractAllWindows(tree)
+			focusedTree := testutils.ExtractFocusedTree(tree)
+
+			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+			gomock.InOrder(
+				aerospaceClient.EXPECT().
+					GetAllWindows().
+					Return(allWindows, nil).
+					Times(1),
+
+				aerospaceClient.EXPECT().
+					GetFocusedWorkspace().
+					Return(focusedTree.Workspace, nil).
+					Times(1),
+			)
+
+			cmd := RootCmd(aerospaceClient)
+			out, err := testutils.CmdExecute(cmd, args...)
+			if err == nil {
+				t.Errorf("Expected error, got %v", out)
+			}
+
+			cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
+			expectedError := fmt.Sprintf("Error\n%+v", err)
+			snaps.MatchSnapshot(ttt, tree, cmdAsString, "Output", out, expectedError)
+		})
 	})
 }

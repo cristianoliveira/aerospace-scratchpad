@@ -102,7 +102,13 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				}
 
 				// Apply filters
-				if !applyFilters(window, filters) {
+				filtered, err := applyFilters(window, filters)
+				if err != nil {
+					logger.LogError("SHOW: unable to apply filters", "error", err)
+					stderr.Printf("Error: %s\n", err)
+					return
+				}
+				if !filtered {
 					continue
 				}
 
@@ -334,7 +340,7 @@ func parseFilters(filterFlags []string) ([]Filter, error) {
 }
 
 // applyFilters applies all filters to a window and returns true if all filters pass
-func applyFilters(window aerospacecli.Window, filters []Filter) bool {
+func applyFilters(window aerospacecli.Window, filters []Filter) (bool, error) {
 	for _, filter := range filters {
 		var value string
 		
@@ -347,14 +353,13 @@ func applyFilters(window aerospacecli.Window, filters []Filter) bool {
 		case "app-bundle-id":
 			value = window.AppBundleID
 		default:
-			// Unknown property, skip this filter
-			continue
+			return false, fmt.Errorf("unknown filter property: %s", filter.Property)
 		}
 		
 		if !filter.Pattern.MatchString(value) {
-			return false
+			return false, nil
 		}
 	}
 	
-	return true
+	return true, nil
 }

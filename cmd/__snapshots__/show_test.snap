@@ -330,3 +330,23 @@ Window '5678 | Finder1 | Finder - foo and zas | ws1 | com.linux.finder' is summo
 Error
 <nil>
 ---
+
+[TestShowCmd/MultipleWindows/Filter_flag:_fails_when_unknown_filter_property_is_used - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:5678, WindowTitle:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:5670, WindowTitle:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws1"},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:".scratchpad"},
+        FocusedWindowId: 5670,
+    },
+}
+aerospace-scratchpad show Finder --filter unknown=foo
+
+Output
+
+Error
+Error: unknown filter property: unknown
+
+---

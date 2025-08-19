@@ -44,20 +44,33 @@ aerospace-scratchpad show --help
 
 #### Filter `--filter|-F <property>=<regex>` 
 
-The filter flag helps to narrow down the windows that will be shown. It accepts a property and a regex pattern to match against that property. It can be used multiple time with different properties.
+The filter flag helps to narrow down the windows that will be shown. It accepts a property and a regex pattern to match against that property. It can be used multiple time with different properties to narrow down the window matching.
 
 For example, to filter by class and title, you can use:
 
 ```bash
 aerospace-scratchpad show Brave -F window-title=Gmail -F window-title="personal"
-# Bring all Brave windows with title containing "Gmail" or "personal" to the current workspace.
+# Bring all Brave windows with title containing "Gmail" AND "personal" to the current workspace.
 
-aerospace-scratchpad show Terminal -F window-title=kitty
+aerospace-scratchpad show Terminal --filter window-title=kitty
 # Bring all Terminal windows with title containing "kitty" to the current workspace.
 
 aerospace-scratchpad show Kitty -F window-title=/kitty.*work/i
 # Bring all windows with title matching the regex "kitty.*work" to the current workspace. Eg. "kitty work", "kitty work project", etc.
+
+## Example on how to use only window filter (We may allow empty patterns in the future)
+aerospace-scratchpad show . --filter window-title=kitty
+# Match all windows and filter the ones with title containing "kitty" bringing to the current workspace.
 ```
+
+Current allowed properties for filtering are:
+
+    - *window-id*: The ID of the window.
+    - *window-title*: The title of the window. 
+    - *app-name*: The name of the application. E.g. `Terminal`, `Brave`, etc.
+    - *app-bundle-id*: The bundle ID of the application. E.g. `com.apple.Terminal`.
+
+It fails if the property is not recognized or if the regex pattern is invalid.
 
 ## Command: `summon`
 
