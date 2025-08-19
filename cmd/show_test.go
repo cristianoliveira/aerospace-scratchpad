@@ -789,5 +789,197 @@ func TestShowCmd(t *testing.T) {
 			expectedError := fmt.Sprintf("Error\n%+v", err)
 			snaps.MatchSnapshot(t, tree, cmdAsString, "Output", out, expectedError)
 		})
+
+		tt.Run("Filter flag: brings any windows that matches filter", func(ttt *testing.T) {
+			command := "show"
+			args := []string{command, "Finder", "--filter", "window-title=foo"}
+
+			ctrl := gomock.NewController(ttt)
+			defer ctrl.Finish()
+
+			tree := []testutils.AeroSpaceTree{
+				{
+					Windows: []aerospacecli.Window{
+						{
+							AppName:   "Finder1",
+							WindowID:  5678,
+							WindowTitle: "Finder - foo and zas",
+							Workspace: "ws1",
+						},
+						{
+							AppName:   "Finder2 - bar and baz",
+							WindowID:  5679,
+							Workspace: "ws1",
+						},
+					},
+					Workspace: &aerospacecli.Workspace{
+						Workspace: ".scratchpad",
+					},
+					FocusedWindowId: 0, // Not focused
+				},
+				{
+					Windows: []aerospacecli.Window{
+						{
+							AppName:   "Terminal",
+							WindowID:  91011,
+							Workspace: "ws2",
+						},
+					},
+					Workspace: &aerospacecli.Workspace{
+						Workspace: "ws2",
+					},
+					FocusedWindowId: 91011,
+				},
+			}
+
+			allWindows := testutils.ExtractAllWindows(tree)
+			focusedTree := testutils.ExtractFocusedTree(tree)
+			// focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+			gomock.InOrder(
+				aerospaceClient.EXPECT().
+					GetAllWindows().
+					Return(allWindows, nil).
+					Times(1),
+
+				aerospaceClient.EXPECT().
+					GetFocusedWorkspace().
+					Return(focusedTree.Workspace, nil).
+					Times(1),
+
+				// Send first window
+				aerospaceClient.EXPECT().
+					MoveWindowToWorkspace(
+						tree[0].Windows[0].WindowID,
+						focusedTree.Workspace.Workspace,
+					).
+					Return(nil).
+					Times(1),
+				aerospaceClient.EXPECT().
+					SetFocusByWindowID(
+						tree[0].Windows[0].WindowID,
+					).
+					Return(nil).
+					Times(1),
+			)
+
+			cmd := RootCmd(aerospaceClient)
+			out, err := testutils.CmdExecute(cmd, args...)
+			if err != nil {
+				t.Errorf("Expected no error, got %v", err)
+			}
+
+			if out == "" {
+				t.Errorf("Expected output, got empty string")
+			}
+
+			cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
+			expectedError := fmt.Sprintf("Error\n%+v", err)
+			snaps.MatchSnapshot(ttt, tree, cmdAsString, "Output", out, expectedError)
+		})
+
+		tt.Run("Filter flag: brings any windows that matches filter - allow multiple", func(ttt *testing.T) {
+			command := "show"
+			args := []string{command,
+				"Finder", 
+				"-F", "window-title=foo",
+				"-F", "app-bundle-id=linux",
+			}
+
+			ctrl := gomock.NewController(ttt)
+			defer ctrl.Finish()
+
+			tree := []testutils.AeroSpaceTree{
+				{
+					Windows: []aerospacecli.Window{
+						{
+							AppName:   "Finder1",
+							WindowID:  5678,
+							WindowTitle: "Finder - foo and zas",
+							AppBundleID: "com.linux.finder",
+							Workspace: "ws1",
+						},
+						{
+							AppName:   "Finder2",
+							WindowID:  5679,
+							WindowTitle: "Finder2 - foo and baz",
+							AppBundleID: "com.apple.finder",
+							Workspace: "ws1",
+						},
+						{
+							AppName:   "Finder2",
+							WindowID:  5680,
+							WindowTitle: "Finder2 - bar and baz",
+							AppBundleID: "com.apple.finder",
+							Workspace: "ws1",
+						},
+					},
+					Workspace: &aerospacecli.Workspace{
+						Workspace: ".scratchpad",
+					},
+					FocusedWindowId: 0, // Not focused
+				},
+				{
+					Windows: []aerospacecli.Window{
+						{
+							AppName:   "Terminal",
+							WindowID:  91011,
+							Workspace: "ws2",
+						},
+					},
+					Workspace: &aerospacecli.Workspace{
+						Workspace: "ws2",
+					},
+					FocusedWindowId: 91011,
+				},
+			}
+
+			allWindows := testutils.ExtractAllWindows(tree)
+			focusedTree := testutils.ExtractFocusedTree(tree)
+			// focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+			gomock.InOrder(
+				aerospaceClient.EXPECT().
+					GetAllWindows().
+					Return(allWindows, nil).
+					Times(1),
+
+				aerospaceClient.EXPECT().
+					GetFocusedWorkspace().
+					Return(focusedTree.Workspace, nil).
+					Times(1),
+
+				// Send first window
+				aerospaceClient.EXPECT().
+					MoveWindowToWorkspace(
+						tree[0].Windows[0].WindowID,
+						focusedTree.Workspace.Workspace,
+					).
+					Return(nil).
+					Times(1),
+				aerospaceClient.EXPECT().
+					SetFocusByWindowID(
+						tree[0].Windows[0].WindowID,
+					).
+					Return(nil).
+					Times(1),
+			)
+
+			cmd := RootCmd(aerospaceClient)
+			out, err := testutils.CmdExecute(cmd, args...)
+			if err != nil {
+				t.Errorf("Expected no error, got %v", err)
+			}
+
+			if out == "" {
+				t.Errorf("Expected output, got empty string")
+			}
+
+			cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
+			expectedError := fmt.Sprintf("Error\n%+v", err)
+			snaps.MatchSnapshot(ttt, tree, cmdAsString, "Output", out, expectedError)
+		})
 	})
 }

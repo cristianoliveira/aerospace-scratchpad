@@ -219,3 +219,114 @@ Window '5679 | Finder2  | ws2' is focused
 Error
 <nil>
 ---
+
+[TestShowCmd/MultipleWindows/Filter_flag:_brings_any_windows_that_matches_filter - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:5678, WindowTitle:"Finder - foo and zas", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:5679, WindowTitle:"", AppName:"Finder2 - bar and baz", AppBundleID:"", Workspace:"ws1"},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:".scratchpad"},
+        FocusedWindowId: 0,
+    },
+    {
+        Windows: {
+            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws2"},
+        FocusedWindowId: 91011,
+    },
+}
+aerospace-scratchpad show Finder --filter window-title=foo
+
+Output
+Window '5678 | Finder1 | Finder - foo and zas | ws1' is summoned
+
+Error
+<nil>
+---
+
+[TestShowCmd - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:5678, WindowTitle:"Finder - foo and zas", AppName:"Finder1", AppBundleID:"com.linux.finder", Workspace:"ws1"},
+            {WindowID:5679, WindowTitle:"Finder2 - foo and baz", AppName:"Finder2", AppBundleID:"com.apple.finder", Workspace:"ws1"},
+            {WindowID:5680, WindowTitle:"Finder2 - bar and baz", AppName:"Finder2", AppBundleID:"com.apple.finder", Workspace:"ws1"},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:".scratchpad"},
+        FocusedWindowId: 0,
+    },
+    {
+        Windows: {
+            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws2"},
+        FocusedWindowId: 91011,
+    },
+}
+aerospace-scratchpad show Finder -F window-title=foo -F app-bundle-id=linux
+
+Output
+Window '5678 | Finder1 | Finder - foo and zas | ws1 | com.linux.finder' is summoned
+
+Error
+<nil>
+---
+
+[TestShowCmd - 2]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:5678, WindowTitle:"Finder - foo and zas", AppName:"Finder1", AppBundleID:"com.linux.finder", Workspace:"ws1"},
+            {WindowID:5679, WindowTitle:"Finder2 - foo and baz", AppName:"Finder2", AppBundleID:"com.apple.finder", Workspace:"ws1"},
+            {WindowID:5680, WindowTitle:"Finder2 - bar and baz", AppName:"Finder2", AppBundleID:"com.apple.finder", Workspace:"ws1"},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:".scratchpad"},
+        FocusedWindowId: 0,
+    },
+    {
+        Windows: {
+            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws2"},
+        FocusedWindowId: 91011,
+    },
+}
+aerospace-scratchpad show Finder -F window-title=foo -F app-bundle-id=linux
+
+Output
+Window '5678 | Finder1 | Finder - foo and zas | ws1 | com.linux.finder' is summoned
+
+Error
+<nil>
+---
+
+[TestShowCmd/MultipleWindows/Filter_flag:_brings_any_windows_that_matches_filter_-_allow_multiple - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:5678, WindowTitle:"Finder - foo and zas", AppName:"Finder1", AppBundleID:"com.linux.finder", Workspace:"ws1"},
+            {WindowID:5679, WindowTitle:"Finder2 - foo and baz", AppName:"Finder2", AppBundleID:"com.apple.finder", Workspace:"ws1"},
+            {WindowID:5680, WindowTitle:"Finder2 - bar and baz", AppName:"Finder2", AppBundleID:"com.apple.finder", Workspace:"ws1"},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:".scratchpad"},
+        FocusedWindowId: 0,
+    },
+    {
+        Windows: {
+            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws2"},
+        FocusedWindowId: 91011,
+    },
+}
+aerospace-scratchpad show Finder -F window-title=foo -F app-bundle-id=linux
+
+Output
+Window '5678 | Finder1 | Finder - foo and zas | ws1 | com.linux.finder' is summoned
+
+Error
+<nil>
+---

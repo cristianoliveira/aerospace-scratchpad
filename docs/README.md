@@ -40,6 +40,25 @@ For more details:
 aerospace-scratchpad show --help
 ```
 
+### Flags
+
+#### Filter `--filter|-F <property>=<regex>` 
+
+The filter flag helps to narrow down the windows that will be shown. It accepts a property and a regex pattern to match against that property. It can be used multiple time with different properties.
+
+For example, to filter by class and title, you can use:
+
+```bash
+aerospace-scratchpad show Brave -F window-title=Gmail -F window-title="personal"
+# Bring all Brave windows with title containing "Gmail" or "personal" to the current workspace.
+
+aerospace-scratchpad show Terminal -F window-title=kitty
+# Bring all Terminal windows with title containing "kitty" to the current workspace.
+
+aerospace-scratchpad show Kitty -F window-title=/kitty.*work/i
+# Bring all windows with title matching the regex "kitty.*work" to the current workspace. Eg. "kitty work", "kitty work project", etc.
+```
+
 ## Command: `summon`
 
 Unlike the `show` command, this command will only summon the window to the current workspace and set focus on it.

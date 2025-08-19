@@ -16,6 +16,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Filter represents a filter with property and regex pattern
+type Filter struct {
+	Property string
+	Pattern  *regexp.Regexp
+}
+
 // showCmd represents the show command
 func ShowCmd(
 	aerospaceClient aerospacecli.AeroSpaceClient,
@@ -36,6 +42,21 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			windowNamePattern = strings.TrimSpace(windowNamePattern)
 			if windowNamePattern == "" {
 				stderr.Println("Error: <pattern> cannot be empty")
+				return
+			}
+
+			// Parse filter flags
+			filterFlags, err := cmd.Flags().GetStringArray("filter")
+			if err != nil {
+				logger.LogError("SHOW: unable to get filter flags", "error", err)
+				stderr.Println("Error: unable to get filter flags")
+				return
+			}
+
+			filters, err := parseFilters(filterFlags)
+			if err != nil {
+				logger.LogError("SHOW: unable to parse filters", "error", err)
+				stderr.Printf("Error: %s\n", err)
 				return
 			}
 
@@ -77,6 +98,11 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			var hasAtLeastOneWindowFocused bool
 			for _, window := range windows {
 				if !windowPattern.MatchString(window.AppName) {
+					continue
+				}
+
+				// Apply filters
+				if !applyFilters(window, filters) {
 					continue
 				}
 
@@ -199,6 +225,9 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			}
 		},
 	}
+	
+	// Filter flags --filter
+	showCmd.Flags().StringArrayP("filter", "F", []string{}, "Filter windows by a specific property (e.g., app-name, window-title). Can be used multiple times.")
 
 	return showCmd
 }
@@ -265,4 +294,67 @@ func sendToFocusedWorkspace(
 
 	fmt.Printf("Window '%+v' is summoned\n", window)
 	return nil
+}
+
+// parseFilters parses filter flags and returns a slice of Filter structs
+func parseFilters(filterFlags []string) ([]Filter, error) {
+	var filters []Filter
+	
+	for _, filterFlag := range filterFlags {
+		parts := strings.SplitN(filterFlag, "=", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid filter format: %s. Expected format: property=regex", filterFlag)
+		}
+		
+		property := strings.TrimSpace(parts[0])
+		patternStr := strings.TrimSpace(parts[1])
+		
+		if property == "" || patternStr == "" {
+			return nil, fmt.Errorf("invalid filter format: %s. Property and pattern cannot be empty", filterFlag)
+		}
+		
+		// Handle regex patterns that start with /
+		if strings.HasPrefix(patternStr, "/") && strings.HasSuffix(patternStr, "/") {
+			// Extract the pattern between / and /
+			patternStr = patternStr[1 : len(patternStr)-1]
+		}
+		
+		pattern, err := regexp.Compile(patternStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid regex pattern '%s': %w", patternStr, err)
+		}
+		
+		filters = append(filters, Filter{
+			Property: property,
+			Pattern:  pattern,
+		})
+	}
+	
+	return filters, nil
+}
+
+// applyFilters applies all filters to a window and returns true if all filters pass
+func applyFilters(window aerospacecli.Window, filters []Filter) bool {
+	for _, filter := range filters {
+		var value string
+		
+		// FIXME: find a way to do it dynamically
+		switch filter.Property {
+		case "app-name":
+			value = window.AppName
+		case "window-title":
+			value = window.WindowTitle
+		case "app-bundle-id":
+			value = window.AppBundleID
+		default:
+			// Unknown property, skip this filter
+			continue
+		}
+		
+		if !filter.Pattern.MatchString(value) {
+			return false
+		}
+	}
+	
+	return true
 }
