@@ -7,6 +7,7 @@ import (
 	"os"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/spf13/cobra"
 )
 
@@ -28,12 +29,24 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 		Version: VERSION,
 	}
 
+	// Global Flags
+	rootCmd.PersistentFlags().BoolP("dry-run", "d", false, "Run the command without moving windows (dry run mode)")
+
+	// Create custom client with custom options
+	customClient := aerospace.NewAeroSpaceClient(aerospaceClient)
+	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		dry, _ := cmd.Flags().GetBool("dry-run")
+		customClient.SetOptions(aerospace.AeroSpaceClientOpts{
+			DryRun: dry,
+		})
+	}
+
 	// Commands
-	rootCmd.AddCommand(MoveCmd(aerospaceClient))
-	rootCmd.AddCommand(ShowCmd(aerospaceClient))
-	rootCmd.AddCommand(SummonCmd(aerospaceClient))
-	rootCmd.AddCommand(NextCmd(aerospaceClient))
-	rootCmd.AddCommand(InfoCmd(aerospaceClient))
+	rootCmd.AddCommand(MoveCmd(customClient))
+	rootCmd.AddCommand(ShowCmd(customClient))
+	rootCmd.AddCommand(SummonCmd(customClient))
+	rootCmd.AddCommand(NextCmd(customClient))
+	rootCmd.AddCommand(InfoCmd(customClient))
 
 	return rootCmd
 }
@@ -42,8 +55,8 @@ func Execute(
 	aerospaceClient aerospacecli.AeroSpaceClient,
 ) {
 	rootCmd := RootCmd(aerospaceClient)
-	err := rootCmd.Execute()
-	if err != nil {
+
+	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }

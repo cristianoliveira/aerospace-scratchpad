@@ -62,6 +62,20 @@ This command will summon the next window from the scratchpad workspace until the
 aerospace-scratchpad next
 ```
 
+## Global flags
+
+### `--dry-run|-d` Dry Run
+
+This flag will not execute the command, but will print what would be done. Very handy to test your command before adding to your
+config file.
+
+Usage:
+```bash
+aerospace-scratchpad --dry-run show <pattern>
+```
+
+It will print the actions that would be taken, but will not execute them.
+
 ## Implementation details
 
 ### Scratchpad workspace
