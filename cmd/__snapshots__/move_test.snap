@@ -88,3 +88,25 @@ Error
 Error: unable to move window '5678 | Finder ' to scratchpad
 
 ---
+
+[TestMoveCmd/[dry-run]_move_a_window_to_scratchpad_by_pattern - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        FocusedWindowId: 5678,
+    },
+}
+aerospace-scratchpad move Notepad --dry-run
+
+Output
+Moving window 1234 | Notepad  to scratchpad
+[dry-run] MoveWindowToWorkspace(windowID=1234, workspace=.scratchpad)
+[dry-run] SetLayout(windowID=1234, layout=floating)
+
+Error
+ <nil>
+---

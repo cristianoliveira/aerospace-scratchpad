@@ -288,4 +288,66 @@ func TestMoveCmd(t *testing.T) {
 		errorMessage := fmt.Sprintf("Error\n%+v", err)
 		snaps.MatchSnapshot(t, tree, cmdAsString, "Output", out, errorMessage)
 	})
+
+	t.Run("[dry-run] move a window to scratchpad by pattern", func(t *testing.T) {
+		command := "move"
+		args := []string{command, "Notepad", "--dry-run"}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows: []aerospacecli.Window{
+					{
+						AppName:  "Notepad",
+						WindowID: 1234,
+					},
+					{
+						AppName:  "Finder",
+						WindowID: 5678,
+					},
+				},
+				Workspace: &aerospacecli.Workspace{
+					Workspace: "ws1",
+				},
+
+				FocusedWindowId: 5678,
+			},
+		}
+		allWindows := testutils.ExtractAllWindows(tree)
+		windows := testutils.ExtractWindowsByName(tree, "Notepad")
+		if len(windows) != 1 {
+			t.Fatalf("Expected 1 Notepad window, got %d", len(windows))
+		}
+		notepadWindow := windows[0]
+
+		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		gomock.InOrder(
+			aerospaceClient.EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1),
+
+			aerospaceClient.EXPECT().
+				MoveWindowToWorkspace(notepadWindow.WindowID, constants.DefaultScratchpadWorkspaceName).
+				Return(nil).
+				Times(0), // DO NOT RUN
+
+			aerospaceClient.EXPECT().
+				SetLayout(notepadWindow.WindowID, "floating").
+				Return(nil).
+				Times(0), // DO NOT RUN
+		)
+
+		cmd := RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err != nil {
+			t.Errorf("Expected error, got nil")
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
+		errorMessage := fmt.Sprintf("Error\n %+v", err)
+		snaps.MatchSnapshot(t, tree, cmdAsString, "Output", out, errorMessage)
+	})
 }

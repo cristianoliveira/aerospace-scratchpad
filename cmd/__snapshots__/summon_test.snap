@@ -1,0 +1,152 @@
+
+[TestSummonCmd/successfully_summons_a_window_by_pattern - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        FocusedWindowId: 5678,
+    },
+}
+aerospace-scratchpad summon Notepad
+
+Output
+Window '1234 | Notepad ' is summoned
+
+Error
+ <nil>
+---
+
+[TestSummonCmd/fails_when_pattern_doesn't_match_any_window - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        FocusedWindowId: 5678,
+    },
+}
+aerospace-scratchpad summon NonExistentApp
+
+Output
+
+Error
+ <nil>
+---
+
+[TestSummonCmd/fails_when_getting_all_windows_returns_an_error - 1]
+aerospace-scratchpad summon test
+
+Output
+
+Error
+ Error: unable to get windows
+
+---
+
+[TestSummonCmd/fails_when_getting_focused_workspace_returns_an_error - 1]
+aerospace-scratchpad summon Notepad
+
+Output
+
+Error
+ Error: unable to get focused workspace
+
+---
+
+[TestSummonCmd/fails_when_regex_pattern_is_invalid - 1]
+aerospace-scratchpad summon [invalid
+
+Output
+
+Error
+ Error: invalid app-name-pattern
+
+---
+
+[TestSummonCmd/fails_when_moving_window_to_workspace_returns_an_error - 1]
+aerospace-scratchpad summon Notepad
+
+Output
+
+Error
+ Error: unable to move window '1234 | Notepad ' to workspace 'ws1': mocked_move_error
+
+
+---
+
+[TestSummonCmd/fails_when_setting_focus_returns_an_error - 1]
+aerospace-scratchpad summon Notepad
+
+Output
+
+Error
+ Error: unable to set focus to window '1234 | Notepad '
+
+---
+
+[TestSummonCmd/summons_multiple_windows_matching_the_pattern - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", AppName:"TextEdit", AppBundleID:"", Workspace:""},
+            {WindowID:9012, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        FocusedWindowId: 9012,
+    },
+}
+aerospace-scratchpad summon .*(Notepad|TextEdit).*
+
+Output
+Window '1234 | Notepad ' is summoned
+Window '5678 | TextEdit ' is summoned
+
+Error
+ <nil>
+---
+
+[TestSummonCmd/handles_empty_pattern_gracefully - 1]
+aerospace-scratchpad summon 
+
+Output
+
+Error
+ argument at position 0 is empty or whitespace
+---
+
+[TestSummonCmd/handles_whitespace-only_pattern_gracefully - 1]
+aerospace-scratchpad summon    
+
+Output
+
+Error
+ argument at position 0 is empty or whitespace
+---
+
+[TestSummonCmd/[dry-run]_summons_a_window_by_pattern - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        FocusedWindowId: 5678,
+    },
+}
+aerospace-scratchpad summon Notepad --dry-run
+
+Output
+[dry-run] MoveWindowToWorkspace(windowID=1234, workspace=ws1)
+[dry-run] SetFocusByWindowID(1234)
+Window '1234 | Notepad ' is summoned
+
+Error
+ <nil>
+---
