@@ -30,7 +30,7 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 	}
 
 	// Global Flags
-	rootCmd.PersistentFlags().BoolP("dry-run", "d", false, "Run the command without moving windows (dry run mode)")
+	rootCmd.PersistentFlags().BoolP("dry-run", "n", false, "Run the command without moving windows (dry run mode)")
 
 	// Create custom client with custom options
 	customClient := aerospace.NewAeroSpaceClient(aerospaceClient)

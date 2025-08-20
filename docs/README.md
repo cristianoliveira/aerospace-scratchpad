@@ -64,7 +64,7 @@ aerospace-scratchpad next
 
 ## Global flags
 
-### `--dry-run|-d` Dry Run
+### `--dry-run|-n` Dry Run
 
 This flag will not execute the command, but will print what would be done. Very handy to test your command before adding to your
 config file.
