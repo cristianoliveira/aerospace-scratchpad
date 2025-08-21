@@ -1036,5 +1036,79 @@ func TestShowCmd(t *testing.T) {
 			expectedError := fmt.Sprintf("Error\n%+v", err)
 			snaps.MatchSnapshot(ttt, tree, cmdAsString, "Output", out, expectedError)
 		})
+
+		tt.Run("Filter flag: shows error messages when no match", func(ttt *testing.T) {
+			command := "show"
+			args := []string{command, "Finder", "--filter", "window-title=cantfindme"}
+
+			ctrl := gomock.NewController(ttt)
+			defer ctrl.Finish()
+
+			tree := []testutils.AeroSpaceTree{
+				{
+					Windows: []aerospacecli.Window{
+						{
+							AppName:     "Finder1",
+							WindowID:    5678,
+							WindowTitle: "Finder - foo and zas",
+							Workspace:   "ws1",
+						},
+						{
+							AppName:   "Finder2 - bar and baz",
+							WindowID:  5679,
+							Workspace: "ws1",
+						},
+					},
+					Workspace: &aerospacecli.Workspace{
+						Workspace: ".scratchpad",
+					},
+					FocusedWindowId: 0, // Not focused
+				},
+				{
+					Windows: []aerospacecli.Window{
+						{
+							AppName:   "Terminal",
+							WindowID:  91011,
+							Workspace: "ws2",
+						},
+					},
+					Workspace: &aerospacecli.Workspace{
+						Workspace: "ws2",
+					},
+					FocusedWindowId: 91011,
+				},
+			}
+
+			allWindows := testutils.ExtractAllWindows(tree)
+			focusedTree := testutils.ExtractFocusedTree(tree)
+			// focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+			gomock.InOrder(
+				aerospaceClient.EXPECT().
+					GetAllWindows().
+					Return(allWindows, nil).
+					Times(1),
+
+				aerospaceClient.EXPECT().
+					GetFocusedWorkspace().
+					Return(focusedTree.Workspace, nil).
+					Times(1),
+			)
+
+			cmd := RootCmd(aerospaceClient)
+			out, err := testutils.CmdExecute(cmd, args...)
+			if err == nil {
+				t.Errorf("Expected no error, got %v", err)
+			}
+
+			if out != "" {
+				t.Errorf("Expected output, got empty string")
+			}
+
+			cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
+			expectedError := fmt.Sprintf("Error\n%+v", err)
+			snaps.MatchSnapshot(ttt, tree, cmdAsString, "Output", out, expectedError)
+		})
 	})
 }

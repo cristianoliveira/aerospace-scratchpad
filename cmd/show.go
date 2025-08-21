@@ -176,7 +176,11 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			}
 
 			if len(windowsInFocusedWorkspace) == 0 && len(windowsOutsideView) == 0 {
-				stderr.Println("Error: no windows matched the pattern '%s'", windowNamePattern)
+				if len(filters) > 0 {
+					stderr.Println("Error: no windows matched the filters")
+				} else {
+					stderr.Println("Error: no windows matched the pattern '%s'", windowNamePattern)
+				}
 				return
 			}
 
@@ -341,6 +345,8 @@ func parseFilters(filterFlags []string) ([]Filter, error) {
 
 // applyFilters applies all filters to a window and returns true if all filters pass
 func applyFilters(window aerospacecli.Window, filters []Filter) (bool, error) {
+	logger := logger.GetDefaultLogger()
+
 	for _, filter := range filters {
 		var value string
 
@@ -357,8 +363,18 @@ func applyFilters(window aerospacecli.Window, filters []Filter) (bool, error) {
 		}
 
 		if !filter.Pattern.MatchString(value) {
+			logger.LogDebug(
+				"SHOW: filter did not match",
+				"property", filter.Property,
+				"value", value,
+				"pattern", filter.Pattern.String(),
+			)
 			return false, nil
 		}
+	}
+
+	if len(filters) > 0 {
+		logger.LogDebug("SHOW: filters applied", "filters", filters)
 	}
 
 	return true, nil
