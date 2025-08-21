@@ -231,7 +231,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			}
 		},
 	}
-	
+
 	// Filter flags --filter
 	showCmd.Flags().StringArrayP("filter", "F", []string{}, "Filter windows by a specific property (e.g., app-name, window-title). Can be used multiple times.")
 
@@ -305,37 +305,37 @@ func sendToFocusedWorkspace(
 // parseFilters parses filter flags and returns a slice of Filter structs
 func parseFilters(filterFlags []string) ([]Filter, error) {
 	var filters []Filter
-	
+
 	for _, filterFlag := range filterFlags {
 		parts := strings.SplitN(filterFlag, "=", 2)
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("invalid filter format: %s. Expected format: property=regex", filterFlag)
 		}
-		
+
 		property := strings.TrimSpace(parts[0])
 		patternStr := strings.TrimSpace(parts[1])
-		
+
 		if property == "" || patternStr == "" {
 			return nil, fmt.Errorf("invalid filter format: %s. Property and pattern cannot be empty", filterFlag)
 		}
-		
+
 		// Handle regex patterns that start with /
 		if strings.HasPrefix(patternStr, "/") && strings.HasSuffix(patternStr, "/") {
 			// Extract the pattern between / and /
 			patternStr = patternStr[1 : len(patternStr)-1]
 		}
-		
+
 		pattern, err := regexp.Compile(patternStr)
 		if err != nil {
 			return nil, fmt.Errorf("invalid regex pattern '%s': %w", patternStr, err)
 		}
-		
+
 		filters = append(filters, Filter{
 			Property: property,
 			Pattern:  pattern,
 		})
 	}
-	
+
 	return filters, nil
 }
 
@@ -343,7 +343,7 @@ func parseFilters(filterFlags []string) ([]Filter, error) {
 func applyFilters(window aerospacecli.Window, filters []Filter) (bool, error) {
 	for _, filter := range filters {
 		var value string
-		
+
 		// FIXME: find a way to do it dynamically
 		switch filter.Property {
 		case "app-name":
@@ -355,11 +355,11 @@ func applyFilters(window aerospacecli.Window, filters []Filter) (bool, error) {
 		default:
 			return false, fmt.Errorf("unknown filter property: %s", filter.Property)
 		}
-		
+
 		if !filter.Pattern.MatchString(value) {
 			return false, nil
 		}
 	}
-	
+
 	return true, nil
 }

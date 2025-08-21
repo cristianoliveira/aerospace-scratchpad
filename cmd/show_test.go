@@ -801,10 +801,10 @@ func TestShowCmd(t *testing.T) {
 				{
 					Windows: []aerospacecli.Window{
 						{
-							AppName:   "Finder1",
-							WindowID:  5678,
+							AppName:     "Finder1",
+							WindowID:    5678,
 							WindowTitle: "Finder - foo and zas",
-							Workspace: "ws1",
+							Workspace:   "ws1",
 						},
 						{
 							AppName:   "Finder2 - bar and baz",
@@ -882,7 +882,7 @@ func TestShowCmd(t *testing.T) {
 		tt.Run("Filter flag: brings any windows that matches filter - allow multiple", func(ttt *testing.T) {
 			command := "show"
 			args := []string{command,
-				"Finder", 
+				"Finder",
 				"-F", "window-title=foo",
 				"-F", "app-bundle-id=linux",
 			}
@@ -894,25 +894,25 @@ func TestShowCmd(t *testing.T) {
 				{
 					Windows: []aerospacecli.Window{
 						{
-							AppName:   "Finder1",
-							WindowID:  5678,
+							AppName:     "Finder1",
+							WindowID:    5678,
 							WindowTitle: "Finder - foo and zas",
 							AppBundleID: "com.linux.finder",
-							Workspace: "ws1",
+							Workspace:   "ws1",
 						},
 						{
-							AppName:   "Finder2",
-							WindowID:  5679,
+							AppName:     "Finder2",
+							WindowID:    5679,
 							WindowTitle: "Finder2 - foo and baz",
 							AppBundleID: "com.apple.finder",
-							Workspace: "ws1",
+							Workspace:   "ws1",
 						},
 						{
-							AppName:   "Finder2",
-							WindowID:  5680,
+							AppName:     "Finder2",
+							WindowID:    5680,
 							WindowTitle: "Finder2 - bar and baz",
 							AppBundleID: "com.apple.finder",
-							Workspace: "ws1",
+							Workspace:   "ws1",
 						},
 					},
 					Workspace: &aerospacecli.Workspace{
