@@ -70,9 +70,5 @@ If no pattern is provided, it summons the first window in the scratchpad.
 			}
 		},
 	}
-
-	// Filter flags --filter
-	command.Flags().StringArrayP("filter", "F", []string{}, "Filter windows by a specific property (e.g., app-name, window-title). Can be used multiple times.")
-
 	return command
 }

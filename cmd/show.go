@@ -182,9 +182,5 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			}
 		},
 	}
-
-	// Filter flags --filter
-	command.Flags().StringArrayP("filter", "F", []string{}, "Filter windows by a specific property (e.g., app-name, window-title). Can be used multiple times.")
-
 	return command
 }

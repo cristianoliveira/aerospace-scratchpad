@@ -42,13 +42,22 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 	}
 
 	// Commands
-	rootCmd.AddCommand(MoveCmd(customClient))
-	rootCmd.AddCommand(ShowCmd(customClient))
-	rootCmd.AddCommand(SummonCmd(customClient))
+	rootCmd.AddCommand(enableFilterFlag(MoveCmd(customClient)))
+	rootCmd.AddCommand(enableFilterFlag(ShowCmd(customClient)))
+	rootCmd.AddCommand(enableFilterFlag(SummonCmd(customClient)))
 	rootCmd.AddCommand(NextCmd(customClient))
 	rootCmd.AddCommand(InfoCmd(customClient))
 
 	return rootCmd
+}
+
+func enableFilterFlag(command *cobra.Command) *cobra.Command {
+	command.Flags().StringArrayP(
+		"filter", "F", []string{},
+		`Filter windows by a specific property (e.g. window-title=^foo).
+Requires a key=value format. Can be used multiple times. `,
+	)
+	return command
 }
 
 func Execute(
