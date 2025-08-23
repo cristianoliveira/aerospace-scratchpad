@@ -5,8 +5,6 @@ package cmd
 
 import (
 	"fmt"
-	_ "net/http/pprof"
-	"regexp"
 	"strings"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
@@ -59,17 +57,6 @@ If no pattern is provided, it moves the currently focused window.
 					"MOVE: using focused window app name as pattern",
 					"windowNamePattern", windowNamePattern,
 				)
-			}
-
-			// Validate regex to provide clear error like show command
-			if _, err := regexp.Compile(windowNamePattern); err != nil {
-				logger.LogError(
-					"MOVE: error compiling regex",
-					"windowNamePattern", windowNamePattern,
-					"error", err,
-				)
-				stderr.Println("Error: invalid window-name-pattern")
-				return
 			}
 
 			// Parse filter flags (matches show command behavior)
