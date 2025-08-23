@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
@@ -15,12 +14,6 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 	"github.com/spf13/cobra"
 )
-
-// Filter represents a filter with property and regex pattern
-type Filter struct {
-	Property string
-	Pattern  *regexp.Regexp
-}
 
 // showCmd represents the show command
 func ShowCmd(
@@ -67,30 +60,15 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				windowNamePattern,
 				filterFlags,
 			)
-
-			// instantiate the regex
-			windowPattern, err := regexp.Compile(windowNamePattern)
 			if err != nil {
-				logger.LogError(
-					"SHOW: unable to compile window pattern",
-					"pattern",
-					windowNamePattern,
-					"error",
-					err,
-				)
-				stderr.Println("Error: invalid window-name-pattern")
+				stderr.Printf("Error: %v\n", err)
 				return
 			}
-			logger.LogDebug("SHOW: compiled window pattern", "pattern", windowPattern)
 
 			var windowsOutsideView []aerospacecli.Window
 			var windowsInFocusedWorkspace []aerospacecli.Window
 			var hasAtLeastOneWindowFocused bool
 			for _, window := range windows {
-				if !windowPattern.MatchString(window.AppName) {
-					continue
-				}
-
 				var isWindowInFocusedWorkspace bool
 				if window.Workspace == "" {
 					isWindowInFocusedWorkspace, err = querier.IsWindowInWorkspace(

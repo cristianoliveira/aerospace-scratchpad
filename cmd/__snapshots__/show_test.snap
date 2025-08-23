@@ -347,7 +347,7 @@ aerospace-scratchpad show Finder --filter unknown=foo
 Output
 
 Error
-Error: no windows matched the pattern and filters
+Error: error applying filters to window 'Finder1': unknown filter property: unknown
 
 ---
 
@@ -374,6 +374,6 @@ aerospace-scratchpad show Finder --filter window-title=cantfindme
 Output
 
 Error
-Error: no windows matched the pattern and filters
+Error: no windows matched the pattern 'Finder' with the given filters
 
 ---

@@ -34,8 +34,7 @@ type AerospaceWorkspace interface {
 }
 
 type AeroSpaceWM struct {
-	cli     aerospacecli.AeroSpaceClient
-	pattern *regexp.Regexp
+	cli aerospacecli.AeroSpaceClient
 }
 
 func (a *AeroSpaceWM) IsWindowInWorkspace(windowID int, workspaceName string) (bool, error) {
