@@ -98,16 +98,16 @@ type Filter struct {
 	Pattern  *regexp.Regexp
 }
 
-func (a *AeroSpaceWM) GetFilteredWindows(windowNamePattern string, filterFlags []string) ([]aerospacecli.Window, error) {
+func (a *AeroSpaceWM) GetFilteredWindows(appNamePattern string, filterFlags []string) ([]aerospacecli.Window, error) {
 	logger := logger.GetDefaultLogger()
 
 	// instantiate the regex
-	windowPattern, err := regexp.Compile(windowNamePattern)
+	appPattern, err := regexp.Compile(appNamePattern)
 	if err != nil {
 		logger.LogError(
 			"FILTER: unable to compile window pattern",
 			"pattern",
-			windowNamePattern,
+			appNamePattern,
 			"error",
 			err,
 		)
@@ -116,7 +116,7 @@ func (a *AeroSpaceWM) GetFilteredWindows(windowNamePattern string, filterFlags [
 			err,
 		)
 	}
-	logger.LogDebug("FILTER: compiled window pattern", "pattern", windowPattern)
+	logger.LogDebug("FILTER: compiled window pattern", "pattern", appPattern)
 
 	filters, err := parseFilters(filterFlags)
 	if err != nil {
@@ -132,7 +132,7 @@ func (a *AeroSpaceWM) GetFilteredWindows(windowNamePattern string, filterFlags [
 
 	var filteredWindows []aerospacecli.Window
 	for _, window := range windows {
-		if !windowPattern.MatchString(window.AppName) {
+		if !appPattern.MatchString(window.AppName) {
 			continue
 		}
 
@@ -154,14 +154,14 @@ func (a *AeroSpaceWM) GetFilteredWindows(windowNamePattern string, filterFlags [
 	if len(filteredWindows) == 0 {
 		logger.LogDebug(
 			"FILTER: no windows matched the pattern",
-			"pattern", windowNamePattern,
+			"pattern", appNamePattern,
 		)
 
 		if len(filters) > 0 {
-			return nil, fmt.Errorf("no windows matched the pattern '%s' with the given filters", windowNamePattern)
+			return nil, fmt.Errorf("no windows matched the pattern '%s' with the given filters", appNamePattern)
 		}
 
-		return nil, fmt.Errorf("no windows matched the pattern '%s'", windowNamePattern)
+		return nil, fmt.Errorf("no windows matched the pattern '%s'", appNamePattern)
 	}
 
 	return filteredWindows, nil
