@@ -9,7 +9,6 @@ import (
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 	"github.com/spf13/cobra"
@@ -55,6 +54,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			logger.LogDebug("SHOW: retrieved focused workspace", "workspace", focusedWorkspace)
 
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient)
+			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 
 			windows, err := querier.GetFilteredWindows(
 				windowNamePattern,
@@ -116,9 +116,8 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			)
 
 			for _, window := range windowsOutsideView {
-				err := sendToFocusedWorkspace(
-					aerospaceClient,
-					window,
+				err := mover.MoveWindowToWorkspace(
+					&window,
 					focusedWorkspace,
 					!hasAtLeastOneWindowFocused,
 				)
@@ -169,7 +168,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					"hasAtLeastOneWindowFocused", hasAtLeastOneWindowFocused,
 				)
 				if hasAtLeastOneWindowFocused {
-					if err = sendToScratchpad(aerospaceClient, window); err != nil {
+					if err = mover.MoveWindowToScratchpad(window); err != nil {
 						logger.LogDebug(
 							"Error: unable to move window '%+v' to scratchpad\n%s",
 							"window", window,
@@ -199,66 +198,66 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 	return command
 }
 
-func sendToScratchpad(
-	aerospaceClient aerospacecli.AeroSpaceClient,
-	window aerospacecli.Window,
-) error {
-	logger := logger.GetDefaultLogger()
-	logger.LogDebug("SHOW: sendToScratchpad ", "window", window)
-
-	err := aerospaceClient.MoveWindowToWorkspace(
-		window.WindowID,
-		constants.DefaultScratchpadWorkspaceName,
-	)
-	logger.LogDebug(
-		"SHOW: after aerospaceClient.MoveWindowToWorkspace",
-		"window", window,
-		"to-workspace", constants.DefaultScratchpadWorkspaceName,
-		"error", err,
-	)
-	if err != nil {
-		return err
-	}
-
-	err = aerospaceClient.SetLayout(
-		window.WindowID,
-		"floating",
-	)
-	if err != nil {
-		fmt.Printf(
-			"Warn: unable to set layout for window '%+v' to floating\n%s",
-			window,
-			err,
-		)
-	}
-
-	fmt.Printf("Window '%+v' hidden to scratchpad\n", window)
-	return nil
-}
-
-func sendToFocusedWorkspace(
-	aerospaceClient aerospacecli.AeroSpaceClient,
-	window aerospacecli.Window,
-	focusedWorkspace *aerospacecli.Workspace,
-	shouldSetFocus bool,
-) error {
-	if focusedWorkspace == nil {
-		return fmt.Errorf("focused workspace is nil")
-	}
-
-	if err := aerospaceClient.MoveWindowToWorkspace(
-		window.WindowID,
-		focusedWorkspace.Workspace,
-	); err != nil {
-		return fmt.Errorf("unable to move window '%+v' to workspace '%s': %w", window, focusedWorkspace.Workspace, err)
-	}
-
-	if shouldSetFocus {
-		if err := aerospaceClient.SetFocusByWindowID(window.WindowID); err != nil {
-			return fmt.Errorf("unable to set focus to window '%+v': %w", window, err)
-		}
-	}
-
-	fmt.Printf("Window '%+v' is summoned\n", window)
-	return nil
-}
+// func sendToScratchpad(
+// 	aerospaceClient aerospacecli.AeroSpaceClient,
+// 	window aerospacecli.Window,
+// ) error {
+// 	logger := logger.GetDefaultLogger()
+// 	logger.LogDebug("SHOW: sendToScratchpad ", "window", window)
+//
+// 	err := aerospaceClient.MoveWindowToWorkspace(
+// 		window.WindowID,
+// 		constants.DefaultScratchpadWorkspaceName,
+// 	)
+// 	logger.LogDebug(
+// 		"SHOW: after aerospaceClient.MoveWindowToWorkspace",
+// 		"window", window,
+// 		"to-workspace", constants.DefaultScratchpadWorkspaceName,
+// 		"error", err,
+// 	)
+// 	if err != nil {
+// 		return err
+// 	}
+//
+// 	err = aerospaceClient.SetLayout(
+// 		window.WindowID,
+// 		"floating",
+// 	)
+// 	if err != nil {
+// 		fmt.Printf(
+// 			"Warn: unable to set layout for window '%+v' to floating\n%s",
+// 			window,
+// 			err,
+// 		)
+// 	}
+//
+// 	fmt.Printf("Window '%+v' hidden to scratchpad\n", window)
+// 	return nil
+// }
+//
+// func sendToFocusedWorkspace(
+// 	aerospaceClient aerospacecli.AeroSpaceClient,
+// 	window aerospacecli.Window,
+// 	focusedWorkspace *aerospacecli.Workspace,
+// 	shouldSetFocus bool,
+// ) error {
+// 	if focusedWorkspace == nil {
+// 		return fmt.Errorf("focused workspace is nil")
+// 	}
+//
+// 	if err := aerospaceClient.MoveWindowToWorkspace(
+// 		window.WindowID,
+// 		focusedWorkspace.Workspace,
+// 	); err != nil {
+// 		return fmt.Errorf("unable to move window '%+v' to workspace '%s': %w", window, focusedWorkspace.Workspace, err)
+// 	}
+//
+// 	if shouldSetFocus {
+// 		if err := aerospaceClient.SetFocusByWindowID(window.WindowID); err != nil {
+// 			return fmt.Errorf("unable to set focus to window '%+v': %w", window, err)
+// 		}
+// 	}
+//
+// 	fmt.Printf("Window '%+v' is summoned\n", window)
+// 	return nil
+// }

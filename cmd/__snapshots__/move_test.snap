@@ -34,6 +34,7 @@ aerospace-scratchpad move
 
 Output
 Moving window 5678 | Finder  to scratchpad
+Window '5678 | Finder ' hidden to scratchpad
 
 Error
  <nil>
@@ -64,6 +65,7 @@ aerospace-scratchpad move Notepad
 
 Output
 Moving window 1234 | Notepad  to scratchpad
+Window '1234 | Notepad ' hidden to scratchpad
 
 Error
  <nil>
@@ -85,7 +87,7 @@ aerospace-scratchpad move Finder
 Output
 
 Error
-Error: unable to move window '5678 | Finder ' to scratchpad
+Error: Window '5678 | Finder ' already belongs to scratchpad
 
 ---
 
@@ -106,6 +108,7 @@ Output
 Moving window 1234 | Notepad  to scratchpad
 [dry-run] MoveWindowToWorkspace(windowID=1234, workspace=.scratchpad)
 [dry-run] SetLayout(windowID=1234, layout=floating)
+Window '1234 | Notepad ' hidden to scratchpad
 
 Error
  <nil>

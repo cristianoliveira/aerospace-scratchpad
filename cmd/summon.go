@@ -4,7 +4,6 @@ Copyright © 2025 Cristian Oliveira license@cristianoliveira.dev
 package cmd
 
 import (
-	"fmt"
 	"strings"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
@@ -49,6 +48,8 @@ If no pattern is provided, it summons the first window in the scratchpad.
 
 			// Filter windows using the shared querier
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient)
+			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
+
 			windows, err := querier.GetFilteredWindows(windowNamePattern, filterFlags)
 			if err != nil {
 				stderr.Println("Error: %v", err)
@@ -56,26 +57,16 @@ If no pattern is provided, it summons the first window in the scratchpad.
 			}
 
 			for _, window := range windows {
-				err := aerospaceClient.MoveWindowToWorkspace(
-					window.WindowID,
-					focusedWorkspace.Workspace,
+				setFocus := true
+				err := mover.MoveWindowToWorkspace(
+					&window,
+					focusedWorkspace,
+					setFocus,
 				)
 				if err != nil {
-					stderr.Println(
-						"Error: unable to move window '%+v' to workspace '%s': %v\n",
-						window,
-						focusedWorkspace.Workspace,
-						err,
-					)
+					stderr.Println("Error: %v", err)
 					return
 				}
-
-				if err = aerospaceClient.SetFocusByWindowID(window.WindowID); err != nil {
-					stderr.Printf("Error: unable to set focus to window '%+v'\n", window)
-					return
-				}
-
-				fmt.Printf("Window '%+v' is summoned\n", window)
 			}
 		},
 	}

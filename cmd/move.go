@@ -9,7 +9,6 @@ import (
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 	"github.com/spf13/cobra"
@@ -69,13 +68,9 @@ If no pattern is provided, it moves the currently focused window.
 
 			// Query windows matching pattern and filters
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient)
-			windows, err := querier.GetFilteredWindows(windowNamePattern, filterFlags)
-			logger.LogDebug(
-				"MOVE: retrieved filtered windows",
-				"windows", windows,
-				"filterFlags", filterFlags,
-			)
+			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 
+			windows, err := querier.GetFilteredWindows(windowNamePattern, filterFlags)
 			if err != nil {
 				logger.LogError(
 					"MOVE: error retrieving filtered windows",
@@ -87,45 +82,24 @@ If no pattern is provided, it moves the currently focused window.
 				return
 			}
 
+			logger.LogDebug(
+				"MOVE: retrieved filtered windows",
+				"windows", windows,
+				"filterFlags", filterFlags,
+			)
+
 			for _, window := range windows {
 				// Move the window to the scratchpad
 				fmt.Printf("Moving window %+v to scratchpad\n", window)
-				err := aerospaceClient.MoveWindowToWorkspace(
-					window.WindowID,
-					constants.DefaultScratchpadWorkspaceName,
-				)
-				logger.LogDebug(
-					"MOVE: moving window to scratchpad",
-					"window", window,
-					"workspace", constants.DefaultScratchpadWorkspaceName,
-					"error", err,
-				)
+
+				err := mover.MoveWindowToScratchpad(window)
 				if err != nil {
 					if strings.Contains(err.Error(), "already belongs to workspace") {
 						continue
 					}
 
-					stderr.Println("Error: unable to move window '%+v' to scratchpad", window)
-					// exit loop
+					stderr.Println("Error: %v", err)
 					return
-				}
-
-				err = aerospaceClient.SetLayout(
-					window.WindowID,
-					"floating",
-				)
-				logger.LogDebug(
-					"MOVE: setting layout to floating",
-					"window", window,
-					"layout", "floating",
-					"error", err,
-				)
-				if err != nil {
-					fmt.Printf(
-						"warn: unable to set layout for window '%+v' to floating\n%s",
-						window,
-						err,
-					)
 				}
 			}
 		},

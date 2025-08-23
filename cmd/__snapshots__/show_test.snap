@@ -100,7 +100,7 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder ' is summoned
+Window '5678 | Finder ' is moved to workspace 'ws2'
 
 Error
 <nil>
@@ -127,8 +127,8 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder1  | ws1' is summoned
-Window '5679 | Finder2  | ws1' is summoned
+Window '5678 | Finder1  | ws1' is moved to workspace 'ws2'
+Window '5679 | Finder2  | ws1' is moved to workspace 'ws2'
 
 Error
 <nil>
@@ -184,7 +184,7 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder1  | ws1' is summoned
+Window '5678 | Finder1  | ws1' is moved to workspace 'ws2'
 Window '5679 | Finder2  | ws2' is focused
 
 Error
@@ -213,7 +213,7 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder1  | ws1' is summoned
+Window '5678 | Finder1  | ws1' is moved to workspace 'ws2'
 Window '5679 | Finder2  | ws2' is focused
 
 Error
@@ -241,7 +241,7 @@ Error
 aerospace-scratchpad show Finder --filter window-title=foo
 
 Output
-Window '5678 | Finder1 | Finder - foo and zas | ws1' is summoned
+Window '5678 | Finder1 | Finder - foo and zas | ws1' is moved to workspace 'ws2'
 
 Error
 <nil>
@@ -325,7 +325,7 @@ Error
 aerospace-scratchpad show Finder -F window-title=foo -F app-bundle-id=linux
 
 Output
-Window '5678 | Finder1 | Finder - foo and zas | ws1 | com.linux.finder' is summoned
+Window '5678 | Finder1 | Finder - foo and zas | ws1 | com.linux.finder' is moved to workspace 'ws2'
 
 Error
 <nil>
