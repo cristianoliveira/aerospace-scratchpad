@@ -4,8 +4,6 @@ Copyright © 2025 Cristian Oliveira license@cristianoliveira.dev
 package cmd
 
 import (
-	"fmt"
-
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
@@ -33,31 +31,23 @@ It does not send the windows back to the scratchpad, but rather focuses the next
 			}
 
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient)
+			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
+
 			window, err := querier.GetNextScratchpadWindow()
 			if err != nil {
-				fmt.Println(err)
-				stderr.Println("Error: unable to get next scratchpad window")
+				stderr.Println("Error: %v", err)
 				return
 			}
 
-			if err := aerospaceClient.MoveWindowToWorkspace(
-				window.WindowID,
-				focusedWorkspace.Workspace,
+			setFocus := true
+			if err := mover.MoveWindowToWorkspace(
+				window,
+				focusedWorkspace,
+				setFocus,
 			); err != nil {
-				stderr.Printf("Error: unable to move window '%+v' to workspace '%s'\n", window, focusedWorkspace.Workspace)
+				stderr.Println("Error: %v", err)
 				return
 			}
-
-			if err = aerospaceClient.SetFocusByWindowID(window.WindowID); err != nil {
-				stderr.Printf("Error: unable to set focus to window '%+v'\n", window)
-				return
-			}
-
-			fmt.Printf(
-				"Next scratchpad window '%s' focused in workspace '%s'\n",
-				window.AppName,
-				focusedWorkspace.Workspace,
-			)
 		},
 	}
 
