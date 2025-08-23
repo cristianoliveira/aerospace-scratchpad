@@ -73,7 +73,7 @@ exec-on-workspace-change = ['/bin/bash', '-c',
 					"workspace", newFocusedWorkspace.Workspace,
 				)
 
-				attempts := 0;
+				attempts := 0
 				for {
 					if newFocusedWorkspace.Workspace != constants.DefaultScratchpadWorkspaceName {
 						break
@@ -118,7 +118,7 @@ exec-on-workspace-change = ['/bin/bash', '-c',
 					"WSH: [final] moved window to new focused workspace",
 					"workspace", newFocusedWorkspace.Workspace,
 					"window", focusedWindow,
-				);
+				)
 			}
 		},
 	}
