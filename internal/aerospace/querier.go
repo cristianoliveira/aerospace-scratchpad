@@ -10,7 +10,7 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 )
 
-type AerospaceWorkspace interface {
+type AerospaceQuerier interface {
 	// IsWindowInWorkspace checks if a window is in a workspace
 	//
 	// Returns true if the window is in the workspace
@@ -33,11 +33,11 @@ type AerospaceWorkspace interface {
 	GetFilteredWindows(windowNamePattern string, filterFlags []string) ([]aerospacecli.Window, error)
 }
 
-type AeroSpaceWM struct {
+type AeroSpaceQueryMaker struct {
 	cli aerospacecli.AeroSpaceClient
 }
 
-func (a *AeroSpaceWM) IsWindowInWorkspace(windowID int, workspaceName string) (bool, error) {
+func (a *AeroSpaceQueryMaker) IsWindowInWorkspace(windowID int, workspaceName string) (bool, error) {
 	// Get all windows from the workspace
 	windows, err := a.cli.GetAllWindowsByWorkspace(workspaceName)
 	if err != nil {
@@ -54,7 +54,7 @@ func (a *AeroSpaceWM) IsWindowInWorkspace(windowID int, workspaceName string) (b
 	return false, nil
 }
 
-func (a *AeroSpaceWM) IsWindowInFocusedWorkspace(windowID int) (bool, error) {
+func (a *AeroSpaceQueryMaker) IsWindowInFocusedWorkspace(windowID int) (bool, error) {
 	// Get the focused workspace
 	focusedWorkspace, err := a.cli.GetFocusedWorkspace()
 	if err != nil {
@@ -65,7 +65,7 @@ func (a *AeroSpaceWM) IsWindowInFocusedWorkspace(windowID int) (bool, error) {
 	return a.IsWindowInWorkspace(windowID, focusedWorkspace.Workspace)
 }
 
-func (a *AeroSpaceWM) IsWindowFocused(windowID int) (bool, error) {
+func (a *AeroSpaceQueryMaker) IsWindowFocused(windowID int) (bool, error) {
 	// Get the focused window
 	focusedWindow, err := a.cli.GetFocusedWindow()
 	if err != nil {
@@ -76,7 +76,7 @@ func (a *AeroSpaceWM) IsWindowFocused(windowID int) (bool, error) {
 	return focusedWindow.WindowID == windowID, nil
 }
 
-func (a *AeroSpaceWM) GetNextScratchpadWindow() (*aerospacecli.Window, error) {
+func (a *AeroSpaceQueryMaker) GetNextScratchpadWindow() (*aerospacecli.Window, error) {
 	// Get all windows from the workspace
 	windows, err := a.cli.GetAllWindowsByWorkspace(
 		constants.DefaultScratchpadWorkspaceName,
@@ -98,7 +98,7 @@ type Filter struct {
 	Pattern  *regexp.Regexp
 }
 
-func (a *AeroSpaceWM) GetFilteredWindows(appNamePattern string, filterFlags []string) ([]aerospacecli.Window, error) {
+func (a *AeroSpaceQueryMaker) GetFilteredWindows(appNamePattern string, filterFlags []string) ([]aerospacecli.Window, error) {
 	logger := logger.GetDefaultLogger()
 
 	// instantiate the regex
@@ -236,8 +236,8 @@ func applyFilters(window aerospacecli.Window, filters []Filter) (bool, error) {
 }
 
 // NewAerospaceQuerier creates a new AerospaceQuerier
-func NewAerospaceQuerier(cli aerospacecli.AeroSpaceClient) AerospaceWorkspace {
-	return &AeroSpaceWM{
+func NewAerospaceQuerier(cli aerospacecli.AeroSpaceClient) AerospaceQuerier {
+	return &AeroSpaceQueryMaker{
 		cli: cli,
 	}
 }
