@@ -106,27 +106,28 @@ func (a *AeroSpaceWM) GetFilteredWindows(windowNamePattern string, filterFlags [
 	windowPattern, err := regexp.Compile(windowNamePattern)
 	if err != nil {
 		logger.LogError(
-			"SHOW: unable to compile window pattern",
+			"FILTER: unable to compile window pattern",
 			"pattern",
 			windowNamePattern,
 			"error",
 			err,
 		)
 		return nil, fmt.Errorf(
-			"invalid app-name-pattern '%s': %v",
-			windowNamePattern, err,
+			"invalid app-name-pattern, %v",
+			err,
 		)
 	}
-	logger.LogDebug("SHOW: compiled window pattern", "pattern", windowPattern)
+	logger.LogDebug("FILTER: compiled window pattern", "pattern", windowPattern)
 
 	filters, err := parseFilters(filterFlags)
 	if err != nil {
-		logger.LogError("SHOW: unable to parse filters", "error", err)
+		logger.LogError("FILTER: unable to parse filters", "error", err)
 		return nil, err
 	}
 
 	windows, err := a.cli.GetAllWindows()
 	if err != nil {
+		logger.LogError("FILTER: unable to get all windows", "error", err)
 		return nil, fmt.Errorf("unable to get windows: %v", err)
 	}
 
@@ -149,6 +150,19 @@ func (a *AeroSpaceWM) GetFilteredWindows(windowNamePattern string, filterFlags [
 		}
 
 		filteredWindows = append(filteredWindows, window)
+	}
+
+	if len(filteredWindows) == 0 {
+		logger.LogDebug(
+			"FILTER: no windows matched the pattern",
+			"pattern", windowNamePattern,
+		)
+
+		if len(filters) > 0 {
+			return nil, fmt.Errorf("no windows matched the pattern '%s' with the given filters", windowNamePattern)
+		}
+
+		return nil, fmt.Errorf("no windows matched the pattern '%s'", windowNamePattern)
 	}
 
 	return filteredWindows, nil
@@ -212,7 +226,7 @@ func applyFilters(window aerospacecli.Window, filters []Filter) (bool, error) {
 
 		if !filter.Pattern.MatchString(value) {
 			logger.LogDebug(
-				"SHOW: filter did not match",
+				"FILTER: filter did not match",
 				"property", filter.Property,
 				"value", value,
 				"pattern", filter.Pattern.String(),
@@ -222,7 +236,7 @@ func applyFilters(window aerospacecli.Window, filters []Filter) (bool, error) {
 	}
 
 	if len(filters) > 0 {
-		logger.LogDebug("SHOW: filters applied", "filters", filters)
+		logger.LogDebug("FILTER: filters applied", "filters", filters)
 	}
 
 	return true, nil

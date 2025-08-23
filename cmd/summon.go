@@ -5,10 +5,10 @@ package cmd
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/cli"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 	"github.com/spf13/cobra"
@@ -17,7 +17,7 @@ import (
 func SummonCmd(
 	aerospaceClient aerospacecli.AeroSpaceClient,
 ) *cobra.Command {
-	showCmd := &cobra.Command{
+	command := &cobra.Command{
 		Use:   "summon <pattern>",
 		Short: "Summon a window from scratchpad",
 		Long: `Summon a window from the scratchpad to the current workspace.
@@ -34,30 +34,28 @@ If no pattern is provided, it summons the first window in the scratchpad.
 		Run: func(cmd *cobra.Command, args []string) {
 			windowNamePattern := strings.TrimSpace(args[0])
 
-			windows, err := aerospaceClient.GetAllWindows()
-			if err != nil {
-				stderr.Println("Error: unable to get windows")
-				return
-			}
-
 			focusedWorkspace, err := aerospaceClient.GetFocusedWorkspace()
 			if err != nil {
 				stderr.Println("Error: unable to get focused workspace")
 				return
 			}
 
-			// instantiate the regex
-			windowPattern, err := regexp.Compile(windowNamePattern)
+			// Parse filter flags
+			filterFlags, err := cmd.Flags().GetStringArray("filter")
 			if err != nil {
-				stderr.Println("Error: invalid app-name-pattern")
+				stderr.Println("Error: unable to get filter flags")
+				return
+			}
+
+			// Filter windows using the shared querier
+			querier := aerospace.NewAerospaceQuerier(aerospaceClient)
+			windows, err := querier.GetFilteredWindows(windowNamePattern, filterFlags)
+			if err != nil {
+				stderr.Println("Error: %v", err)
 				return
 			}
 
 			for _, window := range windows {
-				if !windowPattern.MatchString(window.AppName) {
-					continue
-				}
-
 				err := aerospaceClient.MoveWindowToWorkspace(
 					window.WindowID,
 					focusedWorkspace.Workspace,
@@ -82,5 +80,8 @@ If no pattern is provided, it summons the first window in the scratchpad.
 		},
 	}
 
-	return showCmd
+	// Filter flags --filter
+	command.Flags().StringArrayP("filter", "F", []string{}, "Filter windows by a specific property (e.g., app-name, window-title). Can be used multiple times.")
+
+	return command
 }

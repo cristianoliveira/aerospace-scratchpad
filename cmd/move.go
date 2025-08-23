@@ -5,12 +5,12 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	_ "net/http/pprof"
 	"regexp"
 	"strings"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
@@ -21,7 +21,7 @@ import (
 func MoveCmd(
 	aerospaceClient aerospacecli.AeroSpaceClient,
 ) *cobra.Command {
-	moveCmd := &cobra.Command{
+	command := &cobra.Command{
 		Use:   "move <pattern>",
 		Short: "Move a window to scratchpad",
 		Long: `Move a window to the scratchpad.
@@ -61,35 +61,46 @@ If no pattern is provided, it moves the currently focused window.
 				)
 			}
 
-			// instantiate the regex
-			regex, err := regexp.Compile(windowNamePattern)
-			if err != nil {
+			// Validate regex to provide clear error like show command
+			if _, err := regexp.Compile(windowNamePattern); err != nil {
 				logger.LogError(
 					"MOVE: error compiling regex",
 					"windowNamePattern", windowNamePattern,
 					"error", err,
 				)
-				log.Fatalf("Error compiling regex '%s': %v", windowNamePattern, err)
-			}
-
-			// Get all windows
-			windows, err := aerospaceClient.GetAllWindows()
-			logger.LogDebug(
-				"MOVE: retrieved all windows",
-				"windows", windows,
-				"error", err,
-			)
-			if err != nil {
-				stderr.Println("Error: unable to get windows")
+				stderr.Println("Error: invalid window-name-pattern")
 				return
 			}
 
-			var movedCount int
-			for _, window := range windows {
-				if !regex.MatchString(window.AppName) {
-					continue
-				}
+			// Parse filter flags (matches show command behavior)
+			filterFlags, err := cmd.Flags().GetStringArray("filter")
+			if err != nil {
+				logger.LogError("MOVE: unable to get filter flags", "error", err)
+				stderr.Println("Error: unable to get filter flags")
+				return
+			}
 
+			// Query windows matching pattern and filters
+			querier := aerospace.NewAerospaceQuerier(aerospaceClient)
+			windows, err := querier.GetFilteredWindows(windowNamePattern, filterFlags)
+			logger.LogDebug(
+				"MOVE: retrieved filtered windows",
+				"windows", windows,
+				"filterFlags", filterFlags,
+			)
+
+			if err != nil {
+				logger.LogError(
+					"MOVE: error retrieving filtered windows",
+					"error", err,
+					"pattern", windowNamePattern,
+					"filterFlags", filterFlags,
+				)
+				stderr.Println("Error: %v", err)
+				return
+			}
+
+			for _, window := range windows {
 				// Move the window to the scratchpad
 				fmt.Printf("Moving window %+v to scratchpad\n", window)
 				err := aerospaceClient.MoveWindowToWorkspace(
@@ -129,24 +140,12 @@ If no pattern is provided, it moves the currently focused window.
 						err,
 					)
 				}
-
-				movedCount++
-			}
-
-			if movedCount == 0 {
-				logger.LogDebug(
-					"MOVE: no windows matched the pattern",
-					"pattern", windowNamePattern,
-				)
-
-				stderr.Println(
-					"Error: no windows matched the pattern '%s'",
-					windowNamePattern,
-				)
-				return
 			}
 		},
 	}
 
-	return moveCmd
+	// Filter flags --filter
+	command.Flags().StringArrayP("filter", "F", []string{}, "Filter windows by a specific property (e.g., app-name, window-title). Can be used multiple times.")
+
+	return command
 }

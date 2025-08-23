@@ -35,7 +35,8 @@ aerospace-scratchpad summon NonExistentApp
 Output
 
 Error
- <nil>
+ Error: no windows matched the pattern 'NonExistentApp'
+
 ---
 
 [TestSummonCmd/fails_when_getting_all_windows_returns_an_error - 1]
@@ -44,7 +45,7 @@ aerospace-scratchpad summon test
 Output
 
 Error
- Error: unable to get windows
+ Error: unable to get windows: mocked_error
 
 ---
 
@@ -64,7 +65,7 @@ aerospace-scratchpad summon [invalid
 Output
 
 Error
- Error: invalid app-name-pattern
+ Error: invalid app-name-pattern, error parsing regexp: missing closing ]: `[invalid`
 
 ---
 

@@ -26,7 +26,7 @@ type Filter struct {
 func ShowCmd(
 	aerospaceClient *aerospace.AeroSpaceClient,
 ) *cobra.Command {
-	showCmd := &cobra.Command{
+	command := &cobra.Command{
 		Use:   "show <pattern>",
 		Short: "Show a window from scratchpad",
 		Long: `Show a window from the scratchpad in the current workspace.
@@ -216,9 +216,9 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 	}
 
 	// Filter flags --filter
-	showCmd.Flags().StringArrayP("filter", "F", []string{}, "Filter windows by a specific property (e.g., app-name, window-title). Can be used multiple times.")
+	command.Flags().StringArrayP("filter", "F", []string{}, "Filter windows by a specific property (e.g., app-name, window-title). Can be used multiple times.")
 
-	return showCmd
+	return command
 }
 
 func sendToScratchpad(

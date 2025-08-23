@@ -147,6 +147,11 @@ func TestMoveCmd(t *testing.T) {
 		defer ctrl.Finish()
 
 		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		// Move now validates regex and then tries to query via querier which
+		// calls GetAllWindows under the hood. We don't control that directly here,
+		// so simulate that the overall result is an error by letting
+		// GetAllWindows return an error and ensure we don't crash but surface the
+		// generic no-match message (since querier error isn't surfaced).
 		aerospaceClient.EXPECT().
 			GetAllWindows().
 			Return(nil, fmt.Errorf("mocked_error")).

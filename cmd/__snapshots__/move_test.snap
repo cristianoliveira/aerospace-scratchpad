@@ -45,7 +45,7 @@ aerospace-scratchpad move test
 Output
 
 Error
- Error: unable to get windows
+ Error: unable to get windows: mocked_error
 
 ---
 
