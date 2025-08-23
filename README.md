@@ -98,6 +98,13 @@ cmd-shit-ctrl-1 = [
 # Toggle show/hide the window marked as 'sp-1' as scratchpad window
 # If window is not marked does nothing
 cmd-ctrl-1 = "exec-and-forget aerospace-scratchpad show \"$(aerospace-marks get sp-1 -a)\""
+
+# Making a mark more specific
+ctrl-cmd-t = """
+exec-and-forget aerospace-scratchpad show \
+               "$(aerospace-marks get term -a)" \
+               -F window-title="$(aerospace-marks get term -t)"
+"""
 ```
 
 ## Installation
