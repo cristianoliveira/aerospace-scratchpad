@@ -16,7 +16,9 @@
     - '**/*.log'
 
 - name: install after checks
-  run: go install .
+  run: 
+    # Validate if file .install contains 1 otherwise 
+    - if [ -f .tmp/install ]; then go install . && echo "installed latest" ; fi
   change: 
     - '**/*.go'
     - '**/*.snap'
