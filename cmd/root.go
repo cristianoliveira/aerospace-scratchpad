@@ -64,4 +64,4 @@ func Execute(
 // THIS IS GENERATED DON'T EDIT
 // NOTE: to update VERSION change it to an EMPTY STRING
 // and then run scripts/validate-version.sh
-var VERSION = "v0.1.4"
+var VERSION = "v0.2.0"
