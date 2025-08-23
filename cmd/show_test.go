@@ -90,17 +90,15 @@ func TestShowCmd(t *testing.T) {
 		focusedTree := testutils.ExtractFocusedTree(tree)
 
 		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-		gomock.InOrder(
-			aerospaceClient.EXPECT().
-				GetAllWindows().
-				Return(allWindows, nil).
-				Times(1),
+		aerospaceClient.EXPECT().
+			GetAllWindows().
+			Return(allWindows, nil).
+			Times(1)
 
-			aerospaceClient.EXPECT().
-				GetFocusedWorkspace().
-				Return(focusedTree.Workspace, nil).
-				Times(1),
-		)
+		aerospaceClient.EXPECT().
+			GetFocusedWorkspace().
+			Return(focusedTree.Workspace, nil).
+			Times(1)
 
 		cmd := RootCmd(aerospaceClient)
 		out, err := testutils.CmdExecute(cmd, args...)
@@ -147,17 +145,17 @@ func TestShowCmd(t *testing.T) {
 			focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+			aerospaceClient.EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1)
+
+			aerospaceClient.EXPECT().
+				GetFocusedWorkspace().
+				Return(focusedTree.Workspace, nil).
+				Times(1)
+
 			gomock.InOrder(
-				aerospaceClient.EXPECT().
-					GetAllWindows().
-					Return(allWindows, nil).
-					Times(1),
-
-				aerospaceClient.EXPECT().
-					GetFocusedWorkspace().
-					Return(focusedTree.Workspace, nil).
-					Times(1),
-
 				aerospaceClient.EXPECT().
 					GetAllWindowsByWorkspace(focusedTree.Workspace.Workspace).
 					Return(focusedTree.Windows, nil).
@@ -227,17 +225,17 @@ func TestShowCmd(t *testing.T) {
 		focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		aerospaceClient.EXPECT().
+			GetAllWindows().
+			Return(allWindows, nil).
+			Times(1)
+
+		aerospaceClient.EXPECT().
+			GetFocusedWorkspace().
+			Return(focusedTree.Workspace, nil).
+			Times(1)
+
 		gomock.InOrder(
-			aerospaceClient.EXPECT().
-				GetAllWindows().
-				Return(allWindows, nil).
-				Times(1),
-
-			aerospaceClient.EXPECT().
-				GetFocusedWorkspace().
-				Return(focusedTree.Workspace, nil).
-				Times(1),
-
 			aerospaceClient.EXPECT().
 				GetAllWindowsByWorkspace("ws1").
 				Return(focusedTree.Windows, nil).
@@ -325,17 +323,17 @@ func TestShowCmd(t *testing.T) {
 		focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		aerospaceClient.EXPECT().
+			GetAllWindows().
+			Return(allWindows, nil).
+			Times(1)
+
+		aerospaceClient.EXPECT().
+			GetFocusedWorkspace().
+			Return(focusedTree.Workspace, nil).
+			Times(1)
+
 		gomock.InOrder(
-			aerospaceClient.EXPECT().
-				GetAllWindows().
-				Return(allWindows, nil).
-				Times(1),
-
-			aerospaceClient.EXPECT().
-				GetFocusedWorkspace().
-				Return(focusedTree.Workspace, nil).
-				Times(1),
-
 			aerospaceClient.EXPECT().
 				GetAllWindowsByWorkspace(focusedTree.Workspace.Workspace).
 				Return(focusedTree.Windows, nil).
@@ -423,17 +421,18 @@ func TestShowCmd(t *testing.T) {
 			// focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+
+			aerospaceClient.EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1)
+
+			aerospaceClient.EXPECT().
+				GetFocusedWorkspace().
+				Return(focusedTree.Workspace, nil).
+				Times(1)
+
 			gomock.InOrder(
-				aerospaceClient.EXPECT().
-					GetAllWindows().
-					Return(allWindows, nil).
-					Times(1),
-
-				aerospaceClient.EXPECT().
-					GetFocusedWorkspace().
-					Return(focusedTree.Workspace, nil).
-					Times(1),
-
 				// Send first window
 				aerospaceClient.EXPECT().
 					MoveWindowToWorkspace(
@@ -525,17 +524,17 @@ func TestShowCmd(t *testing.T) {
 			focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+			aerospaceClient.EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1)
+
+			aerospaceClient.EXPECT().
+				GetFocusedWorkspace().
+				Return(focusedTree.Workspace, nil).
+				Times(1)
+
 			gomock.InOrder(
-				aerospaceClient.EXPECT().
-					GetAllWindows().
-					Return(allWindows, nil).
-					Times(1),
-
-				aerospaceClient.EXPECT().
-					GetFocusedWorkspace().
-					Return(focusedTree.Workspace, nil).
-					Times(1),
-
 				aerospaceClient.EXPECT().
 					GetFocusedWindow().
 					Return(focusedWindow, nil).
@@ -638,17 +637,17 @@ func TestShowCmd(t *testing.T) {
 			focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+			aerospaceClient.EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1)
+
+			aerospaceClient.EXPECT().
+				GetFocusedWorkspace().
+				Return(focusedTree.Workspace, nil).
+				Times(1)
+
 			gomock.InOrder(
-				aerospaceClient.EXPECT().
-					GetAllWindows().
-					Return(allWindows, nil).
-					Times(1),
-
-				aerospaceClient.EXPECT().
-					GetFocusedWorkspace().
-					Return(focusedTree.Workspace, nil).
-					Times(1),
-
 				aerospaceClient.EXPECT().
 					GetFocusedWindow().
 					Return(focusedWindow, nil).
@@ -743,17 +742,17 @@ func TestShowCmd(t *testing.T) {
 			focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+			aerospaceClient.EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1)
+
+			aerospaceClient.EXPECT().
+				GetFocusedWorkspace().
+				Return(focusedTree.Workspace, nil).
+				Times(1)
+
 			gomock.InOrder(
-				aerospaceClient.EXPECT().
-					GetAllWindows().
-					Return(allWindows, nil).
-					Times(1),
-
-				aerospaceClient.EXPECT().
-					GetFocusedWorkspace().
-					Return(focusedTree.Workspace, nil).
-					Times(1),
-
 				aerospaceClient.EXPECT().
 					GetFocusedWindow().
 					Return(focusedWindow, nil).
@@ -837,17 +836,17 @@ func TestShowCmd(t *testing.T) {
 			// focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+			aerospaceClient.EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1)
+
+			aerospaceClient.EXPECT().
+				GetFocusedWorkspace().
+				Return(focusedTree.Workspace, nil).
+				Times(1)
+
 			gomock.InOrder(
-				aerospaceClient.EXPECT().
-					GetAllWindows().
-					Return(allWindows, nil).
-					Times(1),
-
-				aerospaceClient.EXPECT().
-					GetFocusedWorkspace().
-					Return(focusedTree.Workspace, nil).
-					Times(1),
-
 				// Send first window
 				aerospaceClient.EXPECT().
 					MoveWindowToWorkspace(
@@ -940,17 +939,17 @@ func TestShowCmd(t *testing.T) {
 			// focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+			aerospaceClient.EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1)
+
+			aerospaceClient.EXPECT().
+				GetFocusedWorkspace().
+				Return(focusedTree.Workspace, nil).
+				Times(1)
+
 			gomock.InOrder(
-				aerospaceClient.EXPECT().
-					GetAllWindows().
-					Return(allWindows, nil).
-					Times(1),
-
-				aerospaceClient.EXPECT().
-					GetFocusedWorkspace().
-					Return(focusedTree.Workspace, nil).
-					Times(1),
-
 				// Send first window
 				aerospaceClient.EXPECT().
 					MoveWindowToWorkspace(
@@ -1014,17 +1013,15 @@ func TestShowCmd(t *testing.T) {
 			focusedTree := testutils.ExtractFocusedTree(tree)
 
 			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-			gomock.InOrder(
-				aerospaceClient.EXPECT().
-					GetAllWindows().
-					Return(allWindows, nil).
-					Times(1),
+			aerospaceClient.EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1)
 
-				aerospaceClient.EXPECT().
-					GetFocusedWorkspace().
-					Return(focusedTree.Workspace, nil).
-					Times(1),
-			)
+			aerospaceClient.EXPECT().
+				GetFocusedWorkspace().
+				Return(focusedTree.Workspace, nil).
+				Times(1)
 
 			cmd := RootCmd(aerospaceClient)
 			out, err := testutils.CmdExecute(cmd, args...)
@@ -1084,17 +1081,15 @@ func TestShowCmd(t *testing.T) {
 			// focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-			gomock.InOrder(
-				aerospaceClient.EXPECT().
-					GetAllWindows().
-					Return(allWindows, nil).
-					Times(1),
+			aerospaceClient.EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1)
 
-				aerospaceClient.EXPECT().
-					GetFocusedWorkspace().
-					Return(focusedTree.Workspace, nil).
-					Times(1),
-			)
+			aerospaceClient.EXPECT().
+				GetFocusedWorkspace().
+				Return(focusedTree.Workspace, nil).
+				Times(1)
 
 			cmd := RootCmd(aerospaceClient)
 			out, err := testutils.CmdExecute(cmd, args...)
