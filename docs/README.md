@@ -55,8 +55,8 @@ aerospace-scratchpad show Brave -F window-title=Gmail -F window-title="personal"
 aerospace-scratchpad show Terminal --filter window-title=kitty
 # Bring all Terminal windows with title containing "kitty" to the current workspace.
 
-aerospace-scratchpad show Kitty -F window-title=/kitty.*work/i
-# Bring all windows with title matching the regex "kitty.*work" to the current workspace. Eg. "kitty work", "kitty work project", etc.
+aerospace-scratchpad show Kitty -F window-title='(?i)kitty.*work'
+# Bring all windows with title matching the regex (Case insensitive) "kitty.*work" to the current workspace. Eg. "kitty work", "kitty work project", "KITTY more WORK", etc
 
 ## Example on how to use only window filter (We may allow empty patterns in the future)
 aerospace-scratchpad show . --filter window-title=kitty
@@ -71,6 +71,8 @@ Current allowed properties for filtering are:
     - *app-bundle-id*: The bundle ID of the application. E.g. `com.apple.Terminal`.
 
 It fails if the property is not recognized or if the regex pattern is invalid.
+
+For more advanced regex patterns check [Google re2 syntax](https://github.com/google/re2/wiki/Syntax)
 
 ## Command: `summon`
 

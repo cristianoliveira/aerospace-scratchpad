@@ -185,12 +185,6 @@ func parseFilters(filterFlags []string) ([]Filter, error) {
 			return nil, fmt.Errorf("invalid filter format: %s. Property and pattern cannot be empty", filterFlag)
 		}
 
-		// Handle regex patterns that start with /
-		if strings.HasPrefix(patternStr, "/") && strings.HasSuffix(patternStr, "/") {
-			// Extract the pattern between / and /
-			patternStr = patternStr[1 : len(patternStr)-1]
-		}
-
 		pattern, err := regexp.Compile(patternStr)
 		if err != nil {
 			return nil, fmt.Errorf("invalid regex pattern '%s': %w", patternStr, err)
