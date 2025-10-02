@@ -35,6 +35,11 @@
             # sudo mv /tmp/bobko.aerospace-$USER.sock /tmp/bobko.aerospace-$USER.sock.real
             # socat -v UNIX-LISTEN:/tmp/bobko.aerospace-$USER.sock,fork UNIX-CONNECT:/tmp/bobko.aerospace-$USER.sock.real | tee /tmp/socket.log
             socat
+
+            # File watcher 
+            # USAGE: (check .watch.yaml for config)
+            # fzz 
+            funzzy
           ];
         };
 
