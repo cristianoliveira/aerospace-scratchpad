@@ -142,8 +142,16 @@ The `workspace-handler` command handles when the scratchpad workspace gets focus
 ```toml
 # ~/.config/aerospace/config.toml
 # Add this snippet
-exec-on-workspace-change = ['/bin/bash', '-c',
-    'aerospace-scratchpad workspace-handler $AEROSPACE_FOCUSED_WORKSPACE'
+
+# Ensure the scratchpad window is always on the focused monitor. To avoid it 
+# taking focus in any monitor.
+on-focused-monitor-changed = [
+  "exec-and-forget aerospace-scratchpad wsh bring-scratchpad-to-monitor 0 0"
+]
+
+# Ensure when scratchpad windows take focus, they are moved to the current focused workspace.
+exec-on-workspace-change = ["/bin/bash", "-c",
+  "aerospace-scratchpad wsh bring-window-to-workspace $AEROSPACE_PREV_WORKSPACE $AEROSPACE_FOCUSED_WORKSPACE"
 ]
 ```
 

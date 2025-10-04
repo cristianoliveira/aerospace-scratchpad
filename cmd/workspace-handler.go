@@ -4,7 +4,9 @@ Copyright © 2025 Cristian Oliveira licence@cristianoliveira.dev
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	aerospaceipc "github.com/cristianoliveira/aerospace-ipc"
@@ -28,17 +30,33 @@ exec-on-workspace-change = ['/bin/bash', '-c',
 '''
 `,
 		Aliases: []string{"wsh"},
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.ExactArgs(3),
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.GetDefaultLogger()
 			client := aerospaceClient.Connection()
 
-			focusedWorkspace := args[0]
+			logger.LogInfo("WSH: [started] workspace handler", "args", args)
+
+			command, prevWorkspace, focusedWorkspace := args[0], args[1], args[2]
+			if command == "bring-scratchpad-to-monitor" {
+				moveScratchpadToCurrentMonitor(aerospaceClient, focusedWorkspace)
+				return
+			}
+
+			if prevWorkspace == constants.DefaultScratchpadWorkspaceName {
+				logger.LogDebug(
+					"WSH: previous workspace is scratchpad, nothing to do",
+					"workspace", prevWorkspace,
+				)
+				return
+			}
+
 			if focusedWorkspace != constants.DefaultScratchpadWorkspaceName {
 				logger.LogDebug(
 					"WSH: focused workspace is not scratchpad",
 					"workspace", focusedWorkspace,
 				)
+
 				return
 			}
 
@@ -54,10 +72,21 @@ exec-on-workspace-change = ['/bin/bash', '-c',
 
 			if focusedWindow.Workspace == constants.DefaultScratchpadWorkspaceName {
 
-				_, err := client.SendCommand("workspace-back-and-forth", nil)
+				_, err := client.SendCommand("workspace", []string{prevWorkspace})
 				if err != nil {
 					logger.LogError("WSH: unable to get focused window", "error", err)
 					fmt.Println("Error: unable to get focused window")
+					return
+				}
+
+				// if tmp file exists, return
+				if _, err := os.Stat(constants.TempScratchpadMovingFile); err == nil {
+					logger.LogInfo("WSH: temp file exists, returning")
+					err := os.Remove(constants.TempScratchpadMovingFile)
+					if err != nil {
+						logger.LogError("WSH: unable to remove temp file", "error", err)
+						fmt.Println("Error: unable to remove temp file", err)
+					}
 					return
 				}
 
@@ -124,4 +153,56 @@ exec-on-workspace-change = ['/bin/bash', '-c',
 	}
 
 	return wsHandlerCmd
+}
+
+type MoveScratchpadResult struct {
+	Workspace string `json:"workspace"`
+	MonitorID int    `json:"monitor-id"`
+}
+
+func moveScratchpadToCurrentMonitor(aerospaceClient aerospaceipc.AeroSpaceClient, focusedWorkspace string) {
+	logger := logger.GetDefaultLogger()
+	client := aerospaceClient.Connection()
+	logger.LogDebug("WSH: moving scratchpad to current monitor", "focusedWorkspace", focusedWorkspace)
+
+	if _, err := os.Create(constants.TempScratchpadMovingFile); err != nil {
+		logger.LogError("WSH: unable to create temp file", "error", err)
+		fmt.Println("Error: unable to create temp file", err)
+		return
+	}
+
+	// Check if the .scratchpad ws is already on the current monitor
+	jsonAllWorkspaces, err := client.SendCommand(
+		"list-workspaces",
+		[]string{"--monitor",
+			"focused",
+			"--json",
+			"--format",
+			"%{workspace} %{monitor-id}",
+		})
+
+	if err != nil {
+		logger.LogError("WSH: unable to list workspaces in focused monitor", "error", err)
+		fmt.Println("Error: unable to list workspaces in focused monitor", err)
+		return
+	}
+
+	var workspacesInWorkspace []MoveScratchpadResult
+	err = json.Unmarshal([]byte(jsonAllWorkspaces.StdOut), &workspacesInWorkspace)
+	if err != nil {
+		logger.LogError("WSH: unable to unmarshal workspaces in focused monitor", "error", err)
+		fmt.Println("Error: unable to unmarshal workspaces in focused monitor", err)
+		return
+	}
+
+	_, err = client.SendCommand(
+		"summon-workspace",
+		[]string{
+			constants.DefaultScratchpadWorkspaceName,
+		},
+	)
+	if err != nil {
+		logger.LogError("WSH: unable to move scratchpad to current monitor", "error", err)
+		fmt.Println("Error: unable to move scratchpad to current monitor", err)
+	}
 }
