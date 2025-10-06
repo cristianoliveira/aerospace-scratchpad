@@ -6,6 +6,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -23,26 +24,38 @@ func WorkspaceHandlerCmd(
 		Short: "This command handles when a window in scratchpad is focused (which shouldn't happen)",
 		Long: `This command handles when a window within the scratchpad workspace is focused. It'll move the window to the last focused workspace and take the window too, behaving more like "summoning the window".
 Add this snippet in your ~/aerospace.toml config:
+
 '''toml
-exec-on-workspace-change = ['/bin/bash', '-c',
-    'aerospace-scratchpad workspace-handler $AEROSPACE_FOCUSED_WORKSPACE'
+on-focused-monitor-changed = [
+  "exec-and-forget aerospace-scratchpad wsh bring-scratchpad-to-monitor"
+]
+exec-on-workspace-change = ["/bin/bash", "-c",
+  "aerospace-scratchpad wsh bring-window-to-workspace $AEROSPACE_PREV_WORKSPACE $AEROSPACE_FOCUSED_WORKSPACE"
 ]
 '''
 `,
 		Aliases: []string{"wsh"},
-		Args:    cobra.ExactArgs(3),
+		Args:    cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.GetDefaultLogger()
 			client := aerospaceClient.Connection()
 
 			logger.LogInfo("WSH: [started] workspace handler", "args", args)
 
-			command, prevWorkspace, focusedWorkspace := args[0], args[1], args[2]
+			command := args[0]
 			if command == "bring-scratchpad-to-monitor" {
-				moveScratchpadToCurrentMonitor(aerospaceClient, focusedWorkspace)
+				moveScratchpadToCurrentMonitor(aerospaceClient)
 				return
 			}
 
+			if len(args) < 3 {
+				logger.LogError("WSH: not enough arguments")
+				// Fail and return error 1
+				log.Fatal("Error: not enough arguments missing <previous-workspace> <focused-workspace>")
+				return
+			}
+
+			prevWorkspace, focusedWorkspace := args[1], args[2]
 			if prevWorkspace == constants.DefaultScratchpadWorkspaceName {
 				logger.LogDebug(
 					"WSH: previous workspace is scratchpad, nothing to do",
@@ -160,10 +173,10 @@ type MoveScratchpadResult struct {
 	MonitorID int    `json:"monitor-id"`
 }
 
-func moveScratchpadToCurrentMonitor(aerospaceClient aerospaceipc.AeroSpaceClient, focusedWorkspace string) {
+func moveScratchpadToCurrentMonitor(aerospaceClient aerospaceipc.AeroSpaceClient) {
 	logger := logger.GetDefaultLogger()
 	client := aerospaceClient.Connection()
-	logger.LogDebug("WSH: moving scratchpad to current monitor", "focusedWorkspace", focusedWorkspace)
+	logger.LogDebug("WSH: moving scratchpad to current monitor")
 
 	if _, err := os.Create(constants.TempScratchpadMovingFile); err != nil {
 		logger.LogError("WSH: unable to create temp file", "error", err)
