@@ -6,12 +6,13 @@ package cmd
 import (
 	"os"
 
+	"github.com/spf13/cobra"
+
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
-	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands.
+// RootCmd represents the base command when called without any subcommands.
 func RootCmd(
 	aerospaceClient aerospacecli.AeroSpaceClient,
 ) *cobra.Command {
@@ -30,13 +31,14 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 	}
 
 	// Global Flags
-	rootCmd.PersistentFlags().BoolP("dry-run", "n", false, "Run the command without moving windows (dry run mode)")
+	rootCmd.PersistentFlags().
+		BoolP("dry-run", "n", false, "Run the command without moving windows (dry run mode)")
 
 	// Create custom client with custom options
 	customClient := aerospace.NewAeroSpaceClient(aerospaceClient)
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		dry, _ := cmd.Flags().GetBool("dry-run")
-		customClient.SetOptions(aerospace.AeroSpaceClientOpts{
+		customClient.SetOptions(aerospace.ClientOpts{
 			DryRun: dry,
 		})
 	}
@@ -70,7 +72,10 @@ func Execute(
 	}
 }
 
+// VERSION The CLI current version
 // THIS IS GENERATED DON'T EDIT
 // NOTE: to update VERSION change it to an EMPTY STRING
 // and then run scripts/validate-version.sh.
+//
+//nolint:gochecknoglobals // version is overridden via build flags
 var VERSION = "v0.2.2"

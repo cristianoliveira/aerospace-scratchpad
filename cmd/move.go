@@ -5,19 +5,21 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strings"
+
+	"github.com/spf13/cobra"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
-	"github.com/spf13/cobra"
 )
 
-// moveCmd represents the move command.
-func MoveCmd(
-	aerospaceClient aerospacecli.AeroSpaceClient,
-) *cobra.Command {
+// MoveCmd represents the move command.
+//
+//nolint:funlen,gocognit
+func MoveCmd(aerospaceClient aerospacecli.AeroSpaceClient) *cobra.Command {
 	command := &cobra.Command{
 		Use:   "move <pattern>",
 		Short: "Move a window to scratchpad",
@@ -44,7 +46,10 @@ If no pattern is provided, it moves the currently focused window.
 					"error", err,
 				)
 				if err != nil {
-					stderr.Println("Error: unable to get focused window: %v", err)
+					stderr.Println(
+						"Error: unable to get focused window: %v",
+						err,
+					)
 					return
 				}
 				if focusedWindow == nil {
@@ -61,7 +66,11 @@ If no pattern is provided, it moves the currently focused window.
 			// Parse filter flags (matches show command behavior)
 			filterFlags, err := cmd.Flags().GetStringArray("filter")
 			if err != nil {
-				logger.LogError("MOVE: unable to get filter flags", "error", err)
+				logger.LogError(
+					"MOVE: unable to get filter flags",
+					"error",
+					err,
+				)
 				stderr.Println("Error: unable to get filter flags")
 				return
 			}
@@ -70,7 +79,10 @@ If no pattern is provided, it moves the currently focused window.
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient)
 			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 
-			windows, err := querier.GetFilteredWindows(windowNamePattern, filterFlags)
+			windows, err := querier.GetFilteredWindows(
+				windowNamePattern,
+				filterFlags,
+			)
 			if err != nil {
 				logger.LogError(
 					"MOVE: error retrieving filtered windows",
@@ -90,15 +102,22 @@ If no pattern is provided, it moves the currently focused window.
 
 			for _, window := range windows {
 				// Move the window to the scratchpad
-				fmt.Printf("Moving window %+v to scratchpad\n", window)
+				fmt.Fprintf(
+					os.Stdout,
+					"Moving window %+v to scratchpad\n",
+					window,
+				)
 
-				err := mover.MoveWindowToScratchpad(window)
-				if err != nil {
-					if strings.Contains(err.Error(), "already belongs to workspace") {
+				moveErr := mover.MoveWindowToScratchpad(window)
+				if moveErr != nil {
+					if strings.Contains(
+						moveErr.Error(),
+						"already belongs to workspace",
+					) {
 						continue
 					}
 
-					stderr.Println("Error: %v", err)
+					stderr.Println("Error: %v", moveErr)
 					return
 				}
 			}

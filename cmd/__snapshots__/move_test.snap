@@ -7,7 +7,7 @@
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 5678,
+        FocusedWindowID: 5678,
     },
 }
 aerospace-scratchpad move foo
@@ -27,7 +27,7 @@ Error
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 5678,
+        FocusedWindowID: 5678,
     },
 }
 aerospace-scratchpad move 
@@ -58,7 +58,7 @@ Error
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 5678,
+        FocusedWindowID: 5678,
     },
 }
 aerospace-scratchpad move Notepad
@@ -79,7 +79,7 @@ Error
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 5678,
+        FocusedWindowID: 5678,
     },
 }
 aerospace-scratchpad move Finder
@@ -99,7 +99,7 @@ Error: Window '5678 | Finder ' already belongs to scratchpad
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 5678,
+        FocusedWindowID: 5678,
     },
 }
 aerospace-scratchpad move Notepad --dry-run

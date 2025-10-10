@@ -7,7 +7,7 @@
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 5678,
+        FocusedWindowID: 5678,
     },
     {
         Windows: {
@@ -15,7 +15,7 @@
             {WindowID:8888, WindowTitle:"", AppName:"Another Scratchpad Window", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:".scratchpad"},
-        FocusedWindowId: 0,
+        FocusedWindowID: 0,
     },
 }
 aerospace-scratchpad next

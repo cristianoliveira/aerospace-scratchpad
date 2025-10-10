@@ -28,7 +28,7 @@ func (l *TestingLogger) GetConfig() logger.LogConfig {
 		Level: "DISABLED",
 	}
 }
-func (l *TestingLogger) AsJson(data any) string {
+func (l *TestingLogger) AsJSON(_ any) string {
 	// No-op
 	return ""
 }

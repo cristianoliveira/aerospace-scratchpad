@@ -5,16 +5,20 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strings"
+
+	"github.com/spf13/cobra"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
-	"github.com/spf13/cobra"
 )
 
-// showCmd represents the show command.
+// ShowCmd represents the show command.
+//
+//nolint:funlen,gocognit
 func ShowCmd(
 	aerospaceClient *aerospace.AeroSpaceClient,
 ) *cobra.Command {
@@ -40,18 +44,30 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			// Parse filter flags
 			filterFlags, err := cmd.Flags().GetStringArray("filter")
 			if err != nil {
-				logger.LogError("SHOW: unable to get filter flags", "error", err)
+				logger.LogError(
+					"SHOW: unable to get filter flags",
+					"error",
+					err,
+				)
 				stderr.Println("Error: unable to get filter flags")
 				return
 			}
 
 			focusedWorkspace, err := aerospaceClient.GetFocusedWorkspace()
 			if err != nil {
-				logger.LogError("SHOW: unable to get focused workspace", "error", err)
+				logger.LogError(
+					"SHOW: unable to get focused workspace",
+					"error",
+					err,
+				)
 				stderr.Println("Error: unable to get focused workspace")
 				return
 			}
-			logger.LogDebug("SHOW: retrieved focused workspace", "workspace", focusedWorkspace)
+			logger.LogDebug(
+				"SHOW: retrieved focused workspace",
+				"workspace",
+				focusedWorkspace,
+			)
 
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient)
 			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
@@ -87,16 +103,25 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					isWindowInFocusedWorkspace = window.Workspace == focusedWorkspace.Workspace
 				}
 				if isWindowInFocusedWorkspace {
-					windowsInFocusedWorkspace = append(windowsInFocusedWorkspace, window)
+					windowsInFocusedWorkspace = append(
+						windowsInFocusedWorkspace,
+						window,
+					)
 
-					isWindowFocused, err := querier.IsWindowFocused(window.WindowID)
-					if err != nil {
-						stderr.Printf("Error: unable to check if window '%+v' is focused\n", window)
+					isWindowFocused, focusErr := querier.IsWindowFocused(
+						window.WindowID,
+					)
+					if focusErr != nil {
+						stderr.Printf(
+							"Error: unable to check if window '%+v' is focused\n",
+							window,
+						)
 						return
 					}
 
 					// Make sure that once hasAtLeastOneWindowFocused is true, it will remain true
-					hasAtLeastOneWindowFocused = hasAtLeastOneWindowFocused || isWindowFocused
+					hasAtLeastOneWindowFocused = hasAtLeastOneWindowFocused ||
+						isWindowFocused
 				} else {
 					windowsOutsideView = append(windowsOutsideView, window)
 				}
@@ -117,16 +142,16 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			)
 
 			for _, window := range windowsOutsideView {
-				err := mover.MoveWindowToWorkspace(
+				moveErr := mover.MoveWindowToWorkspace(
 					&window,
 					focusedWorkspace,
 					!hasAtLeastOneWindowFocused,
 				)
-				if err != nil {
+				if moveErr != nil {
 					stderr.Printf(
 						"Error: unable to move window '%+v' to scratchpad\n%s",
 						window,
-						err,
+						moveErr,
 					)
 					return
 				}
@@ -146,8 +171,12 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 						)
 						return
 					}
-					logger.LogDebug("SHOW: set focus to window", "window", window)
-					fmt.Printf("Window '%+v' is focused\n", window)
+					logger.LogDebug(
+						"SHOW: set focus to window",
+						"window",
+						window,
+					)
+					fmt.Fprintf(os.Stdout, "Window '%+v' is focused\n", window)
 				}
 
 				return
@@ -163,8 +192,10 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					if err = mover.MoveWindowToScratchpad(window); err != nil {
 						logger.LogDebug(
 							"Error: unable to move window '%+v' to scratchpad\n%s",
-							"window", window,
-							"error", err,
+							"window",
+							window,
+							"error",
+							err,
 						)
 						continue
 					}
@@ -178,7 +209,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 						)
 						return
 					}
-					fmt.Printf("Window '%+v' is focused\n", window)
+					fmt.Fprintf(os.Stdout, "Window '%+v' is focused\n", window)
 				}
 			}
 		},

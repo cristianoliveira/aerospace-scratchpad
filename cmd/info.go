@@ -6,9 +6,10 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/spf13/cobra"
+
 	aerospaceipc "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
-	"github.com/spf13/cobra"
 )
 
 // InfoCmd represents the info command.

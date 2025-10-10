@@ -4,7 +4,6 @@ Copyright © 2025 Cristian Oliveira license@cristianoliveira.dev
 package main
 
 import (
-	"fmt"
 	"log"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
@@ -19,8 +18,8 @@ func main() {
 		return
 	}
 	defer func() {
-		if err := defaultLogger.Close(); err != nil {
-			log.Fatalf("Error: closing logger\n%v", err)
+		if closeErr := defaultLogger.Close(); closeErr != nil {
+			log.Fatalf("Error: closing logger\n%v", closeErr)
 		}
 	}()
 	logger.SetDefaultLogger(defaultLogger)
@@ -28,7 +27,7 @@ func main() {
 
 	aerospaceMarkClient, err := aerospacecli.NewAeroSpaceClient()
 	if err != nil {
-		fmt.Println("Error creating Aerospace client:", err)
+		log.Printf("Error creating Aerospace client: %v", err)
 	}
 
 	cmd.Execute(aerospaceMarkClient)

@@ -1,16 +1,18 @@
-package cmd
+package cmd_test
 
 import (
 	"fmt"
 	"strings"
 	"testing"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/mocks/aerospacecli"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 	"github.com/gkampitakis/go-snaps/snaps"
 	"go.uber.org/mock/gomock"
+
+	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
+	mock_aerospace "github.com/cristianoliveira/aerospace-scratchpad/internal/mocks/aerospacecli"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
 func TestNextCmd(t *testing.T) {
@@ -37,7 +39,7 @@ func TestNextCmd(t *testing.T) {
 					Workspace: "ws1",
 				},
 
-				FocusedWindowId: 5678,
+				FocusedWindowID: 5678,
 			},
 			{
 				Windows: []aerospacecli.Window{
@@ -54,7 +56,7 @@ func TestNextCmd(t *testing.T) {
 					Workspace: constants.DefaultScratchpadWorkspaceName,
 				},
 
-				FocusedWindowId: 0,
+				FocusedWindowID: 0,
 			},
 		}
 
@@ -84,7 +86,7 @@ func TestNextCmd(t *testing.T) {
 				Times(1),
 		)
 
-		cmd := RootCmd(aerospaceClient)
+		cmd := cmd.RootCmd(aerospaceClient)
 		out, err := testutils.CmdExecute(cmd, args...)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)

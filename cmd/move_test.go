@@ -1,4 +1,4 @@
-package cmd
+package cmd_test
 
 import (
 	"errors"
@@ -6,14 +6,16 @@ import (
 	"strings"
 	"testing"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/mocks/aerospacecli"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 	"github.com/gkampitakis/go-snaps/snaps"
 	"go.uber.org/mock/gomock"
+
+	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
+	mock_aerospace "github.com/cristianoliveira/aerospace-scratchpad/internal/mocks/aerospacecli"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
 func TestMoveCmd(t *testing.T) {
@@ -49,7 +51,7 @@ func TestMoveCmd(t *testing.T) {
 					Workspace: "ws1",
 				},
 
-				FocusedWindowId: 5678,
+				FocusedWindowID: 5678,
 			},
 		}
 		allWindows := testutils.ExtractAllWindows(tree)
@@ -66,7 +68,7 @@ func TestMoveCmd(t *testing.T) {
 				Times(1),
 		)
 
-		cmd := RootCmd(aerospaceClient)
+		cmd := cmd.RootCmd(aerospaceClient)
 		out, err := testutils.CmdExecute(cmd, args...)
 		if err == nil {
 			t.Errorf("Expected error, got nil")
@@ -100,7 +102,7 @@ func TestMoveCmd(t *testing.T) {
 					Workspace: "ws1",
 				},
 
-				FocusedWindowId: 5678,
+				FocusedWindowID: 5678,
 			},
 		}
 		allWindows := testutils.ExtractAllWindows(tree)
@@ -129,16 +131,27 @@ func TestMoveCmd(t *testing.T) {
 				Times(1),
 		)
 
-		cmd := RootCmd(aerospaceClient)
+		cmd := cmd.RootCmd(aerospaceClient)
 		out, err := testutils.CmdExecute(cmd, args...)
 		if err != nil {
 			t.Errorf("Expected error, got nil")
 		}
 
-		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
+		cmdAsString := "aerospace-scratchpad " + strings.Join(
+			args,
+			" ",
+		) + "\n"
 		errorMessage := fmt.Sprintf("Error\n %+v", err)
-		snaps.MatchSnapshot(t, tree, cmdAsString, "Output", out, errorMessage)
-	})
+		snaps.MatchSnapshot(
+			t,
+			tree,
+			cmdAsString,
+			"Output",
+			out,
+			errorMessage,
+		)
+	},
+	)
 
 	t.Run("fails when getting all windows return an erro", func(t *testing.T) {
 		command := "move"
@@ -158,7 +171,7 @@ func TestMoveCmd(t *testing.T) {
 			Return(nil, errors.New("mocked_error")).
 			Times(1)
 
-		cmd := RootCmd(aerospaceClient)
+		cmd := cmd.RootCmd(aerospaceClient)
 		out, err := testutils.CmdExecute(cmd, args...)
 		if err == nil {
 			t.Errorf("Expected error, got nil")
@@ -196,7 +209,7 @@ func TestMoveCmd(t *testing.T) {
 					Workspace: "ws1",
 				},
 
-				FocusedWindowId: 5678,
+				FocusedWindowID: 5678,
 			},
 		}
 		allWindows := testutils.ExtractAllWindows(tree)
@@ -224,7 +237,7 @@ func TestMoveCmd(t *testing.T) {
 				Times(1),
 		)
 
-		cmd := RootCmd(aerospaceClient)
+		cmd := cmd.RootCmd(aerospaceClient)
 		out, err := testutils.CmdExecute(cmd, args...)
 		if err != nil {
 			t.Errorf("Expected error, got nil")
@@ -258,7 +271,7 @@ func TestMoveCmd(t *testing.T) {
 					Workspace: "ws1",
 				},
 
-				FocusedWindowId: 5678,
+				FocusedWindowID: 5678,
 			},
 		}
 		allWindows := testutils.ExtractAllWindows(tree)
@@ -284,7 +297,7 @@ func TestMoveCmd(t *testing.T) {
 				Times(0),
 		)
 
-		cmd := RootCmd(aerospaceClient)
+		cmd := cmd.RootCmd(aerospaceClient)
 		out, err := testutils.CmdExecute(cmd, args...)
 		if err == nil {
 			t.Errorf("Expected error, got nil")
@@ -318,7 +331,7 @@ func TestMoveCmd(t *testing.T) {
 					Workspace: "ws1",
 				},
 
-				FocusedWindowId: 5678,
+				FocusedWindowID: 5678,
 			},
 		}
 		allWindows := testutils.ExtractAllWindows(tree)
@@ -346,14 +359,25 @@ func TestMoveCmd(t *testing.T) {
 				Times(0), // DO NOT RUN
 		)
 
-		cmd := RootCmd(aerospaceClient)
+		cmd := cmd.RootCmd(aerospaceClient)
 		out, err := testutils.CmdExecute(cmd, args...)
 		if err != nil {
 			t.Errorf("Expected error, got nil")
 		}
 
-		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
+		cmdAsString := "aerospace-scratchpad " + strings.Join(
+			args,
+			" ",
+		) + "\n"
 		errorMessage := fmt.Sprintf("Error\n %+v", err)
-		snaps.MatchSnapshot(t, tree, cmdAsString, "Output", out, errorMessage)
-	})
+		snaps.MatchSnapshot(
+			t,
+			tree,
+			cmdAsString,
+			"Output",
+			out,
+			errorMessage,
+		)
+	},
+	)
 }

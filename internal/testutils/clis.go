@@ -11,8 +11,9 @@ import (
 	"io"
 	"os"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/spf13/cobra"
+
+	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 )
 
 func CmdExecute(cmd *cobra.Command, args ...string) (string, error) {
@@ -25,9 +26,10 @@ func CmdExecute(cmd *cobra.Command, args ...string) (string, error) {
 		return "", err
 	}
 
-	return string(stdOut), nil
+	return stdOut, nil
 }
 
+//nolint:reassign // CaptureStdOut temporarily redirects standard streams for testing
 func CaptureStdOut(f func() error) (string, error) {
 	var buf bytes.Buffer
 	// Save original stdout

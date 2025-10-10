@@ -7,7 +7,7 @@
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 5678,
+        FocusedWindowID: 5678,
     },
 }
 aerospace-scratchpad summon Notepad
@@ -27,7 +27,7 @@ Error
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 5678,
+        FocusedWindowID: 5678,
     },
 }
 aerospace-scratchpad summon NonExistentApp
@@ -98,7 +98,7 @@ Error
             {WindowID:9012, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 9012,
+        FocusedWindowID: 9012,
     },
 }
 aerospace-scratchpad summon .*(Notepad|TextEdit).*
@@ -137,7 +137,7 @@ Error
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 5678,
+        FocusedWindowID: 5678,
     },
 }
 aerospace-scratchpad summon Notepad --dry-run

@@ -4,10 +4,11 @@ Copyright © 2025 Cristian Oliveira license@cristianoliveira.dev
 package cmd
 
 import (
+	"github.com/spf13/cobra"
+
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
-	"github.com/spf13/cobra"
 )
 
 // NextCmd represents the next command.
@@ -40,12 +41,12 @@ It does not send the windows back to the scratchpad, but rather focuses the next
 			}
 
 			setFocus := true
-			if err := mover.MoveWindowToWorkspace(
+			if moveErr := mover.MoveWindowToWorkspace(
 				window,
 				focusedWorkspace,
 				setFocus,
-			); err != nil {
-				stderr.Println("Error: %v", err)
+			); moveErr != nil {
+				stderr.Println("Error: %v", moveErr)
 				return
 			}
 		},

@@ -7,7 +7,7 @@
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 5678,
+        FocusedWindowID: 5678,
     },
 }
 aerospace-scratchpad show 
@@ -27,7 +27,7 @@ Error: <pattern> cannot be empty
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 1234,
+        FocusedWindowID: 1234,
     },
 }
 aerospace-scratchpad show foo
@@ -47,7 +47,7 @@ Error: no windows matched the pattern 'foo'
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 1234,
+        FocusedWindowID: 1234,
     },
 }
 aerospace-scratchpad show Finder
@@ -67,7 +67,7 @@ Error
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 5678,
+        FocusedWindowID: 5678,
     },
 }
 aerospace-scratchpad show Finder
@@ -87,14 +87,14 @@ Error
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 0,
+        FocusedWindowID: 0,
     },
     {
         Windows: {
             {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:""},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws2"},
-        FocusedWindowId: 91011,
+        FocusedWindowID: 91011,
     },
 }
 aerospace-scratchpad show Finder
@@ -114,14 +114,14 @@ Error
             {WindowID:5679, WindowTitle:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws1"},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 0,
+        FocusedWindowID: 0,
     },
     {
         Windows: {
             {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws2"},
-        FocusedWindowId: 91011,
+        FocusedWindowID: 91011,
     },
 }
 aerospace-scratchpad show Finder
@@ -140,7 +140,7 @@ Error
         Windows: {
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 0,
+        FocusedWindowID: 0,
     },
     {
         Windows: {
@@ -149,7 +149,7 @@ Error
             {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws2"},
-        FocusedWindowId: 5678,
+        FocusedWindowID: 5678,
     },
 }
 aerospace-scratchpad show Finder
@@ -170,7 +170,7 @@ Error
             {WindowID:22, WindowTitle:"", AppName:"Browser", AppBundleID:"", Workspace:"ws1"},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 0,
+        FocusedWindowID: 0,
     },
     {
         Windows: {
@@ -178,7 +178,7 @@ Error
             {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws2"},
-        FocusedWindowId: 91011,
+        FocusedWindowID: 91011,
     },
 }
 aerospace-scratchpad show Finder
@@ -199,7 +199,7 @@ Error
             {WindowID:22, WindowTitle:"", AppName:"Browser", AppBundleID:"", Workspace:"ws1"},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws1"},
-        FocusedWindowId: 0,
+        FocusedWindowID: 0,
     },
     {
         Windows: {
@@ -207,7 +207,7 @@ Error
             {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws2"},
-        FocusedWindowId: 5679,
+        FocusedWindowID: 5679,
     },
 }
 aerospace-scratchpad show Finder
@@ -228,14 +228,14 @@ Error
             {WindowID:5679, WindowTitle:"", AppName:"Finder2 - bar and baz", AppBundleID:"", Workspace:"ws1"},
         },
         Workspace:       &aerospace.Workspace{Workspace:".scratchpad"},
-        FocusedWindowId: 0,
+        FocusedWindowID: 0,
     },
     {
         Windows: {
             {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws2"},
-        FocusedWindowId: 91011,
+        FocusedWindowID: 91011,
     },
 }
 aerospace-scratchpad show Finder --filter window-title=foo
@@ -312,14 +312,14 @@ Error
             {WindowID:5680, WindowTitle:"Finder2 - bar and baz", AppName:"Finder2", AppBundleID:"com.apple.finder", Workspace:"ws1"},
         },
         Workspace:       &aerospace.Workspace{Workspace:".scratchpad"},
-        FocusedWindowId: 0,
+        FocusedWindowID: 0,
     },
     {
         Windows: {
             {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws2"},
-        FocusedWindowId: 91011,
+        FocusedWindowID: 91011,
     },
 }
 aerospace-scratchpad show Finder -F window-title=foo -F app-bundle-id=linux
@@ -339,7 +339,7 @@ Error
             {WindowID:5670, WindowTitle:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws1"},
         },
         Workspace:       &aerospace.Workspace{Workspace:".scratchpad"},
-        FocusedWindowId: 5670,
+        FocusedWindowID: 5670,
     },
 }
 aerospace-scratchpad show Finder --filter unknown=foo
@@ -359,14 +359,14 @@ Error: error applying filters to window 'Finder1': unknown filter property: unkn
             {WindowID:5679, WindowTitle:"", AppName:"Finder2 - bar and baz", AppBundleID:"", Workspace:"ws1"},
         },
         Workspace:       &aerospace.Workspace{Workspace:".scratchpad"},
-        FocusedWindowId: 0,
+        FocusedWindowID: 0,
     },
     {
         Windows: {
             {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
         },
         Workspace:       &aerospace.Workspace{Workspace:"ws2"},
-        FocusedWindowId: 91011,
+        FocusedWindowID: 91011,
     },
 }
 aerospace-scratchpad show Finder --filter window-title=cantfindme

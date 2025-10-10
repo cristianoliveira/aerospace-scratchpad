@@ -36,12 +36,8 @@ formatters:
       # with the given prefixes are grouped after 3rd-party packages.
       # Default: []
       local-prefixes:
-        - github.com/my/project
-
-    golines:
-      # Target maximum line length.
-      # Default: 100
-      max-len: 80
+        - github.com/cristianoliveira/aerospace-ipc
+        - github.com/cristianoliveira/aerospace-scratchpad
 
 linters:
   enable:
@@ -385,6 +381,11 @@ linters:
       # Default: ["EOF", "Err.*"]
       patterns:
         - ".*"
+
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true
 
     rowserrcheck:
       # database/sql is always checked.

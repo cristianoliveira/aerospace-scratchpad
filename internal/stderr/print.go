@@ -10,7 +10,8 @@ import (
 // This package contains functions to print errors in a consistent way.
 // Also handle the error codes and messages.
 
-var ShouldExit bool = true
+//nolint:gochecknoglobals // configurable exit behaviour used by tests
+var ShouldExit = true
 
 func SetBehavior(shouldExit bool) {
 	ShouldExit = shouldExit

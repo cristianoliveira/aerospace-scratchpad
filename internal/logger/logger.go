@@ -9,6 +9,7 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 )
 
+//nolint:gochecknoglobals // default logger is configured once at startup for reuse across packages
 var defaultLogger Logger
 
 type LogConfig struct {
@@ -29,37 +30,37 @@ type Logger interface {
 	// GetConfig returns the logger configuration
 	GetConfig() LogConfig
 
-	// AsJson returns the logger as a JSON object
+	// AsJSON returns the logger as a JSON object
 	// In error, logs the error and returns an empty string
-	AsJson(data any) string
+	AsJSON(data any) string
 
 	// Close closes the logger
 	Close() error
 }
 
-type LoggerClient struct {
+type Client struct {
 	logger *slog.Logger
 	file   *os.File
 	config LogConfig
 }
 
-func (l *LoggerClient) LogInfo(msg string, args ...any) {
+func (l *Client) LogInfo(msg string, args ...any) {
 	l.logger.Info(msg, args...)
 }
 
-func (l *LoggerClient) LogError(msg string, args ...any) {
+func (l *Client) LogError(msg string, args ...any) {
 	l.logger.Error(msg, args...)
 }
 
-func (l *LoggerClient) LogDebug(msg string, args ...any) {
+func (l *Client) LogDebug(msg string, args ...any) {
 	l.logger.Debug(msg, args...)
 }
 
-func (l *LoggerClient) GetConfig() LogConfig {
+func (l *Client) GetConfig() LogConfig {
 	return l.config
 }
 
-func (l *LoggerClient) AsJson(data any) string {
+func (l *Client) AsJSON(data any) string {
 	json, err := json.Marshal(data)
 	if err != nil {
 		l.LogError("failed to marshal data to JSON", err)
@@ -68,7 +69,7 @@ func (l *LoggerClient) AsJson(data any) string {
 	return string(json)
 }
 
-func (l *LoggerClient) Close() error {
+func (l *Client) Close() error {
 	if l.file != nil {
 		err := l.file.Close()
 		if err != nil {
@@ -80,13 +81,13 @@ func (l *LoggerClient) Close() error {
 
 type EmptyLogger struct{}
 
-func (l *EmptyLogger) LogInfo(msg string, args ...any) {
+func (l *EmptyLogger) LogInfo(_ string, _ ...any) {
 	// No-op
 }
-func (l *EmptyLogger) LogError(msg string, args ...any) {
+func (l *EmptyLogger) LogError(_ string, _ ...any) {
 	// No-op
 }
-func (l *EmptyLogger) LogDebug(msg string, args ...any) {
+func (l *EmptyLogger) LogDebug(_ string, _ ...any) {
 	// No-op
 }
 func (l *EmptyLogger) Close() error {
@@ -100,7 +101,7 @@ func (l *EmptyLogger) GetConfig() LogConfig {
 		Level: "DISABLED",
 	}
 }
-func (l *EmptyLogger) AsJson(data any) string {
+func (l *EmptyLogger) AsJSON(_ any) string {
 	// No-op
 	return ""
 }
@@ -114,7 +115,7 @@ func NewLogger() (Logger, error) {
 		path = "/tmp/aerospace-scratchpad.log"
 	}
 
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open log file: %w", err)
 	}
@@ -143,7 +144,7 @@ func NewLogger() (Logger, error) {
 	})
 
 	newLogger := slog.New(textHandler)
-	logClient := &LoggerClient{
+	logClient := &Client{
 		logger: newLogger,
 		file:   file,
 		config: LogConfig{
