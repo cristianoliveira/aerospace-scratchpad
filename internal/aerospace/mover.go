@@ -1,6 +1,7 @@
 package aerospace
 
 import (
+	"errors"
 	"fmt"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
@@ -64,10 +65,10 @@ func (a *MoverAeroSpace) MoveWindowToWorkspace(
 	shouldSetFocus bool,
 ) error {
 	if window == nil {
-		return fmt.Errorf("window is nil")
+		return errors.New("window is nil")
 	}
 	if workspace == nil {
-		return fmt.Errorf("workspace is nil")
+		return errors.New("workspace is nil")
 	}
 
 	if err := a.aerospace.MoveWindowToWorkspace(

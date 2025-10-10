@@ -72,7 +72,7 @@ func (l *LoggerClient) Close() error {
 	if l.file != nil {
 		err := l.file.Close()
 		if err != nil {
-			return fmt.Errorf("failed to close log file: %v", err)
+			return fmt.Errorf("failed to close log file: %w", err)
 		}
 	}
 	return nil
@@ -107,7 +107,7 @@ func (l *EmptyLogger) AsJson(data any) string {
 
 // NewLogger creates a new logger instance
 // It accepts a path to a file where logs will be written
-// and a boolean indicating whether to log to stdout as well
+// and a boolean indicating whether to log to stdout as well.
 func NewLogger() (Logger, error) {
 	path := os.Getenv(constants.EnvAeroSpaceScratchpadLogsPath)
 	if path == "" {
@@ -116,7 +116,7 @@ func NewLogger() (Logger, error) {
 
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open log file: %v", err)
+		return nil, fmt.Errorf("failed to open log file: %w", err)
 	}
 
 	configLogLevel := os.Getenv(constants.EnvAeroSpaceScratchpadLogsLevel)

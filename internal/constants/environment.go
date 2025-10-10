@@ -11,6 +11,6 @@ const (
 	// default: `DISABLED`
 	EnvAeroSpaceScratchpadLogsLevel string = "AEROSPACE_SCRATCHPAD_LOGS_LEVEL"
 
-	// EnvAeroSpaceSock is the environment variable for the AeroSpace IPC socket path
+	// EnvAeroSpaceSock is the environment variable for the AeroSpace IPC socket path.
 	EnvAeroSpaceSock string = "AEROSPACESOCK"
 )

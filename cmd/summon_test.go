@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -153,7 +154,7 @@ func TestSummonCmd(t *testing.T) {
 				Times(1),
 			aerospaceClient.EXPECT().
 				GetAllWindows().
-				Return(nil, fmt.Errorf("mocked_error")).
+				Return(nil, errors.New("mocked_error")).
 				Times(1),
 		)
 
@@ -200,7 +201,7 @@ func TestSummonCmd(t *testing.T) {
 		gomock.InOrder(
 			aerospaceClient.EXPECT().
 				GetFocusedWorkspace().
-				Return(nil, fmt.Errorf("mocked_error")).
+				Return(nil, errors.New("mocked_error")).
 				Times(1),
 		)
 
@@ -291,7 +292,7 @@ func TestSummonCmd(t *testing.T) {
 
 			aerospaceClient.EXPECT().
 				MoveWindowToWorkspace(notepadWindow.WindowID, focusedWorkspace.Workspace).
-				Return(fmt.Errorf("mocked_move_error")).
+				Return(errors.New("mocked_move_error")).
 				Times(1),
 		)
 
@@ -358,7 +359,7 @@ func TestSummonCmd(t *testing.T) {
 
 			aerospaceClient.EXPECT().
 				SetFocusByWindowID(notepadWindow.WindowID).
-				Return(fmt.Errorf("mocked_focus_error")).
+				Return(errors.New("mocked_focus_error")).
 				Times(1),
 		)
 

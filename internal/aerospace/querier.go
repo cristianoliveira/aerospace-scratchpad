@@ -1,6 +1,7 @@
 package aerospace
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -41,7 +42,7 @@ func (a *AeroSpaceQueryMaker) IsWindowInWorkspace(windowID int, workspaceName st
 	// Get all windows from the workspace
 	windows, err := a.cli.GetAllWindowsByWorkspace(workspaceName)
 	if err != nil {
-		return false, fmt.Errorf("unable to get windows from workspace '%s'. Reason: %v", workspaceName, err)
+		return false, fmt.Errorf("unable to get windows from workspace '%s'. Reason: %w", workspaceName, err)
 	}
 
 	// Check if the window is in the workspace
@@ -58,7 +59,7 @@ func (a *AeroSpaceQueryMaker) IsWindowInFocusedWorkspace(windowID int) (bool, er
 	// Get the focused workspace
 	focusedWorkspace, err := a.cli.GetFocusedWorkspace()
 	if err != nil {
-		return false, fmt.Errorf("unable to get focused workspace, reason %v", err)
+		return false, fmt.Errorf("unable to get focused workspace, reason %w", err)
 	}
 
 	// Check if the window is in the focused workspace
@@ -69,7 +70,7 @@ func (a *AeroSpaceQueryMaker) IsWindowFocused(windowID int) (bool, error) {
 	// Get the focused window
 	focusedWindow, err := a.cli.GetFocusedWindow()
 	if err != nil {
-		return false, fmt.Errorf("unable to get focused window, reason %v", err)
+		return false, fmt.Errorf("unable to get focused window, reason %w", err)
 	}
 
 	// Check if the window is focused
@@ -86,19 +87,22 @@ func (a *AeroSpaceQueryMaker) GetNextScratchpadWindow() (*aerospacecli.Window, e
 	}
 
 	if len(windows) == 0 {
-		return nil, fmt.Errorf("no scratchpad windows found")
+		return nil, errors.New("no scratchpad windows found")
 	}
 
 	return &windows[0], nil
 }
 
-// Filter represents a filter with property and regex pattern
+// Filter represents a filter with property and regex pattern.
 type Filter struct {
 	Property string
 	Pattern  *regexp.Regexp
 }
 
-func (a *AeroSpaceQueryMaker) GetFilteredWindows(appNamePattern string, filterFlags []string) ([]aerospacecli.Window, error) {
+func (a *AeroSpaceQueryMaker) GetFilteredWindows(
+	appNamePattern string,
+	filterFlags []string,
+) ([]aerospacecli.Window, error) {
 	logger := logger.GetDefaultLogger()
 
 	// instantiate the regex
@@ -112,7 +116,7 @@ func (a *AeroSpaceQueryMaker) GetFilteredWindows(appNamePattern string, filterFl
 			err,
 		)
 		return nil, fmt.Errorf(
-			"invalid app-name-pattern, %v",
+			"invalid app-name-pattern, %w",
 			err,
 		)
 	}
@@ -127,7 +131,7 @@ func (a *AeroSpaceQueryMaker) GetFilteredWindows(appNamePattern string, filterFl
 	windows, err := a.cli.GetAllWindows()
 	if err != nil {
 		logger.LogError("FILTER: unable to get all windows", "error", err)
-		return nil, fmt.Errorf("unable to get windows: %v", err)
+		return nil, fmt.Errorf("unable to get windows: %w", err)
 	}
 
 	var filteredWindows []aerospacecli.Window
@@ -140,7 +144,7 @@ func (a *AeroSpaceQueryMaker) GetFilteredWindows(appNamePattern string, filterFl
 		filtered, err := applyFilters(window, filters)
 		if err != nil {
 			return nil, fmt.Errorf(
-				"error applying filters to window '%s': %v",
+				"error applying filters to window '%s': %w",
 				window.AppName, err,
 			)
 		}
@@ -167,7 +171,7 @@ func (a *AeroSpaceQueryMaker) GetFilteredWindows(appNamePattern string, filterFl
 	return filteredWindows, nil
 }
 
-// parseFilters parses filter flags and returns a slice of Filter structs
+// parseFilters parses filter flags and returns a slice of Filter structs.
 func parseFilters(filterFlags []string) ([]Filter, error) {
 	var filters []Filter
 
@@ -198,7 +202,7 @@ func parseFilters(filterFlags []string) ([]Filter, error) {
 	return filters, nil
 }
 
-// applyFilters applies all filters to a window and returns true if all filters pass
+// applyFilters applies all filters to a window and returns true if all filters pass.
 func applyFilters(window aerospacecli.Window, filters []Filter) (bool, error) {
 	logger := logger.GetDefaultLogger()
 
@@ -235,7 +239,7 @@ func applyFilters(window aerospacecli.Window, filters []Filter) (bool, error) {
 	return true, nil
 }
 
-// NewAerospaceQuerier creates a new AerospaceQuerier
+// NewAerospaceQuerier creates a new AerospaceQuerier.
 func NewAerospaceQuerier(cli aerospacecli.AeroSpaceClient) AerospaceQuerier {
 	return &AeroSpaceQueryMaker{
 		cli: cli,

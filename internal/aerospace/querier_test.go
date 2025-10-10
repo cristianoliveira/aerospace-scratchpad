@@ -1,7 +1,7 @@
 package aerospace
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
@@ -35,7 +35,6 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		if !in {
 			t.Fatalf("expected true, got false")
 		}
-
 	})
 
 	t.Run("IsWindowInWorkspace false", func(t *testing.T) {
@@ -101,7 +100,6 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		if err != nil || !is {
 			t.Fatalf("expected true, got %v err=%v", is, err)
 		}
-
 	})
 
 	t.Run("IsWindowFocused false", func(t *testing.T) {
@@ -136,7 +134,6 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		if err != nil || w == nil || w.WindowID != 77 {
 			t.Fatalf("expected 77, got %v err=%v", w, err)
 		}
-
 	})
 
 	t.Run("GetNextScratchpadWindow returns error when empty", func(t *testing.T) {
@@ -265,7 +262,7 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
 		client.EXPECT().
 			GetAllWindows().
-			Return(nil, fmt.Errorf("mocked_error")).
+			Return(nil, errors.New("mocked_error")).
 			Times(1)
 		q := NewAerospaceQuerier(client)
 		if _, err := q.GetFilteredWindows("Finder", nil); err == nil {

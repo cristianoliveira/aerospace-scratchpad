@@ -70,9 +70,23 @@ If no pattern is provided, it summons the first window in the scratchpad.
 				)
 				if err != nil {
 					if strings.Contains(err.Error(), "already belongs to workspace") {
-						logger.LogDebug("SUMMON: window already belongs to workspace", "window", window, "workspace", focusedWorkspace, "error", err)
+						logger.LogDebug(
+							"SUMMON: window already belongs to workspace",
+							"window",
+							window,
+							"workspace",
+							focusedWorkspace,
+							"error",
+							err,
+						)
 						if focusErr := aerospaceClient.SetFocusByWindowID(window.WindowID); focusErr != nil {
-							logger.LogError("SUMMON: unable to set focus to window", "window", window, "error", focusErr)
+							logger.LogError(
+								"SUMMON: unable to set focus to window",
+								"window",
+								window,
+								"error",
+								focusErr,
+							)
 							stderr.Printf(
 								"Error: unable to set focus to window '%+v'\n%s",
 								window,
@@ -84,12 +98,19 @@ If no pattern is provided, it summons the first window in the scratchpad.
 						continue
 					}
 
-					logger.LogDebug("SUMMON: unable to move window to workspace", "window", window, "workspace", focusedWorkspace, "error", err)
+					logger.LogDebug(
+						"SUMMON: unable to move window to workspace",
+						"window",
+						window,
+						"workspace",
+						focusedWorkspace,
+						"error",
+						err,
+					)
 					stderr.Println("Error: %v", err)
 					return
 				}
 			}
-
 		},
 	}
 	return command

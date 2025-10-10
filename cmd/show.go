@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// showCmd represents the show command
+// showCmd represents the show command.
 func ShowCmd(
 	aerospaceClient *aerospace.AeroSpaceClient,
 ) *cobra.Command {
@@ -76,13 +76,15 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 						focusedWorkspace.Workspace,
 					)
 					if err != nil {
-						stderr.Printf("Error: unable to check if window '%+v' is in workspace '%s'\n", window, focusedWorkspace.Workspace)
+						stderr.Printf(
+							"Error: unable to check if window '%+v' is in workspace '%s'\n",
+							window,
+							focusedWorkspace.Workspace,
+						)
 						return
 					}
-
 				} else {
 					isWindowInFocusedWorkspace = window.Workspace == focusedWorkspace.Workspace
-
 				}
 				if isWindowInFocusedWorkspace {
 					windowsInFocusedWorkspace = append(windowsInFocusedWorkspace, window)
@@ -97,7 +99,6 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					hasAtLeastOneWindowFocused = hasAtLeastOneWindowFocused || isWindowFocused
 				} else {
 					windowsOutsideView = append(windowsOutsideView, window)
-
 				}
 
 				logger.LogDebug(

@@ -31,7 +31,7 @@ func (c *AeroSpaceClient) SetOptions(opts AeroSpaceClientOpts) {
 	c.dryRun = opts.DryRun
 }
 
-// All methods
+// All methods.
 func (c *AeroSpaceClient) GetAllWindows() ([]aerospacecli.Window, error) {
 	return c.ogClient.GetAllWindows()
 }

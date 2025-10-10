@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// moveCmd represents the move command
+// moveCmd represents the move command.
 func MoveCmd(
 	aerospaceClient aerospacecli.AeroSpaceClient,
 ) *cobra.Command {

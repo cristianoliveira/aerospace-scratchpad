@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// InfoCmd represents the info command
+// InfoCmd represents the info command.
 func InfoCmd(
 	aerospace aerospaceipc.AeroSpaceClient,
 ) *cobra.Command {

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -154,7 +155,7 @@ func TestMoveCmd(t *testing.T) {
 		// generic no-match message (since querier error isn't surfaced).
 		aerospaceClient.EXPECT().
 			GetAllWindows().
-			Return(nil, fmt.Errorf("mocked_error")).
+			Return(nil, errors.New("mocked_error")).
 			Times(1)
 
 		cmd := RootCmd(aerospaceClient)

@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NextCmd represents the next command
+// NextCmd represents the next command.
 func NextCmd(aerospaceClient aerospacecli.AeroSpaceClient) *cobra.Command {
 	nextCmd := &cobra.Command{
 		Use:   "next",

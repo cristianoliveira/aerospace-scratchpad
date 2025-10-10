@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
+// rootCmd represents the base command when called without any subcommands.
 func RootCmd(
 	aerospaceClient aerospacecli.AeroSpaceClient,
 ) *cobra.Command {
@@ -72,5 +72,5 @@ func Execute(
 
 // THIS IS GENERATED DON'T EDIT
 // NOTE: to update VERSION change it to an EMPTY STRING
-// and then run scripts/validate-version.sh
+// and then run scripts/validate-version.sh.
 var VERSION = "v0.2.2"
