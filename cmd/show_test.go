@@ -50,7 +50,6 @@ func (m *mockAeroSpaceConnection) CheckServerVersion() error {
 
 //nolint:gocognit // Integration-style test exercises multiple window scenarios for coverage
 func TestShowCmd(t *testing.T) {
-	t.Skip("Skipping integration-style test that requires AeroSpace WM")
 	logger.SetDefaultLogger(&logger.EmptyLogger{})
 
 	t.Run("fails when pattern is empty", func(t *testing.T) {
@@ -637,6 +636,11 @@ func TestShowCmd(t *testing.T) {
 						Times(1),
 
 					// Second window operations
+					aerospaceClient.EXPECT().
+						Connection().
+						Return(&mockAeroSpaceConnection{}).
+						Times(1),
+
 					aerospaceClient.EXPECT().
 						MoveWindowToWorkspace(
 							tree[1].Windows[1].WindowID,
