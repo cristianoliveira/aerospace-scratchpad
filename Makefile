@@ -69,3 +69,13 @@ nix-build-all: nix-build-source nix-build-nightly nix-build ## Build all using N
 git-hooks-pre-push: ## Set up git hooks and run
 	echo "Pre-push git hooks set up"
 	bash scripts/git-hooks/pre-push
+
+.PHONY: tail-log
+tail-log: ## Tail the log file
+	@echo "Tailing the log file..."
+	@tail -f /tmp/aerospace-scratchpad.log
+	
+.PHONY: tail-log-truncate
+tail-log-truncate: ## Truncate and tail the log file
+	@echo "Truncating and tailing the log file..."
+	@truncate -s 0 /tmp/aerospace-scratchpad.log && tail -f /tmp/aerospace-scratchpad.log
