@@ -57,6 +57,30 @@ func (c *AeroSpaceClient) SetFocusByWindowID(windowID int) error {
 	return c.ogClient.SetFocusByWindowID(windowID)
 }
 
+// SetFocusBackAndForth switches focus between the two most recently focused windows.
+// TODO: implement in aerospace-ipc too
+// `aerospace focus-back-and-forth`.
+func (c *AeroSpaceClient) SetFocusBackAndForth() error {
+	if c.dryRun {
+		fmt.Fprintln(os.Stdout, "[dry-run] SetFocusBackAndForth()")
+		return nil
+	}
+	client := c.ogClient.Connection()
+	response, err := client.SendCommand(
+		"focus-back-and-forth",
+		[]string{},
+	)
+	if err != nil {
+		return err
+	}
+
+	if response.ExitCode != 0 {
+		return fmt.Errorf("failed to execute focus-back-and-forth: %s", response.StdErr)
+	}
+
+	return nil
+}
+
 func (c *AeroSpaceClient) GetFocusedWorkspace() (*aerospacecli.Workspace, error) {
 	return c.ogClient.GetFocusedWorkspace()
 }
