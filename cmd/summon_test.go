@@ -1,4 +1,4 @@
-package cmd_test //nolint:cyclop // integration-style tests use complex setup to cover scenarios
+package cmd_test
 
 import (
 	"errors"

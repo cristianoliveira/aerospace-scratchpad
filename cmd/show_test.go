@@ -9,6 +9,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	socketcli "github.com/cristianoliveira/aerospace-ipc/pkg/client"
 	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
@@ -17,9 +18,38 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
+// mockAeroSpaceConnection is a simple mock for AeroSpaceConnection.
+type mockAeroSpaceConnection struct{}
+
+func (m *mockAeroSpaceConnection) SendCommand(
+	command string,
+	args []string,
+) (*socketcli.Response, error) {
+	return &socketcli.Response{
+		ExitCode: 0,
+		StdOut:   "",
+		StdErr:   "",
+	}, nil
+}
+
+func (m *mockAeroSpaceConnection) CloseConnection() error {
+	return nil
+}
+
+func (m *mockAeroSpaceConnection) GetSocketPath() (string, error) {
+	return "", nil
+}
+
+func (m *mockAeroSpaceConnection) GetServerVersion() (string, error) {
+	return "", nil
+}
+
+func (m *mockAeroSpaceConnection) CheckServerVersion() error {
+	return nil
+}
+
 //nolint:gocognit // Integration-style test exercises multiple window scenarios for coverage
 func TestShowCmd(t *testing.T) {
-	t.Skip("Skipping integration-style test that requires AeroSpace WM")
 	logger.SetDefaultLogger(&logger.EmptyLogger{})
 
 	t.Run("fails when pattern is empty", func(t *testing.T) {
@@ -259,6 +289,11 @@ func TestShowCmd(t *testing.T) {
 			aerospaceClient.EXPECT().
 				GetFocusedWindow().
 				Return(focusedWindow, nil).
+				Times(1),
+
+			aerospaceClient.EXPECT().
+				Connection().
+				Return(&mockAeroSpaceConnection{}).
 				Times(1),
 
 			aerospaceClient.EXPECT().
@@ -580,6 +615,11 @@ func TestShowCmd(t *testing.T) {
 						Return(focusedWindow, nil).
 						Times(2),
 
+					// First window operations
+					aerospaceClient.EXPECT().
+						Connection().
+						Return(&mockAeroSpaceConnection{}).
+						Times(1),
 					aerospaceClient.EXPECT().
 						MoveWindowToWorkspace(
 							tree[1].Windows[0].WindowID,
@@ -595,6 +635,11 @@ func TestShowCmd(t *testing.T) {
 						Return(nil).
 						Times(1),
 
+					// Second window operations
+					aerospaceClient.EXPECT().
+						Connection().
+						Return(&mockAeroSpaceConnection{}).
+						Times(1),
 					aerospaceClient.EXPECT().
 						MoveWindowToWorkspace(
 							tree[1].Windows[1].WindowID,
