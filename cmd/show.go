@@ -189,6 +189,15 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					"hasAtLeastOneWindowFocused", hasAtLeastOneWindowFocused,
 				)
 				if hasAtLeastOneWindowFocused {
+					if err = aerospaceClient.SetFocusBackAndForth(); err != nil {
+						// No need to exit here, just log the error and continue
+						logger.LogError(
+							"SHOW: unable to switch focus back and forth",
+							"error",
+							err,
+						)
+					}
+
 					if err = mover.MoveWindowToScratchpad(window); err != nil {
 						logger.LogDebug(
 							"Error: unable to move window '%+v' to scratchpad\n%s",
