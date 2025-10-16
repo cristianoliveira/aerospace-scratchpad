@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -141,7 +142,10 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				"hasAtLeastOneWindowFocused", hasAtLeastOneWindowFocused,
 			)
 
-			for _, window := range windowsOutsideView {
+			for i, window := range windowsOutsideView {
+				//nolint:mnd // Multiply by 10
+				waitTime := 10 * time.Millisecond * time.Duration(i)
+				time.Sleep(waitTime)
 				moveErr := mover.MoveWindowToWorkspace(
 					&window,
 					focusedWorkspace,
