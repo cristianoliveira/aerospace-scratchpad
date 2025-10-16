@@ -144,7 +144,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 
 			for i, window := range windowsOutsideView {
 				//nolint:mnd // Multiply by 10
-				waitTime := 10 * time.Millisecond * time.Duration(i)
+				waitTime := 20 * time.Millisecond * time.Duration(i+1)
 				time.Sleep(waitTime)
 				moveErr := mover.MoveWindowToWorkspace(
 					&window,
@@ -186,7 +186,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				return
 			}
 
-			for _, window := range windowsInFocusedWorkspace {
+			for i, window := range windowsInFocusedWorkspace {
 				logger.LogDebug(
 					"SHOW: processing window in focused workspace",
 					"window", window,
@@ -202,6 +202,9 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 						)
 					}
 
+					//nolint:mnd // Multiply by 10
+					waitTime := 20 * time.Millisecond * time.Duration(i+1)
+					time.Sleep(waitTime)
 					if err = mover.MoveWindowToScratchpad(window); err != nil {
 						logger.LogDebug(
 							"Error: unable to move window '%+v' to scratchpad\n%s",
