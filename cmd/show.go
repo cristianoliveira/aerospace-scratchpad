@@ -182,7 +182,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				return
 			}
 
-			for _, window := range windowsInFocusedWorkspace {
+			for i, window := range windowsInFocusedWorkspace {
 				logger.LogDebug(
 					"SHOW: processing window in focused workspace",
 					"window", window,
