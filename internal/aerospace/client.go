@@ -57,12 +57,11 @@ func (c *AeroSpaceClient) SetFocusByWindowID(windowID int) error {
 	return c.ogClient.SetFocusByWindowID(windowID)
 }
 
-// SetFocusBackAndForth switches focus between the two most recently focused windows.
-// TODO: implement in aerospace-ipc too
-// `aerospace focus-back-and-forth`.
-func (c *AeroSpaceClient) SetFocusBackAndForth() error {
+// FocusNextTilingWindow moves focus to the next tiled window in depth-first order, ignoring floating windows.
+// Equivalent to: `aerospace focus dfs-next --ignore-floating`.
+func (c *AeroSpaceClient) FocusNextTilingWindow() error {
 	if c.dryRun {
-		fmt.Fprintln(os.Stdout, "[dry-run] SetFocusBackAndForth()")
+		fmt.Fprintln(os.Stdout, "[dry-run] FocusNextTilingWindow()")
 		return nil
 	}
 	client := c.ogClient.Connection()
@@ -78,7 +77,7 @@ func (c *AeroSpaceClient) SetFocusBackAndForth() error {
 	}
 
 	if response.ExitCode != 0 {
-		return fmt.Errorf("failed to execute focus-back-and-forth: %s", response.StdErr)
+		return fmt.Errorf("failed to focus next tiling window: %s", response.StdErr)
 	}
 
 	return nil

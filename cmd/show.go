@@ -190,10 +190,10 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				)
 				if hasAtLeastOneWindowFocused {
 					if i == 0 {
-						if err = aerospaceClient.SetFocusBackAndForth(); err != nil {
+						if err = aerospaceClient.FocusNextTilingWindow(); err != nil {
 							// No need to exit here, just log the error and continue
 							logger.LogError(
-								"SHOW: unable to switch focus back and forth",
+								"SHOW: unable to focus next tiling window",
 								"error",
 								err,
 							)
