@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -142,10 +141,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				"hasAtLeastOneWindowFocused", hasAtLeastOneWindowFocused,
 			)
 
-			for i, window := range windowsOutsideView {
-				//nolint:mnd // Multiply by 10
-				waitTime := 20 * time.Millisecond * time.Duration(i+1)
-				time.Sleep(waitTime)
+			for _, window := range windowsOutsideView {
 				moveErr := mover.MoveWindowToWorkspace(
 					&window,
 					focusedWorkspace,
@@ -193,18 +189,17 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					"hasAtLeastOneWindowFocused", hasAtLeastOneWindowFocused,
 				)
 				if hasAtLeastOneWindowFocused {
-					if err = aerospaceClient.SetFocusBackAndForth(); err != nil {
-						// No need to exit here, just log the error and continue
-						logger.LogError(
-							"SHOW: unable to switch focus back and forth",
-							"error",
-							err,
-						)
+					if i == 0 {
+						if err = aerospaceClient.SetFocusBackAndForth(); err != nil {
+							// No need to exit here, just log the error and continue
+							logger.LogError(
+								"SHOW: unable to switch focus back and forth",
+								"error",
+								err,
+							)
+						}
 					}
 
-					//nolint:mnd // Multiply by 10
-					waitTime := 20 * time.Millisecond * time.Duration(i+1)
-					time.Sleep(waitTime)
 					if err = mover.MoveWindowToScratchpad(window); err != nil {
 						logger.LogDebug(
 							"Error: unable to move window '%+v' to scratchpad\n%s",
@@ -213,20 +208,20 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 							"error",
 							err,
 						)
-						continue
 					}
-				} else {
-					err = aerospaceClient.SetFocusByWindowID(window.WindowID)
-					if err != nil {
-						stderr.Printf(
-							"Error: unable to set focus to window '%+v'\n%s",
-							window,
-							err,
-						)
-						return
-					}
-					fmt.Fprintf(os.Stdout, "Window '%+v' is focused\n", window)
+					continue
 				}
+
+				err = aerospaceClient.SetFocusByWindowID(window.WindowID)
+				if err != nil {
+					stderr.Printf(
+						"Error: unable to set focus to window '%+v'\n%s",
+						window,
+						err,
+					)
+					return
+				}
+				fmt.Fprintf(os.Stdout, "Window '%+v' is focused\n", window)
 			}
 		},
 	}
