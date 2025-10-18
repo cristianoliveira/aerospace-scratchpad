@@ -68,16 +68,23 @@ func (c *AeroSpaceClient) FocusNextTilingWindow() error {
 	response, err := client.SendCommand(
 		"focus",
 		[]string{
-			"dfs-next",
-			"--ignore-floating",
+			"dfs-prev",
 		},
 	)
-	if err != nil {
-		return err
-	}
+	if err != nil || response.ExitCode != 0 {
+		response, err = client.SendCommand(
+			"focus",
+			[]string{
+				"dfs-next",
+			},
+		)
+		if err != nil {
+			return err
+		}
 
-	if response.ExitCode != 0 {
-		return fmt.Errorf("failed to focus next tiling window: %s", response.StdErr)
+		if response.ExitCode != 0 {
+			return fmt.Errorf("failed to focus next tiling window: %s", response.StdErr)
+		}
 	}
 
 	return nil

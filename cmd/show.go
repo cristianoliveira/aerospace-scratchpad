@@ -190,6 +190,11 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				)
 				if hasAtLeastOneWindowFocused {
 					if i == 0 {
+						logger.LogDebug(
+							"SHOW: first window to hide, will focus next tiling window after hiding",
+							"window",
+							window,
+						)
 						if err = aerospaceClient.FocusNextTilingWindow(); err != nil {
 							// No need to exit here, just log the error and continue
 							logger.LogError(
