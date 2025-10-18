@@ -4,11 +4,21 @@
 # List here the tasks and the commands for this workflow
 # then run `fzz` to start to work.
 
-- name: quick checks
+- name: changed files quick checks
   run: 
-    - go fmt ./...
-    - make fmt
+    - cd $(dirname {{relative_path}}) && go fmt .
+    ## Test only the current changed package
+    - cd $(dirname {{relative_path}}) && gotestsum --format pkgname .
+  change: 
+    - '**/*.go'
+  ignore: 
+    - '.tmp/**'
+    - '**/*.log'
+
+- name: full quick checks
+  run: 
     - gotestsum --format pkgname
+    - make fmt
   run_on_init: true
   change: 
     - '**/*.go'
