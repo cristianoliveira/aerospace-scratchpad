@@ -637,10 +637,6 @@ func TestShowCmd(t *testing.T) {
 
 					// Second window operations
 					aerospaceClient.EXPECT().
-						Connection().
-						Return(&mockAeroSpaceConnection{}).
-						Times(1),
-					aerospaceClient.EXPECT().
 						MoveWindowToWorkspace(
 							tree[1].Windows[1].WindowID,
 							constants.DefaultScratchpadWorkspaceName,

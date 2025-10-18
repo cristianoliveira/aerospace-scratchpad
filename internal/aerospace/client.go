@@ -67,8 +67,11 @@ func (c *AeroSpaceClient) SetFocusBackAndForth() error {
 	}
 	client := c.ogClient.Connection()
 	response, err := client.SendCommand(
-		"focus-back-and-forth",
-		[]string{},
+		"focus",
+		[]string{
+			"dfs-next",
+			"--ignore-floating",
+		},
 	)
 	if err != nil {
 		return err
