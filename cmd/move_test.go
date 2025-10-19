@@ -10,6 +10,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	clientipc "github.com/cristianoliveira/aerospace-ipc/pkg/client"
 	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
@@ -17,6 +18,26 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
+
+// dummyConn is a no-op implementation of clientipc.AeroSpaceConnection used by tests to satisfy FocusNextTilingWindow.
+type dummyConn struct{}
+
+// CloseConnection is a no-op.
+func (d dummyConn) CloseConnection() error { return nil }
+
+// GetSocketPath is a no-op.
+func (d dummyConn) GetSocketPath() (string, error) { return "", nil }
+
+// GetServerVersion is a no-op.
+func (d dummyConn) GetServerVersion() (string, error) { return "", nil }
+
+// CheckServerVersion is a no-op.
+func (d dummyConn) CheckServerVersion() error { return nil }
+
+// SendCommand always returns a successful zero-exit response.
+func (d dummyConn) SendCommand(cmd string, args []string) (*clientipc.Response, error) {
+	return &clientipc.Response{ExitCode: 0}, nil
+}
 
 func TestMoveCmd(t *testing.T) {
 	logger.SetDefaultLogger(&logger.EmptyLogger{})
@@ -61,6 +82,8 @@ func TestMoveCmd(t *testing.T) {
 		}
 
 		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		// allow FocusNextTilingWindow to run without mocking Connection details
+		aerospaceClient.EXPECT().Connection().Return(dummyConn{}).AnyTimes()
 		gomock.InOrder(
 			aerospaceClient.EXPECT().
 				GetAllWindows().
@@ -109,6 +132,8 @@ func TestMoveCmd(t *testing.T) {
 		focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		// allow FocusNextTilingWindow to run without mocking Connection details
+		aerospaceClient.EXPECT().Connection().Return(dummyConn{}).AnyTimes()
 		gomock.InOrder(
 			aerospaceClient.EXPECT().
 				GetFocusedWindow().
@@ -161,6 +186,8 @@ func TestMoveCmd(t *testing.T) {
 		defer ctrl.Finish()
 
 		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		// allow FocusNextTilingWindow if it were called; skip Connection
+		aerospaceClient.EXPECT().Connection().Return(dummyConn{}).AnyTimes()
 		// Move now validates regex and then tries to query via querier which
 		// calls GetAllWindows under the hood. We don't control that directly here,
 		// so simulate that the overall result is an error by letting
@@ -220,6 +247,8 @@ func TestMoveCmd(t *testing.T) {
 		notepadWindow := windows[0]
 
 		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		// allow FocusNextTilingWindow to run without mocking Connection details
+		aerospaceClient.EXPECT().Connection().Return(dummyConn{}).AnyTimes()
 		gomock.InOrder(
 			aerospaceClient.EXPECT().
 				GetAllWindows().
@@ -278,6 +307,8 @@ func TestMoveCmd(t *testing.T) {
 		focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		// allow FocusNextTilingWindow to run without mocking Connection details
+		aerospaceClient.EXPECT().Connection().Return(dummyConn{}).AnyTimes()
 		gomock.InOrder(
 			aerospaceClient.EXPECT().
 				GetAllWindows().
@@ -342,6 +373,8 @@ func TestMoveCmd(t *testing.T) {
 		notepadWindow := windows[0]
 
 		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		// allow wrapper.FocusNextTilingWindow in dry-run (will not call Connection)
+		aerospaceClient.EXPECT().Connection().Return(dummyConn{}).AnyTimes()
 		gomock.InOrder(
 			aerospaceClient.EXPECT().
 				GetAllWindows().

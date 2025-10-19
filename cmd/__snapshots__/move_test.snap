@@ -105,6 +105,7 @@ Error: Window '5678 | Finder ' already belongs to scratchpad
 aerospace-scratchpad move Notepad --dry-run
 
 Output
+[dry-run] FocusNextTilingWindow()
 Moving window 1234 | Notepad  to scratchpad
 [dry-run] MoveWindowToWorkspace(windowID=1234, workspace=.scratchpad)
 [dry-run] SetLayout(windowID=1234, layout=floating)

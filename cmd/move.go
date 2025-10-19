@@ -10,7 +10,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
@@ -19,7 +18,7 @@ import (
 // MoveCmd represents the move command.
 //
 //nolint:funlen,gocognit
-func MoveCmd(aerospaceClient aerospacecli.AeroSpaceClient) *cobra.Command {
+func MoveCmd(aerospaceClient *aerospace.AeroSpaceClient) *cobra.Command {
 	command := &cobra.Command{
 		Use:   "move <pattern>",
 		Short: "Move a window to scratchpad",
@@ -99,6 +98,18 @@ If no pattern is provided, it moves the currently focused window.
 				"windows", windows,
 				"filterFlags", filterFlags,
 			)
+
+			logger.LogDebug(
+				"SHOW: first window to hide, will focus next tiling window after hiding",
+			)
+			if err = aerospaceClient.FocusNextTilingWindow(); err != nil {
+				// No need to exit here, just log the error and continue
+				logger.LogError(
+					"SHOW: unable to focus next tiling window",
+					"error",
+					err,
+				)
+			}
 
 			for _, window := range windows {
 				// Move the window to the scratchpad
