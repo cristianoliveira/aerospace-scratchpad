@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"os"
 	"strconv"
-	"time"
 
 	aerospaceipc "github.com/cristianoliveira/aerospace-ipc"
 
@@ -20,13 +19,9 @@ import (
 )
 
 const (
-	bringScratchpadToMonitorCmd = "bring-scratchpad-to-monitor"
-	bringWindowToWorkspaceCmd   = "bring-window-to-workspace"
+	bringWindowToWorkspaceCmd = "bring-window-to-workspace"
 
 	minArgsBringWindow = 3
-
-	workspacePollMaxAttempts = 5
-	workspacePollDelay       = 100 * time.Millisecond
 )
 
 // MoveScratchpadResult holds the response from list-workspaces.
@@ -154,10 +149,6 @@ func (h *workspaceHandler) handleBringWindowToWorkspace(
 		return nil
 	}
 
-	if switchErr := h.switchToWorkspace(prevWorkspace); switchErr != nil {
-		return switchErr
-	}
-
 	cleared, markerErr := h.clearMovingMarker()
 	if markerErr != nil {
 		return h.fail(
@@ -172,42 +163,15 @@ func (h *workspaceHandler) handleBringWindowToWorkspace(
 		return nil
 	}
 
-	newFocusedWorkspace, workspaceErr := h.waitForWorkspaceChange()
-	if workspaceErr != nil {
-		return workspaceErr
-	}
-
-	if moveErr := h.moveWindowToWorkspace(focusedWindow.WindowID, newFocusedWorkspace.Workspace); moveErr != nil {
+	if moveErr := h.moveWindowToWorkspace(focusedWindow.WindowID, prevWorkspace); moveErr != nil {
 		return moveErr
 	}
 
 	h.logger.LogInfo(
 		"WSH: [final] moved window to new focused workspace",
-		"workspace", newFocusedWorkspace.Workspace,
+		"workspace", prevWorkspace,
 		"window", focusedWindow,
 	)
-
-	return nil
-}
-
-func (h *workspaceHandler) switchToWorkspace(workspace string) error {
-	client := h.client.Connection()
-	response, err := client.SendCommand("workspace", []string{workspace})
-	if err != nil {
-		return h.fail(
-			"Error: unable to get focused window",
-			err,
-			"WSH: unable to switch workspace",
-		)
-	}
-
-	if response.ExitCode != 0 {
-		return h.fail(
-			"Error: unable to get focused window",
-			errors.New(response.StdErr),
-			"WSH: unable to switch workspace - non-zero exit",
-		)
-	}
 
 	return nil
 }
@@ -226,41 +190,6 @@ func (h *workspaceHandler) clearMovingMarker() (bool, error) {
 	}
 
 	return true, nil
-}
-
-func (h *workspaceHandler) waitForWorkspaceChange() (*aerospaceipc.Workspace, error) {
-	newFocusedWorkspace, err := h.client.GetFocusedWorkspace()
-	if err != nil {
-		return nil, h.fail(
-			"Error: unable to get focused workspace after moving window",
-			err,
-			"WSH: unable to get focused workspace after moving window",
-		)
-	}
-
-	for attempts := 0; attempts < workspacePollMaxAttempts && newFocusedWorkspace.Workspace == constants.DefaultScratchpadWorkspaceName; attempts++ {
-		h.logger.LogInfo(
-			"WSH: focused workspace is still scratchpad, retrying...",
-			"attempt", attempts,
-		)
-
-		time.Sleep(workspacePollDelay)
-
-		newFocusedWorkspace, err = h.client.GetFocusedWorkspace()
-		if err != nil {
-			return nil, h.fail(
-				"Error: unable to get focused workspace after moving window",
-				err,
-				"WSH: unable to get focused workspace after moving window",
-			)
-		}
-	}
-
-	if newFocusedWorkspace.Workspace == constants.DefaultScratchpadWorkspaceName {
-		h.logger.LogError("WSH: focused workspace remained scratchpad after retries")
-	}
-
-	return newFocusedWorkspace, nil
 }
 
 func (h *workspaceHandler) moveWindowToWorkspace(windowID int, workspace string) error {
