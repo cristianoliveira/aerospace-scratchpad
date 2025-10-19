@@ -45,9 +45,6 @@ func WorkspaceHandlerCmd(
 Add this snippet in your ~/aerospace.toml config:
 
 '''toml
-on-focused-monitor-changed = [
-  "exec-and-forget aerospace-scratchpad wsh bring-scratchpad-to-monitor"
-]
 exec-on-workspace-change = ["/bin/bash", "-c",
   "aerospace-scratchpad wsh bring-window-to-workspace $AEROSPACE_PREV_WORKSPACE $AEROSPACE_FOCUSED_WORKSPACE"
 ]
