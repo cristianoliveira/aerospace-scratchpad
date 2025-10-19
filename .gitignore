@@ -27,3 +27,4 @@ result
 aerospace-scratchpad
 _tmp/
 .cache/
+.gocache
