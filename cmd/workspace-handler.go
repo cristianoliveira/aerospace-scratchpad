@@ -4,7 +4,6 @@ Copyright © 2025 Cristian Oliveira licence@cristianoliveira.dev
 package cmd
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -92,8 +91,6 @@ func (h *workspaceHandler) execute(args []string) error {
 	}
 
 	switch args[0] {
-	case bringScratchpadToMonitorCmd:
-		return h.moveScratchpadToCurrentMonitor()
 	case bringWindowToWorkspaceCmd:
 		if len(args) < minArgsBringWindow {
 			return h.fail(
@@ -192,80 +189,6 @@ func (h *workspaceHandler) handleBringWindowToWorkspace(
 		"workspace", newFocusedWorkspace.Workspace,
 		"window", focusedWindow,
 	)
-
-	return nil
-}
-
-func (h *workspaceHandler) moveScratchpadToCurrentMonitor() error {
-	h.logger.LogDebug("WSH: moving scratchpad to current monitor")
-
-	if err := h.createMovingMarker(); err != nil {
-		return h.fail(
-			"Error: unable to create temp file",
-			err,
-			"WSH: unable to create temp file",
-		)
-	}
-
-	client := h.client.Connection()
-	listResponse, err := client.SendCommand(
-		"list-workspaces",
-		[]string{
-			"--monitor",
-			"focused",
-			"--json",
-			"--format",
-			"%{workspace} %{monitor-id}",
-		},
-	)
-	if err != nil {
-		return h.fail(
-			"Error: unable to list workspaces in focused monitor",
-			err,
-			"WSH: unable to list workspaces in focused monitor",
-		)
-	}
-
-	if listResponse.ExitCode != 0 {
-		return h.fail(
-			"Error: unable to list workspaces in focused monitor",
-			errors.New(listResponse.StdErr),
-			"WSH: unable to list workspaces in focused monitor - non-zero exit",
-		)
-	}
-
-	var workspacesInMonitor []MoveScratchpadResult
-	if unmarshalErr := json.Unmarshal([]byte(listResponse.StdOut), &workspacesInMonitor); unmarshalErr != nil {
-		return h.fail(
-			"Error: unable to unmarshal workspaces in focused monitor",
-			unmarshalErr,
-			"WSH: unable to unmarshal workspaces in focused monitor",
-		)
-	}
-
-	summonResponse, err := client.SendCommand(
-		"summon-workspace",
-		[]string{
-			constants.DefaultScratchpadWorkspaceName,
-		},
-	)
-	if err != nil {
-		return h.fail(
-			"Error: unable to move scratchpad to current monitor",
-			err,
-			"WSH: unable to move scratchpad to current monitor",
-		)
-	}
-
-	if summonResponse.ExitCode != 0 {
-		return h.fail(
-			"Error: unable to move scratchpad to current monitor",
-			errors.New(summonResponse.StdErr),
-			"WSH: unable to move scratchpad to current monitor - non-zero exit",
-		)
-	}
-
-	h.logger.LogDebug("WSH: scratchpad moved to current monitor", "workspaces", workspacesInMonitor)
 
 	return nil
 }
@@ -371,10 +294,6 @@ func (h *workspaceHandler) moveWindowToWorkspace(windowID int, workspace string)
 	}
 
 	return nil
-}
-
-func (h *workspaceHandler) createMovingMarker() error {
-	return os.WriteFile(constants.TempScratchpadMovingFile, []byte{}, 0o600)
 }
 
 func (h *workspaceHandler) fail(userMessage string, err error, logMessage string) error {
