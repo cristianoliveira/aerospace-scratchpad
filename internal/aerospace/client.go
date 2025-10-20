@@ -68,14 +68,14 @@ func (c *AeroSpaceClient) FocusNextTilingWindow() error {
 	response, err := client.SendCommand(
 		"focus",
 		[]string{
-			"dfs-prev",
+			"dfs-next",
 		},
 	)
 	if err != nil || response.ExitCode != 0 {
 		response, err = client.SendCommand(
 			"focus",
 			[]string{
-				"dfs-next",
+				"dfs-prev",
 			},
 		)
 		if err != nil {
