@@ -57,6 +57,39 @@ func (c *AeroSpaceClient) SetFocusByWindowID(windowID int) error {
 	return c.ogClient.SetFocusByWindowID(windowID)
 }
 
+// FocusNextTilingWindow moves focus to the next tiled window in depth-first order, ignoring floating windows.
+// Equivalent to: `aerospace focus dfs-next --ignore-floating`.
+func (c *AeroSpaceClient) FocusNextTilingWindow() error {
+	if c.dryRun {
+		fmt.Fprintln(os.Stdout, "[dry-run] FocusNextTilingWindow()")
+		return nil
+	}
+	client := c.ogClient.Connection()
+	response, err := client.SendCommand(
+		"focus",
+		[]string{
+			"dfs-next",
+		},
+	)
+	if err != nil || response.ExitCode != 0 {
+		response, err = client.SendCommand(
+			"focus",
+			[]string{
+				"dfs-prev",
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		if response.ExitCode != 0 {
+			return fmt.Errorf("failed to focus next tiling window: %s", response.StdErr)
+		}
+	}
+
+	return nil
+}
+
 func (c *AeroSpaceClient) GetFocusedWorkspace() (*aerospacecli.Workspace, error) {
 	return c.ogClient.GetFocusedWorkspace()
 }

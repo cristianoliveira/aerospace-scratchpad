@@ -182,13 +182,29 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				return
 			}
 
-			for _, window := range windowsInFocusedWorkspace {
+			for i, window := range windowsInFocusedWorkspace {
 				logger.LogDebug(
 					"SHOW: processing window in focused workspace",
 					"window", window,
 					"hasAtLeastOneWindowFocused", hasAtLeastOneWindowFocused,
 				)
 				if hasAtLeastOneWindowFocused {
+					if i == 0 {
+						logger.LogDebug(
+							"SHOW: first window to hide, will focus next tiling window after hiding",
+							"window",
+							window,
+						)
+						if err = aerospaceClient.FocusNextTilingWindow(); err != nil {
+							// No need to exit here, just log the error and continue
+							logger.LogError(
+								"SHOW: unable to focus next tiling window",
+								"error",
+								err,
+							)
+						}
+					}
+
 					if err = mover.MoveWindowToScratchpad(window); err != nil {
 						logger.LogDebug(
 							"Error: unable to move window '%+v' to scratchpad\n%s",
@@ -197,20 +213,20 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 							"error",
 							err,
 						)
-						continue
 					}
-				} else {
-					err = aerospaceClient.SetFocusByWindowID(window.WindowID)
-					if err != nil {
-						stderr.Printf(
-							"Error: unable to set focus to window '%+v'\n%s",
-							window,
-							err,
-						)
-						return
-					}
-					fmt.Fprintf(os.Stdout, "Window '%+v' is focused\n", window)
+					continue
 				}
+
+				err = aerospaceClient.SetFocusByWindowID(window.WindowID)
+				if err != nil {
+					stderr.Printf(
+						"Error: unable to set focus to window '%+v'\n%s",
+						window,
+						err,
+					)
+					return
+				}
+				fmt.Fprintf(os.Stdout, "Window '%+v' is focused\n", window)
 			}
 		},
 	}
