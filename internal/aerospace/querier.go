@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
@@ -250,6 +251,8 @@ func applyFilters(window aerospacecli.Window, filters []Filter) (bool, error) {
 			value = window.WindowTitle
 		case "app-bundle-id":
 			value = window.AppBundleID
+		case "window-id":
+			value = strconv.Itoa(window.WindowID)
 		default:
 			return false, fmt.Errorf(
 				"unknown filter property: %s",

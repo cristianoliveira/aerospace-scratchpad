@@ -329,4 +329,39 @@ func TestAeroSpaceQuerier(t *testing.T) {
 			}
 		},
 	)
+
+	t.Run(
+		"GetFilteredWindows with window-id filter matches",
+		func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			tree := []testutils.AeroSpaceTree{{
+				Windows: []aerospacecli.Window{
+					{
+						AppName:     "Terminal",
+						WindowID:    1,
+						WindowTitle: "Terminal",
+						AppBundleID: "com.apple.terminal",
+					},
+				},
+				Workspace: &aerospacecli.Workspace{Workspace: "ws1"},
+			}}
+			all := testutils.ExtractAllWindows(tree)
+
+			client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+			client.EXPECT().
+				GetAllWindows().
+				Return(all, nil).
+				Times(1)
+			q := aerospace.NewAerospaceQuerier(client)
+			wins, err := q.GetFilteredWindows(
+				"Terminal",
+				[]string{"window-id=1"},
+			)
+			if err != nil || len(wins) != 1 || wins[0].WindowID != 1 {
+				t.Fatalf("expected 1 window (id=1), got %v err=%v", wins, err)
+			}
+		},
+	)
 }

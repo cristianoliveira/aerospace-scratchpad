@@ -116,7 +116,7 @@ can turn any window into a scratchpad window and bind a toggle key on the fly!
 # ~/.config/aerospace/config.toml
 [mode.main.binding]
 # Mark current window with sp-1 so you can use the shortcut
-cmd-shit-ctrl-1 = [
+cmd-shift-ctrl-1 = [
     "exec-and-forget aerospace-marks mark sp-1"
 ]
 
