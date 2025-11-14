@@ -344,6 +344,12 @@ func TestAeroSpaceQuerier(t *testing.T) {
 						WindowTitle: "Terminal",
 						AppBundleID: "com.apple.terminal",
 					},
+					{
+						AppName:     "Finder",
+						WindowID:    2,
+						WindowTitle: "Documents",
+						AppBundleID: "com.apple.finder",
+					},
 				},
 				Workspace: &aerospacecli.Workspace{Workspace: "ws1"},
 			}}
