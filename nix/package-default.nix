@@ -3,15 +3,15 @@
     # name of our derivation
     name = "aerospace-scratchpad";
     # FIXME: once we have the first release, we can use the version
-    version = "v0.2.2";
-    # version = "v0.2.2";
+    version = "v0.2.3";
+    # version = "v0.2.3";
 
     # sources that will be used for our derivation.
     src = pkgs.fetchFromGitHub {
       owner = "cristianoliveira";
       repo = "aerospace-scratchpad";
       rev = version;
-      sha256 = "sha256-/2s0QdFr3Jr5P1REbj9t+K/yDGkcpyAfLqV2I14IfqQ=";
+      sha256 = "sha256-N6Ah+Fvyvs7UNpMfh+cP8eOCfdLBSXT4Gc3l69qhueI=";
     };
 
     vendorHash = "sha256-u2tlLqfcKG8JbzdAA5RnH8m0yzjCGKxQv0FsgxZKDYI=";
