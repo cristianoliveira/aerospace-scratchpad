@@ -114,3 +114,24 @@ Window '1234 | Notepad ' hidden to scratchpad
 Error
  <nil>
 ---
+
+[TestMoveCmd/moves_only_the_focused_window_when_multiple_matches_exist - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1111, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        FocusedWindowID: 5678,
+    },
+}
+aerospace-scratchpad move 
+
+Output
+Moving window 5678 | Finder  to scratchpad
+Window '5678 | Finder ' hidden to scratchpad
+
+Error
+ <nil>
+---

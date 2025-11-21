@@ -39,6 +39,7 @@ func (d dummyConn) SendCommand(cmd string, args []string) (*clientipc.Response, 
 	return &clientipc.Response{ExitCode: 0}, nil
 }
 
+//nolint:gocognit // Integration-style test exercises multiple window scenarios for coverage
 func TestMoveCmd(t *testing.T) {
 	logger.SetDefaultLogger(&logger.EmptyLogger{})
 	stderr.SetBehavior(false)
@@ -48,6 +49,9 @@ func TestMoveCmd(t *testing.T) {
 			Logger: func(msg string, largs ...any) {
 				t.Logf(msg, largs...)
 			},
+		})
+		t.Cleanup(func() {
+			logger.SetDefaultLogger(&logger.EmptyLogger{})
 		})
 
 		command := "move"
@@ -146,7 +150,10 @@ func TestMoveCmd(t *testing.T) {
 				Times(1),
 
 			aerospaceClient.EXPECT().
-				MoveWindowToWorkspace(focusedWindow.WindowID, constants.DefaultScratchpadWorkspaceName).
+				MoveWindowToWorkspace(
+					focusedWindow.WindowID,
+					constants.DefaultScratchpadWorkspaceName,
+				).
 				Return(nil).
 				Times(1),
 
@@ -175,8 +182,79 @@ func TestMoveCmd(t *testing.T) {
 			out,
 			errorMessage,
 		)
-	},
-	)
+	})
+
+	t.Run("moves only the focused window when multiple matches exist", func(t *testing.T) {
+		command := "move"
+		args := []string{command, ""}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows: []aerospacecli.Window{
+					{AppName: "Finder", WindowID: 1111},
+					{AppName: "Finder", WindowID: 5678},
+				},
+				Workspace: &aerospacecli.Workspace{
+					Workspace: "ws1",
+				},
+
+				FocusedWindowID: 5678,
+			},
+		}
+		allWindows := testutils.ExtractAllWindows(tree)
+		focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		// allow FocusNextTilingWindow to run without mocking Connection details
+		aerospaceClient.EXPECT().Connection().Return(dummyConn{}).AnyTimes()
+		gomock.InOrder(
+			aerospaceClient.EXPECT().
+				GetFocusedWindow().
+				Return(focusedWindow, nil).
+				Times(1),
+
+			aerospaceClient.EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1),
+
+			aerospaceClient.EXPECT().
+				MoveWindowToWorkspace(
+					focusedWindow.WindowID,
+					constants.DefaultScratchpadWorkspaceName,
+				).
+				Return(nil).
+				Times(1),
+
+			aerospaceClient.EXPECT().
+				SetLayout(focusedWindow.WindowID, "floating").
+				Return(nil).
+				Times(1),
+		)
+
+		cmd := cmd.RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err != nil {
+			t.Errorf("Expected error, got nil")
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(
+			args,
+			" ",
+		) + "\n"
+		errorMessage := fmt.Sprintf("Error\n %+v", err)
+		snaps.MatchSnapshot(
+			t,
+			tree,
+			cmdAsString,
+			"Output",
+			out,
+			errorMessage,
+		)
+	})
 
 	t.Run("fails when getting all windows return an erro", func(t *testing.T) {
 		command := "move"
@@ -256,7 +334,10 @@ func TestMoveCmd(t *testing.T) {
 				Times(1),
 
 			aerospaceClient.EXPECT().
-				MoveWindowToWorkspace(notepadWindow.WindowID, constants.DefaultScratchpadWorkspaceName).
+				MoveWindowToWorkspace(
+					notepadWindow.WindowID,
+					constants.DefaultScratchpadWorkspaceName,
+				).
 				Return(nil).
 				Times(1),
 
@@ -318,8 +399,14 @@ func TestMoveCmd(t *testing.T) {
 			aerospaceClient.EXPECT().
 				MoveWindowToWorkspace(
 					focusedWindow.WindowID,
-					constants.DefaultScratchpadWorkspaceName).
-				Return(fmt.Errorf("Window '%+v' already belongs to scratchpad", focusedWindow)).
+					constants.DefaultScratchpadWorkspaceName,
+				).
+				Return(
+					fmt.Errorf(
+						"Window '%+v' already belongs to scratchpad",
+						focusedWindow,
+					),
+				).
 				Times(1),
 
 			aerospaceClient.EXPECT().
@@ -382,7 +469,10 @@ func TestMoveCmd(t *testing.T) {
 				Times(1),
 
 			aerospaceClient.EXPECT().
-				MoveWindowToWorkspace(notepadWindow.WindowID, constants.DefaultScratchpadWorkspaceName).
+				MoveWindowToWorkspace(
+					notepadWindow.WindowID,
+					constants.DefaultScratchpadWorkspaceName,
+				).
 				Return(nil).
 				Times(0), // DO NOT RUN
 
@@ -411,6 +501,5 @@ func TestMoveCmd(t *testing.T) {
 			out,
 			errorMessage,
 		)
-	},
-	)
+	})
 }

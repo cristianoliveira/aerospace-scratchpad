@@ -37,6 +37,7 @@ If no pattern is provided, it moves the currently focused window.
 				windowNamePattern = strings.TrimSpace(args[0])
 			}
 
+			focusedWindowID := -1
 			if windowNamePattern == "" {
 				focusedWindow, err := aerospaceClient.GetFocusedWindow()
 				logger.LogDebug(
@@ -55,10 +56,12 @@ If no pattern is provided, it moves the currently focused window.
 					stderr.Println("Error: no focused window found")
 					return
 				}
+				focusedWindowID = focusedWindow.WindowID
 				windowNamePattern = fmt.Sprintf("^%s$", focusedWindow.AppName)
 				logger.LogDebug(
 					"MOVE: using focused window app name as pattern",
 					"windowNamePattern", windowNamePattern,
+					"focusedWindowId", focusedWindowID,
 				)
 			}
 
@@ -112,6 +115,16 @@ If no pattern is provided, it moves the currently focused window.
 			}
 
 			for _, window := range windows {
+				// FIXME: not sure this is the right place to do this check
+				if focusedWindowID != -1 && window.WindowID != focusedWindowID {
+					logger.LogDebug(
+						"MOVE: skipping window, not focused",
+						"window", window,
+						"focusedWindowId", focusedWindowID,
+					)
+					continue
+				}
+
 				// Move the window to the scratchpad
 				fmt.Fprintf(
 					os.Stdout,
@@ -134,5 +147,6 @@ If no pattern is provided, it moves the currently focused window.
 			}
 		},
 	}
+
 	return command
 }
