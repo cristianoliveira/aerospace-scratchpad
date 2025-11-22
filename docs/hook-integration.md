@@ -1,5 +1,7 @@
 # Hook Integration Guide to enhance UX
 
+**MINIMUM VERSION**: 0.3.0
+
 This document dives deeper into the `hook`s and how to use then to enhance the UX. Hooks are thin commands you can tie into AeroSpace WM events so that scratchpad windows behave predictably when third-party tools (launchers, notifications, scripts) try to focus 
 windows inside the scratchpad or otherwise interact with them.
 
@@ -56,27 +58,18 @@ This leverages AeroSpace’s environment variables:
 - `AEROSPACE_PREV_WORKSPACE` → where you *should* remain.
 - `AEROSPACE_FOCUSED_WORKSPACE` → what unexpectedly got focus (the scratchpad).
 
-Optional companion hook to keep the scratchpad monitor-sticky:
-
-```toml
-on-focused-monitor-changed = [
-  "exec-and-forget aerospace-scratchpad wsh bring-scratchpad-to-monitor 0 0"
-]
-```
-
-(Adjust monitor coordinates to your setup.)
-
 ### Step-by-step integration checklist
 
-1. **Install/Update** `aerospace-scratchpad` ≥ v0.2.3 so the `hook` command exists.
+1. **Install/Update** `aerospace-scratchpad` ≥ v0.3.0 so the `hook` command exists.
 2. **Confirm** AeroSpace exports the workspace env vars (AeroSpace ≥ 0.15.x).
 3. **Drop** the `exec-on-workspace-change` snippet above into your config.
 4. **Reload** AeroSpace (`aerospace reload-config`) or restart it.
-5. **Trigger** a notification/launcher that previously jumped you into scratchpad. The window should now materialize in your current workspace.
+5. **Trigger** a notification/launcher that previously jumped you into scratchpad. The window should now be summoned in your current workspace.
+6. **Verify** The .scratchpad workspace is not focused at any point.
 
-### Logging & debugging
+### Troubleshooting
 
-Hooks share the same logging infrastructure as other commands. Set:
+Hooks share the same logging pattern as other commands. Set:
 
 ```bash
 export AEROSPACE_SCRATCHPAD_LOGS_LEVEL=DEBUG
@@ -91,15 +84,6 @@ HOOK: [final] moved window to new focused workspace workspace=1 window={...}
 ```
 
 If something fails (e.g., AeroSpace IPC unavailable), the hook writes to stderr and exits non-zero; AeroSpace shows that error in its log.
-
-### Troubleshooting
-
-| Symptom | Likely cause | Fix |
-| --- | --- | --- |
-| Hook runs repeatedly/loops | Temp marker file missing or command crashing mid-run | Check `/tmp/.aerospace-scratchpad-moving` permissions; ensure the command isn’t being killed. |
-| Nothing happens when scratchpad steals focus | Hook stuck on early exit | Ensure `$AEROSPACE_PREV_WORKSPACE` differs from `.scratchpad` and that your config snippet passes both env vars. |
-| Error: unable to move window | AeroSpace IPC rejected the request | Confirm `aerospace` CLI supports `move-node-to-workspace` (match AeroSpace version). |
-| No logs appear | Logger disabled | Set `AEROSPACE_SCRATCHPAD_LOGS_LEVEL` (see Logging & debugging). |
 
 ### Future hooks
 
