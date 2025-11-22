@@ -69,3 +69,14 @@ func ExtractScratchpadWindows(tree []AeroSpaceTree) *AeroSpaceTree {
 	}
 	return nil
 }
+
+func ExtractWindowByID(tree []AeroSpaceTree, id int) *aerospacecli.Window {
+	for _, t := range tree {
+		for _, window := range t.Windows {
+			if window.WindowID == id {
+				return &window
+			}
+		}
+	}
+	return nil
+}

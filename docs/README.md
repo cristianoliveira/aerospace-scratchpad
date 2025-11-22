@@ -20,6 +20,11 @@ For more details:
 aerospace-scratchpad move --help
 ```
 
+To move all windows that match the focused window's app name to the scratchpad, you can use:
+```bash
+aerospace-scratchpad move --all 
+```
+
 See also [flags](#flags).
 
 ## Command: `show`

@@ -26,6 +26,8 @@ func MoveCmd(aerospaceClient *aerospace.AeroSpaceClient) *cobra.Command {
 
 This command moves a window to the scratchpad using a regex to match the app name.
 If no pattern is provided, it moves the currently focused window.
+
+To move all windows that match the focused window's app name to the scratchpad, use the --all flag.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.GetDefaultLogger()
@@ -77,6 +79,18 @@ If no pattern is provided, it moves the currently focused window.
 				return
 			}
 
+			// Get all flag
+			allFlag, err := cmd.Flags().GetBool("all")
+			if err != nil {
+				logger.LogError(
+					"MOVE: unable to get all flag",
+					"error",
+					err,
+				)
+				stderr.Println("Error: unable to get all flag")
+				return
+			}
+
 			// Query windows matching pattern and filters
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient)
 			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
@@ -115,10 +129,10 @@ If no pattern is provided, it moves the currently focused window.
 			}
 
 			for _, window := range windows {
-				// FIXME: not sure this is the right place to do this check
-				if focusedWindowID != -1 && window.WindowID != focusedWindowID {
+				// Skip non-focused windows unless the --all flag is provided
+				if focusedWindowID != -1 && window.WindowID != focusedWindowID && !allFlag {
 					logger.LogDebug(
-						"MOVE: skipping window, not focused",
+						"MOVE: skipping window, not focused and --all flag not provided",
 						"window", window,
 						"focusedWindowId", focusedWindowID,
 					)
@@ -147,6 +161,10 @@ If no pattern is provided, it moves the currently focused window.
 			}
 		},
 	}
+
+	// Add the all flag
+	command.Flags().
+		BoolP("all", "a", false, "Move all windows that match the focused window's app name to the scratchpad")
 
 	return command
 }

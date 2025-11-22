@@ -135,3 +135,54 @@ Window '5678 | Finder ' hidden to scratchpad
 Error
  <nil>
 ---
+
+[TestMoveCmd/[dry-run]_moves_all_windows_with_the_same_app_name_as_the_focused_window_when_--all_is_used - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1111, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        FocusedWindowID: 5678,
+    },
+}
+aerospace-scratchpad move  --all --dry-run
+
+Output
+[dry-run] FocusNextTilingWindow()
+Moving window 1111 | Finder  to scratchpad
+[dry-run] MoveWindowToWorkspace(windowID=1111, workspace=.scratchpad)
+[dry-run] SetLayout(windowID=1111, layout=floating)
+Window '1111 | Finder ' hidden to scratchpad
+Moving window 5678 | Finder  to scratchpad
+[dry-run] MoveWindowToWorkspace(windowID=5678, workspace=.scratchpad)
+[dry-run] SetLayout(windowID=5678, layout=floating)
+Window '5678 | Finder ' hidden to scratchpad
+
+Error
+ <nil>
+---
+
+[TestMoveCmd/moves_all_windows_with_the_same_app_name_as_the_focused_window_when_--all_is_used - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1111, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+        },
+        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        FocusedWindowID: 5678,
+    },
+}
+aerospace-scratchpad move  --all
+
+Output
+Moving window 1111 | Finder  to scratchpad
+Window '1111 | Finder ' hidden to scratchpad
+Moving window 5678 | Finder  to scratchpad
+Window '5678 | Finder ' hidden to scratchpad
+
+Error
+ <nil>
+---

@@ -502,4 +502,154 @@ func TestMoveCmd(t *testing.T) {
 			errorMessage,
 		)
 	})
+
+	t.Run(
+		"moves all windows with the same app name as the focused window when --all is used",
+		func(t *testing.T) {
+			command := "move"
+			args := []string{command, "", "--all"}
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			tree := []testutils.AeroSpaceTree{
+				{
+					Windows: []aerospacecli.Window{
+						{AppName: "Finder", WindowID: 1111},
+						{AppName: "Finder", WindowID: 5678},
+					},
+					Workspace: &aerospacecli.Workspace{
+						Workspace: "ws1",
+					},
+
+					FocusedWindowID: 5678,
+				},
+			}
+			allWindows := testutils.ExtractAllWindows(tree)
+			focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+			// allow FocusNextTilingWindow to run without mocking Connection details
+			aerospaceClient.EXPECT().Connection().Return(dummyConn{}).AnyTimes()
+
+			// Setup expectations without strict ordering
+			aerospaceClient.EXPECT().
+				GetFocusedWindow().
+				Return(focusedWindow, nil)
+
+			aerospaceClient.EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil)
+
+			// For each window, expect a pair of calls (MoveWindowToWorkspace followed by SetLayout)
+			// Window 1 (5678)
+			aerospaceClient.EXPECT().
+				MoveWindowToWorkspace(5678, constants.DefaultScratchpadWorkspaceName).
+				Return(nil)
+			aerospaceClient.EXPECT().
+				SetLayout(5678, "floating").
+				Return(nil)
+
+			// Window 2 (1111)
+			aerospaceClient.EXPECT().
+				MoveWindowToWorkspace(1111, constants.DefaultScratchpadWorkspaceName).
+				Return(nil)
+			aerospaceClient.EXPECT().
+				SetLayout(1111, "floating").
+				Return(nil)
+
+			cmd := cmd.RootCmd(aerospaceClient)
+			out, err := testutils.CmdExecute(cmd, args...)
+			if err != nil {
+				t.Errorf("Expected no error, got %v", err)
+			}
+
+			cmdAsString := "aerospace-scratchpad " + strings.Join(
+				args,
+				" ",
+			) + "\n"
+			errorMessage := fmt.Sprintf("Error\n %+v", err)
+			snaps.MatchSnapshot(
+				t,
+				tree,
+				cmdAsString,
+				"Output",
+				out,
+				errorMessage,
+			)
+		},
+	)
+
+	t.Run(
+		"[dry-run] moves all windows with the same app name as the focused window when --all is used",
+		func(t *testing.T) {
+			command := "move"
+			args := []string{command, "", "--all", "--dry-run"}
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			tree := []testutils.AeroSpaceTree{
+				{
+					Windows: []aerospacecli.Window{
+						{AppName: "Finder", WindowID: 1111},
+						{AppName: "Finder", WindowID: 5678},
+					},
+					Workspace: &aerospacecli.Workspace{
+						Workspace: "ws1",
+					},
+
+					FocusedWindowID: 5678,
+				},
+			}
+			allWindows := testutils.ExtractAllWindows(tree)
+			focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+			aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+			// allow wrapper.FocusNextTilingWindow in dry-run (will not call Connection)
+			aerospaceClient.EXPECT().Connection().Return(dummyConn{}).AnyTimes()
+			gomock.InOrder(
+				aerospaceClient.EXPECT().
+					GetFocusedWindow().
+					Return(focusedWindow, nil).
+					Times(1),
+
+				aerospaceClient.EXPECT().
+					GetAllWindows().
+					Return(allWindows, nil).
+					Times(1),
+
+				// DO NOT RUN in dry-run mode
+				aerospaceClient.EXPECT().
+					MoveWindowToWorkspace(gomock.Any(), gomock.Any()).
+					Return(nil).
+					Times(0),
+
+				aerospaceClient.EXPECT().
+					SetLayout(gomock.Any(), gomock.Any()).
+					Return(nil).
+					Times(0),
+			)
+
+			cmd := cmd.RootCmd(aerospaceClient)
+			out, err := testutils.CmdExecute(cmd, args...)
+			if err != nil {
+				t.Errorf("Expected no error, got %v", err)
+			}
+
+			cmdAsString := "aerospace-scratchpad " + strings.Join(
+				args,
+				" ",
+			) + "\n"
+			errorMessage := fmt.Sprintf("Error\n %+v", err)
+			snaps.MatchSnapshot(
+				t,
+				tree,
+				cmdAsString,
+				"Output",
+				out,
+				errorMessage,
+			)
+		},
+	)
 }
