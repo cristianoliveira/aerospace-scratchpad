@@ -10,111 +10,93 @@ import (
 	"os"
 	"strconv"
 
-	aerospaceipc "github.com/cristianoliveira/aerospace-ipc"
-
 	"github.com/spf13/cobra"
+
+	aerospaceipc "github.com/cristianoliveira/aerospace-ipc"
 
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 )
 
 const (
-	bringWindowToWorkspaceCmd = "bring-window-to-workspace"
+	pullWindowSubcommand = "pull-window"
 
-	minArgsBringWindow = 3
+	minArgsPullWindow = 2
 )
 
-// MoveScratchpadResult holds the response from list-workspaces.
-type MoveScratchpadResult struct {
-	Workspace string `json:"workspace"`
-	MonitorID int    `json:"monitor-id"`
-}
-
-func WorkspaceHandlerCmd(
+func HookCmd(
 	aerospaceClient aerospaceipc.AeroSpaceClient,
 ) *cobra.Command {
-	var wsHandlerCmd = &cobra.Command{
-		Use:   "workspace-handler <workspace>",
-		Short: "This command handles when a window in scratchpad is focused (which shouldn't happen)",
-		Long: `This command handles when a window within the scratchpad workspace is focused. It'll move the window to the last focused workspace and take the window too, behaving more like "summoning the window".
-Add this snippet in your ~/aerospace.toml config:
+	hookCmd := &cobra.Command{
+		Use:   "hook",
+		Short: "Hook commands to react to specific actions outside AeroSpace WM",
+		Long: `Hook commands to react to actions that aren't handled by AeroSpace WM.
+Example of such action is when a window in the scratchpad workspace is focused, which happens when clicking in a notification or
+when a program is focused by the launcher (alfred, raycast, etc).
+`,
+	}
+
+	hookCmd.AddCommand(newPullWindowCmd(aerospaceClient))
+
+	return hookCmd
+}
+
+func newPullWindowCmd(
+	aerospaceClient aerospaceipc.AeroSpaceClient,
+) *cobra.Command {
+	return &cobra.Command{
+		Use:   fmt.Sprintf("%s <previous-workspace> <focused-workspace>", pullWindowSubcommand),
+		Short: "Pull the focused scratchpad window back to the previous workspace",
+		Long: `Pull the focused scratchpad window back to the previous workspace so it behaves like it was summoned there.
+
+This is usually hooked via exec-on-workspace-change.
+
+Add this snippet in your aerospace.toml config:
 
 '''toml
 exec-on-workspace-change = ["/bin/bash", "-c",
-  "aerospace-scratchpad wsh bring-window-to-workspace $AEROSPACE_PREV_WORKSPACE $AEROSPACE_FOCUSED_WORKSPACE"
+  "aerospace-scratchpad hook pull-window $AEROSPACE_PREV_WORKSPACE $AEROSPACE_FOCUSED_WORKSPACE"
 ]
-'''
 `,
-		Aliases: []string{"wsh"},
-		Args:    cobra.MinimumNArgs(1),
+		Aliases: []string{"pull"},
+		Args:    cobra.ExactArgs(minArgsPullWindow),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			handler := newWorkspaceHandler(cmd, aerospaceClient)
-			return handler.execute(args)
+			handler := newHookHandler(cmd, aerospaceClient)
+			return handler.handlePullWindow(args[0], args[1])
 		},
 	}
-
-	return wsHandlerCmd
 }
 
-type workspaceHandler struct {
+type hookHandler struct {
 	cmd    *cobra.Command
 	client aerospaceipc.AeroSpaceClient
 	logger logger.Logger
 }
 
-func newWorkspaceHandler(
+func newHookHandler(
 	cmd *cobra.Command,
 	client aerospaceipc.AeroSpaceClient,
-) *workspaceHandler {
-	return &workspaceHandler{
+) *hookHandler {
+	return &hookHandler{
 		cmd:    cmd,
 		client: client,
 		logger: logger.GetDefaultLogger(),
 	}
 }
 
-func (h *workspaceHandler) execute(args []string) error {
-	if len(args) == 0 {
-		return h.fail(
-			"Error: missing subcommand",
-			nil,
-			"WSH: missing subcommand",
-		)
-	}
-
-	switch args[0] {
-	case bringWindowToWorkspaceCmd:
-		if len(args) < minArgsBringWindow {
-			return h.fail(
-				"Error: missing <previous-workspace> <focused-workspace> arguments",
-				nil,
-				"WSH: not enough arguments",
-			)
-		}
-
-		return h.handleBringWindowToWorkspace(args[1], args[2])
-	default:
-		return h.fail(
-			fmt.Sprintf("Error: unknown subcommand %q", args[0]),
-			nil,
-			"WSH: unknown subcommand",
-		)
-	}
-}
-
-func (h *workspaceHandler) handleBringWindowToWorkspace(
+func (h *hookHandler) handlePullWindow(
 	prevWorkspace string,
 	focusedWorkspace string,
 ) error {
 	h.logger.LogInfo(
-		"WSH: bring-window-to-workspace invoked",
+		"HOOK: pull-window invoked",
 		"previous-workspace", prevWorkspace,
 		"focused-workspace", focusedWorkspace,
 	)
 
 	if prevWorkspace == constants.DefaultScratchpadWorkspaceName {
 		h.logger.LogDebug(
-			"WSH: previous workspace is scratchpad, nothing to do",
+			"HOOK: previous workspace is scratchpad, nothing to do",
 			"workspace", prevWorkspace,
 		)
 		return nil
@@ -122,28 +104,28 @@ func (h *workspaceHandler) handleBringWindowToWorkspace(
 
 	if focusedWorkspace != constants.DefaultScratchpadWorkspaceName {
 		h.logger.LogDebug(
-			"WSH: focused workspace is not scratchpad",
+			"HOOK: focused workspace is not scratchpad",
 			"workspace", focusedWorkspace,
 		)
 		return nil
 	}
 
-	h.logger.LogInfo("WSH: focused workspace is scratchpad")
+	h.logger.LogInfo("HOOK: focused workspace is scratchpad")
 
 	focusedWindow, err := h.client.GetFocusedWindow()
 	if err != nil {
 		return h.fail(
 			"Error: unable to get focused window",
 			err,
-			"WSH: unable to get focused window",
+			"HOOK: unable to get focused window",
 		)
 	}
 
-	h.logger.LogInfo("WSH: focused window", "window", focusedWindow)
+	h.logger.LogInfo("HOOK: focused window", "window", focusedWindow)
 
 	if focusedWindow.Workspace != constants.DefaultScratchpadWorkspaceName {
 		h.logger.LogDebug(
-			"WSH: focused window is no longer in scratchpad, skipping move",
+			"HOOK: focused window is no longer in scratchpad, skipping move",
 			"workspace", focusedWindow.Workspace,
 		)
 		return nil
@@ -154,12 +136,12 @@ func (h *workspaceHandler) handleBringWindowToWorkspace(
 		return h.fail(
 			"Error: unable to remove temp file",
 			markerErr,
-			"WSH: unable to remove temp file",
+			"HOOK: unable to remove temp file",
 		)
 	}
 
 	if cleared {
-		h.logger.LogInfo("WSH: temp file exists, returning")
+		h.logger.LogInfo("HOOK: temp file exists, returning")
 		return nil
 	}
 
@@ -168,7 +150,7 @@ func (h *workspaceHandler) handleBringWindowToWorkspace(
 	}
 
 	h.logger.LogInfo(
-		"WSH: [final] moved window to new focused workspace",
+		"HOOK: [final] moved window to new focused workspace",
 		"workspace", prevWorkspace,
 		"window", focusedWindow,
 	)
@@ -176,7 +158,7 @@ func (h *workspaceHandler) handleBringWindowToWorkspace(
 	return nil
 }
 
-func (h *workspaceHandler) clearMovingMarker() (bool, error) {
+func (h *hookHandler) clearMovingMarker() (bool, error) {
 	_, err := os.Stat(constants.TempScratchpadMovingFile)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
@@ -192,7 +174,7 @@ func (h *workspaceHandler) clearMovingMarker() (bool, error) {
 	return true, nil
 }
 
-func (h *workspaceHandler) moveWindowToWorkspace(windowID int, workspace string) error {
+func (h *hookHandler) moveWindowToWorkspace(windowID int, workspace string) error {
 	client := h.client.Connection()
 
 	response, err := client.SendCommand(
@@ -207,7 +189,7 @@ func (h *workspaceHandler) moveWindowToWorkspace(windowID int, workspace string)
 		return h.fail(
 			fmt.Sprintf("Error: unable to move window %d to workspace %s", windowID, workspace),
 			err,
-			"WSH: unable to move window to workspace",
+			"HOOK: unable to move window to workspace",
 		)
 	}
 
@@ -215,14 +197,14 @@ func (h *workspaceHandler) moveWindowToWorkspace(windowID int, workspace string)
 		return h.fail(
 			fmt.Sprintf("Error: unable to move window %d to workspace %s", windowID, workspace),
 			errors.New(response.StdErr),
-			"WSH: unable to move window to workspace - non-zero exit",
+			"HOOK: unable to move window to workspace - non-zero exit",
 		)
 	}
 
 	return nil
 }
 
-func (h *workspaceHandler) fail(userMessage string, err error, logMessage string) error {
+func (h *hookHandler) fail(userMessage string, err error, logMessage string) error {
 	if err != nil {
 		h.logger.LogError(logMessage, "error", err)
 		h.cmd.PrintErrf("%s: %v\n", userMessage, err)
