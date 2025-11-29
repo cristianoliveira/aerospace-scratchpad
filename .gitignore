@@ -28,3 +28,4 @@ aerospace-scratchpad
 _tmp/
 .cache/
 .gocache
+bin
