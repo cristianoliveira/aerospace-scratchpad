@@ -12,7 +12,8 @@ package mock_aerospace
 import (
 	reflect "reflect"
 
-	aerospace "github.com/cristianoliveira/aerospace-ipc"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	client "github.com/cristianoliveira/aerospace-ipc/pkg/client"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -70,10 +71,10 @@ func (mr *MockAeroSpaceClientMockRecorder) Connection() *gomock.Call {
 }
 
 // GetAllWindows mocks base method.
-func (m *MockAeroSpaceClient) GetAllWindows() ([]aerospace.Window, error) {
+func (m *MockAeroSpaceClient) GetAllWindows() ([]windows.Window, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllWindows")
-	ret0, _ := ret[0].([]aerospace.Window)
+	ret0, _ := ret[0].([]windows.Window)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -85,10 +86,10 @@ func (mr *MockAeroSpaceClientMockRecorder) GetAllWindows() *gomock.Call {
 }
 
 // GetAllWindowsByWorkspace mocks base method.
-func (m *MockAeroSpaceClient) GetAllWindowsByWorkspace(workspaceName string) ([]aerospace.Window, error) {
+func (m *MockAeroSpaceClient) GetAllWindowsByWorkspace(workspaceName string) ([]windows.Window, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllWindowsByWorkspace", workspaceName)
-	ret0, _ := ret[0].([]aerospace.Window)
+	ret0, _ := ret[0].([]windows.Window)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -100,10 +101,10 @@ func (mr *MockAeroSpaceClientMockRecorder) GetAllWindowsByWorkspace(workspaceNam
 }
 
 // GetFocusedWindow mocks base method.
-func (m *MockAeroSpaceClient) GetFocusedWindow() (*aerospace.Window, error) {
+func (m *MockAeroSpaceClient) GetFocusedWindow() (*windows.Window, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFocusedWindow")
-	ret0, _ := ret[0].(*aerospace.Window)
+	ret0, _ := ret[0].(*windows.Window)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -115,10 +116,10 @@ func (mr *MockAeroSpaceClientMockRecorder) GetFocusedWindow() *gomock.Call {
 }
 
 // GetFocusedWorkspace mocks base method.
-func (m *MockAeroSpaceClient) GetFocusedWorkspace() (*aerospace.Workspace, error) {
+func (m *MockAeroSpaceClient) GetFocusedWorkspace() (*workspaces.Workspace, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFocusedWorkspace")
-	ret0, _ := ret[0].(*aerospace.Workspace)
+	ret0, _ := ret[0].(*workspaces.Workspace)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

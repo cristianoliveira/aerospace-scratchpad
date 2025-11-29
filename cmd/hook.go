@@ -12,7 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	aerospaceipc "github.com/cristianoliveira/aerospace-ipc"
+	aerospaceipc "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
 
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
@@ -25,7 +25,7 @@ const (
 )
 
 func HookCmd(
-	aerospaceClient aerospaceipc.AeroSpaceClient,
+	aerospaceClient *aerospaceipc.AeroSpaceWM,
 ) *cobra.Command {
 	hookCmd := &cobra.Command{
 		Use:   "hook",
@@ -42,7 +42,7 @@ when a program is focused by the launcher (alfred, raycast, etc).
 }
 
 func newPullWindowCmd(
-	aerospaceClient aerospaceipc.AeroSpaceClient,
+	aerospaceClient *aerospaceipc.AeroSpaceWM,
 ) *cobra.Command {
 	return &cobra.Command{
 		Use:   fmt.Sprintf("%s <previous-workspace> <focused-workspace>", pullWindowSubcommand),
@@ -69,13 +69,13 @@ exec-on-workspace-change = ["/bin/bash", "-c",
 
 type hookHandler struct {
 	cmd    *cobra.Command
-	client aerospaceipc.AeroSpaceClient
+	client *aerospaceipc.AeroSpaceWM
 	logger logger.Logger
 }
 
 func newHookHandler(
 	cmd *cobra.Command,
-	client aerospaceipc.AeroSpaceClient,
+	client *aerospaceipc.AeroSpaceWM,
 ) *hookHandler {
 	return &hookHandler{
 		cmd:    cmd,
@@ -112,7 +112,7 @@ func (h *hookHandler) handlePullWindow(
 
 	h.logger.LogInfo("HOOK: focused workspace is scratchpad")
 
-	focusedWindow, err := h.client.GetFocusedWindow()
+	focusedWindow, err := h.client.Windows().GetFocusedWindow()
 	if err != nil {
 		return h.fail(
 			"Error: unable to get focused window",

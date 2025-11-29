@@ -8,13 +8,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	aerospacecli "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 )
 
 // RootCmd represents the base command when called without any subcommands.
 func RootCmd(
-	aerospaceClient aerospacecli.AeroSpaceClient,
+	aerospaceClient *aerospacecli.AeroSpaceWM,
 ) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "aerospace-scratchpad",
@@ -48,8 +48,8 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 	rootCmd.AddCommand(enableFilterFlag(ShowCmd(customClient)))
 	rootCmd.AddCommand(enableFilterFlag(SummonCmd(customClient)))
 	rootCmd.AddCommand(NextCmd(customClient))
-	rootCmd.AddCommand(InfoCmd(customClient))
-	rootCmd.AddCommand(HookCmd(customClient))
+	rootCmd.AddCommand(InfoCmd(customClient.GetUnderlyingClient()))
+	rootCmd.AddCommand(HookCmd(customClient.GetUnderlyingClient()))
 
 	return rootCmd
 }
@@ -64,7 +64,7 @@ Requires a key=value format. Can be used multiple times. `,
 }
 
 func Execute(
-	aerospaceClient aerospacecli.AeroSpaceClient,
+	aerospaceClient *aerospacecli.AeroSpaceWM,
 ) {
 	rootCmd := RootCmd(aerospaceClient)
 

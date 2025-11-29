@@ -7,7 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	aerospacecli "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 )
@@ -29,17 +30,17 @@ type Querier interface {
 	IsWindowFocused(windowID int) (bool, error)
 
 	// GetNextScratchpadWindow returns the next scratchpad window in the workspace
-	GetNextScratchpadWindow() (*aerospacecli.Window, error)
+	GetNextScratchpadWindow() (*windows.Window, error)
 
 	// GetFilteredWindows returns all windows that match the given filters
 	GetFilteredWindows(
 		windowNamePattern string,
 		filterFlags []string,
-	) ([]aerospacecli.Window, error)
+	) ([]windows.Window, error)
 }
 
 type QueryMaker struct {
-	cli aerospacecli.AeroSpaceClient
+	cli *aerospacecli.AeroSpaceWM
 }
 
 func (a *QueryMaker) IsWindowInWorkspace(
@@ -47,7 +48,7 @@ func (a *QueryMaker) IsWindowInWorkspace(
 	workspaceName string,
 ) (bool, error) {
 	// Get all windows from the workspace
-	windows, err := a.cli.GetAllWindowsByWorkspace(workspaceName)
+	wsWindows, err := a.cli.Windows().GetAllWindowsByWorkspace(workspaceName)
 	if err != nil {
 		return false, fmt.Errorf(
 			"unable to get windows from workspace '%s'. Reason: %w",
@@ -57,7 +58,7 @@ func (a *QueryMaker) IsWindowInWorkspace(
 	}
 
 	// Check if the window is in the workspace
-	for _, window := range windows {
+	for _, window := range wsWindows {
 		if window.WindowID == windowID {
 			return true, nil
 		}
@@ -70,7 +71,7 @@ func (a *QueryMaker) IsWindowInFocusedWorkspace(
 	windowID int,
 ) (bool, error) {
 	// Get the focused workspace
-	focusedWorkspace, err := a.cli.GetFocusedWorkspace()
+	focusedWorkspace, err := a.cli.Workspaces().GetFocusedWorkspace()
 	if err != nil {
 		return false, fmt.Errorf(
 			"unable to get focused workspace, reason %w",
@@ -84,7 +85,7 @@ func (a *QueryMaker) IsWindowInFocusedWorkspace(
 
 func (a *QueryMaker) IsWindowFocused(windowID int) (bool, error) {
 	// Get the focused window
-	focusedWindow, err := a.cli.GetFocusedWindow()
+	focusedWindow, err := a.cli.Windows().GetFocusedWindow()
 	if err != nil {
 		return false, fmt.Errorf("unable to get focused window, reason %w", err)
 	}
@@ -93,20 +94,20 @@ func (a *QueryMaker) IsWindowFocused(windowID int) (bool, error) {
 	return focusedWindow.WindowID == windowID, nil
 }
 
-func (a *QueryMaker) GetNextScratchpadWindow() (*aerospacecli.Window, error) {
+func (a *QueryMaker) GetNextScratchpadWindow() (*windows.Window, error) {
 	// Get all windows from the workspace
-	windows, err := a.cli.GetAllWindowsByWorkspace(
+	wsWindows, err := a.cli.Windows().GetAllWindowsByWorkspace(
 		constants.DefaultScratchpadWorkspaceName,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(windows) == 0 {
+	if len(wsWindows) == 0 {
 		return nil, errors.New("no scratchpad windows found")
 	}
 
-	return &windows[0], nil
+	return &wsWindows[0], nil
 }
 
 // Filter represents a filter with property and regex pattern.
@@ -120,7 +121,7 @@ const filterPartsExpected = 2
 func (a *QueryMaker) GetFilteredWindows(
 	appNamePattern string,
 	filterFlags []string,
-) ([]aerospacecli.Window, error) {
+) ([]windows.Window, error) {
 	logger := logger.GetDefaultLogger()
 
 	// instantiate the regex
@@ -146,14 +147,14 @@ func (a *QueryMaker) GetFilteredWindows(
 		return nil, err
 	}
 
-	windows, err := a.cli.GetAllWindows()
+	allWindows, err := a.cli.Windows().GetAllWindows()
 	if err != nil {
 		logger.LogError("FILTER: unable to get all windows", "error", err)
 		return nil, fmt.Errorf("unable to get windows: %w", err)
 	}
 
-	var filteredWindows []aerospacecli.Window
-	for _, window := range windows {
+	var filteredWindows []windows.Window
+	for _, window := range allWindows {
 		if !appPattern.MatchString(window.AppName) {
 			continue
 		}
@@ -237,7 +238,7 @@ func parseFilters(filterFlags []string) ([]Filter, error) {
 }
 
 // applyFilters applies all filters to a window and returns true if all filters pass.
-func applyFilters(window aerospacecli.Window, filters []Filter) (bool, error) {
+func applyFilters(window windows.Window, filters []Filter) (bool, error) {
 	logger := logger.GetDefaultLogger()
 
 	for _, filter := range filters {
@@ -279,7 +280,7 @@ func applyFilters(window aerospacecli.Window, filters []Filter) (bool, error) {
 }
 
 // NewAerospaceQuerier creates a new AerospaceQuerier.
-func NewAerospaceQuerier(cli aerospacecli.AeroSpaceClient) Querier {
+func NewAerospaceQuerier(cli *aerospacecli.AeroSpaceWM) Querier {
 	return &QueryMaker{
 		cli: cli,
 	}

@@ -13,7 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	aerospacecli "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
 )
 
 func CmdExecute(cmd *cobra.Command, args ...string) (string, error) {

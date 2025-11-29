@@ -6,7 +6,7 @@ package main
 import (
 	"log"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	aerospacecli "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 )
@@ -25,7 +25,7 @@ func main() {
 	logger.SetDefaultLogger(defaultLogger)
 	defaultLogger.LogInfo("Executing Aerospace Scratchpad CLI")
 
-	aerospaceMarkClient, err := aerospacecli.NewAeroSpaceClient()
+	aerospaceMarkClient, err := aerospacecli.NewClient()
 	if err != nil {
 		log.Printf("Error creating Aerospace client: %v", err)
 	}

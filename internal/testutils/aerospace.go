@@ -3,18 +3,19 @@ package testutils
 import (
 	"regexp"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 )
 
 type AeroSpaceTree struct {
-	Windows         []aerospacecli.Window
-	Workspace       *aerospacecli.Workspace
+	Windows         []windows.Window
+	Workspace       *workspaces.Workspace
 	FocusedWindowID int
 }
 
-func ExtractAllWindows(tree []AeroSpaceTree) []aerospacecli.Window {
-	var allWindows []aerospacecli.Window
+func ExtractAllWindows(tree []AeroSpaceTree) []windows.Window {
+	var allWindows []windows.Window
 	for _, t := range tree {
 		allWindows = append(allWindows, t.Windows...)
 	}
@@ -24,9 +25,9 @@ func ExtractAllWindows(tree []AeroSpaceTree) []aerospacecli.Window {
 func ExtractWindowsByName(
 	tree []AeroSpaceTree,
 	name string,
-) []aerospacecli.Window {
+) []windows.Window {
 	pattern := regexp.MustCompile(name)
-	var matchedWindows []aerospacecli.Window
+	var matchedWindows []windows.Window
 	for _, t := range tree {
 		for _, window := range t.Windows {
 			if pattern.MatchString(window.AppName) {
@@ -47,7 +48,7 @@ func ExtractFocusedTree(tree []AeroSpaceTree) *AeroSpaceTree {
 	return nil
 }
 
-func ExtractFocusedWindow(tree []AeroSpaceTree) *aerospacecli.Window {
+func ExtractFocusedWindow(tree []AeroSpaceTree) *windows.Window {
 	for _, t := range tree {
 		if t.FocusedWindowID != 0 {
 			for _, window := range t.Windows {
@@ -70,7 +71,7 @@ func ExtractScratchpadWindows(tree []AeroSpaceTree) *AeroSpaceTree {
 	return nil
 }
 
-func ExtractWindowByID(tree []AeroSpaceTree, id int) *aerospacecli.Window {
+func ExtractWindowByID(tree []AeroSpaceTree, id int) *windows.Window {
 	for _, t := range tree {
 		for _, window := range t.Windows {
 			if window.WindowID == id {
