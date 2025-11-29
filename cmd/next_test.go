@@ -11,8 +11,8 @@ import (
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
@@ -66,8 +66,8 @@ func TestNextCmd(t *testing.T) {
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
 		gomock.InOrder(
-		aerospaceClient.GetWorkspacesMock().EXPECT().
-			GetFocusedWorkspace().
+			aerospaceClient.GetWorkspacesMock().EXPECT().
+				GetFocusedWorkspace().
 				Return(focusedTree.Workspace, nil).
 				Times(1),
 			aerospaceClient.GetWindowsMock().EXPECT().

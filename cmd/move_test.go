@@ -11,34 +11,13 @@ import (
 
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
-	clientipc "github.com/cristianoliveira/aerospace-ipc/pkg/client"
 	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
-
-// dummyConn is a no-op implementation of clientipc.AeroSpaceConnection used by tests to satisfy FocusNextTilingWindow.
-type dummyConn struct{}
-
-// CloseConnection is a no-op.
-func (d dummyConn) CloseConnection() error { return nil }
-
-// GetSocketPath is a no-op.
-func (d dummyConn) GetSocketPath() (string, error) { return "", nil }
-
-// GetServerVersion is a no-op.
-func (d dummyConn) GetServerVersion() (string, error) { return "", nil }
-
-// CheckServerVersion is a no-op.
-func (d dummyConn) CheckServerVersion() error { return nil }
-
-// SendCommand always returns a successful zero-exit response.
-func (d dummyConn) SendCommand(cmd string, args []string) (*clientipc.Response, error) {
-	return &clientipc.Response{ExitCode: 0}, nil
-}
 
 //nolint:gocognit // Integration-style test exercises multiple window scenarios for coverage
 func TestMoveCmd(t *testing.T) {
@@ -573,8 +552,8 @@ func TestMoveCmd(t *testing.T) {
 				Return(nil)
 
 			wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
-		_ = wrappedClient
-		cmd := cmd.RootCmd(aerospaceClient)
+			_ = wrappedClient
+			cmd := cmd.RootCmd(aerospaceClient)
 			out, err := testutils.CmdExecute(cmd, args...)
 			if err != nil {
 				t.Errorf("Expected no error, got %v", err)
@@ -625,8 +604,8 @@ func TestMoveCmd(t *testing.T) {
 			// allow wrapper.FocusNextTilingWindow in dry-run (will not call Connection)
 			// Connection() is handled by routing connection, no need to mock
 			gomock.InOrder(
-		aerospaceClient.GetWindowsMock().EXPECT().
-			GetFocusedWindow().
+				aerospaceClient.GetWindowsMock().EXPECT().
+					GetFocusedWindow().
 					Return(focusedWindow, nil).
 					Times(1),
 
@@ -636,20 +615,20 @@ func TestMoveCmd(t *testing.T) {
 					Times(1),
 
 				// DO NOT RUN in dry-run mode
-		aerospaceClient.GetWorkspacesMock().EXPECT().
-			MoveWindowToWorkspace(gomock.Any(), gomock.Any()).
+				aerospaceClient.GetWorkspacesMock().EXPECT().
+					MoveWindowToWorkspace(gomock.Any(), gomock.Any()).
 					Return(nil).
 					Times(0),
 
-		aerospaceClient.GetWindowsMock().EXPECT().
-			SetLayout(gomock.Any(), gomock.Any()).
+				aerospaceClient.GetWindowsMock().EXPECT().
+					SetLayout(gomock.Any(), gomock.Any()).
 					Return(nil).
 					Times(0),
 			)
 
 			wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
-		_ = wrappedClient
-		cmd := cmd.RootCmd(aerospaceClient)
+			_ = wrappedClient
+			cmd := cmd.RootCmd(aerospaceClient)
 			out, err := testutils.CmdExecute(cmd, args...)
 			if err != nil {
 				t.Errorf("Expected no error, got %v", err)

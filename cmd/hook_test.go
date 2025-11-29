@@ -2,48 +2,17 @@ package cmd_test
 
 import (
 	"os"
-	"reflect"
 	"testing"
 
 	"go.uber.org/mock/gomock"
 
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
-	clientipc "github.com/cristianoliveira/aerospace-ipc/pkg/client"
 	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
-
-type stubConnection struct {
-	t               *testing.T
-	expectedCommand string
-	expectedArgs    []string
-	called          bool
-}
-
-func (s *stubConnection) SendCommand(command string, args []string) (*clientipc.Response, error) {
-	s.t.Helper()
-
-	if command != s.expectedCommand {
-		s.t.Fatalf("expected command %q, got %q", s.expectedCommand, command)
-	}
-
-	if !reflect.DeepEqual(s.expectedArgs, args) {
-		s.t.Fatalf("expected args %v, got %v", s.expectedArgs, args)
-	}
-
-	s.called = true
-	return &clientipc.Response{ExitCode: 0}, nil
-}
-
-func (s *stubConnection) CloseConnection() error         { return nil }
-func (s *stubConnection) GetSocketPath() (string, error) { return "", nil }
-func (s *stubConnection) GetServerVersion() (string, error) {
-	return "", nil
-}
-func (s *stubConnection) CheckServerVersion() error { return nil }
 
 func cleanupMarkerFile(t *testing.T) {
 	t.Helper()
@@ -71,7 +40,11 @@ func TestHookPullWindow(t *testing.T) {
 		}
 
 		gomock.InOrder(
-			mockClient.GetWindowsMock().EXPECT().GetFocusedWindow().Return(focusedWindow, nil).Times(1),
+			mockClient.GetWindowsMock().
+				EXPECT().
+				GetFocusedWindow().
+				Return(focusedWindow, nil).
+				Times(1),
 			mockClient.GetWorkspacesMock().EXPECT().
 				MoveWindowToWorkspace(focusedWindow.WindowID, "prev-ws").
 				Return(nil).

@@ -69,8 +69,8 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				focusedWorkspace,
 			)
 
-		querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
-		mover := aerospace.NewAeroSpaceMover(aerospaceClient)
+			querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
+			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 
 			windows, err := querier.GetFilteredWindows(
 				windowNamePattern,

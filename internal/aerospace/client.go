@@ -8,7 +8,6 @@ import (
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/client"
-	socketcli "github.com/cristianoliveira/aerospace-ipc/pkg/client"
 )
 
 // AeroSpaceClient implements the AeroSpaceClient interface for interacting with AeroSpaceWM.
@@ -44,12 +43,12 @@ func (c *AeroSpaceClient) SetOptions(opts ClientOpts) {
 	c.dryRun = opts.DryRun
 }
 
-// Windows returns the windows service
+// Windows returns the windows service.
 func (c *AeroSpaceClient) Windows() *windows.Service {
 	return c.client.Windows()
 }
 
-// Workspaces returns the workspaces service
+// Workspaces returns the workspaces service.
 func (c *AeroSpaceClient) Workspaces() *workspaces.Service {
 	return c.client.Workspaces()
 }
@@ -143,7 +142,7 @@ func (c *AeroSpaceClient) SetLayout(windowID int, layout string) error {
 	return c.client.Windows().SetLayout(windowID, layout)
 }
 
-func (c *AeroSpaceClient) Connection() socketcli.AeroSpaceConnection {
+func (c *AeroSpaceClient) Connection() client.AeroSpaceConnection {
 	if c.client != nil {
 		return c.client.Connection()
 	}
@@ -156,12 +155,15 @@ func (c *AeroSpaceClient) CloseConnection() error {
 		return nil
 	}
 	if c.client != nil {
-		return c.client.(interface{ CloseConnection() error }).CloseConnection()
+		if closer, ok := c.client.(interface{ CloseConnection() error }); ok {
+			return closer.CloseConnection()
+		}
+		return nil
 	}
 	return c.ogClient.CloseConnection()
 }
 
-// AeroSpaceWMClient defines the interface for clients that provide Windows() and Workspaces() services
+// AeroSpaceWMClient defines the interface for clients that provide Windows() and Workspaces() services.
 type AeroSpaceWMClient interface {
 	Windows() *windows.Service
 	Workspaces() *workspaces.Service

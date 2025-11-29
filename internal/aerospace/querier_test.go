@@ -1,4 +1,4 @@
-package aerospace_test //nolint:cyclop // test suite validates many scenarios in one package
+package aerospace_test
 
 import (
 	"errors"
@@ -157,7 +157,7 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		},
 	)
 
-		t.Run(
+	t.Run(
 		"GetFilteredWindows returns two matches with pattern only",
 		func(t *testing.T) {
 			ctrl := gomock.NewController(t)

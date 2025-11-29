@@ -10,7 +10,6 @@ import (
 
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
-	socketcli "github.com/cristianoliveira/aerospace-ipc/pkg/client"
 	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
@@ -18,36 +17,6 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
-
-// mockAeroSpaceConnection is a simple mock for AeroSpaceConnection.
-type mockAeroSpaceConnection struct{}
-
-func (m *mockAeroSpaceConnection) SendCommand(
-	command string,
-	args []string,
-) (*socketcli.Response, error) {
-	return &socketcli.Response{
-		ExitCode: 0,
-		StdOut:   "",
-		StdErr:   "",
-	}, nil
-}
-
-func (m *mockAeroSpaceConnection) CloseConnection() error {
-	return nil
-}
-
-func (m *mockAeroSpaceConnection) GetSocketPath() (string, error) {
-	return "", nil
-}
-
-func (m *mockAeroSpaceConnection) GetServerVersion() (string, error) {
-	return "", nil
-}
-
-func (m *mockAeroSpaceConnection) CheckServerVersion() error {
-	return nil
-}
 
 //nolint:gocognit // Integration-style test exercises multiple window scenarios for coverage
 func TestShowCmd(t *testing.T) {
@@ -660,8 +629,8 @@ func TestShowCmd(t *testing.T) {
 				)
 
 				wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
-			_ = wrappedClient
-			cmd := cmd.RootCmd(aerospaceClient)
+				_ = wrappedClient
+				cmd := cmd.RootCmd(aerospaceClient)
 				out, err := testutils.CmdExecute(cmd, args...)
 				if err != nil {
 					t.Errorf("Expected no error, got %v", err)
@@ -780,8 +749,8 @@ func TestShowCmd(t *testing.T) {
 				)
 
 				wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
-			_ = wrappedClient
-			cmd := cmd.RootCmd(aerospaceClient)
+				_ = wrappedClient
+				cmd := cmd.RootCmd(aerospaceClient)
 				out, err := testutils.CmdExecute(cmd, args...)
 				if err != nil {
 					t.Errorf("Expected no error, got %v", err)
@@ -893,8 +862,8 @@ func TestShowCmd(t *testing.T) {
 				)
 
 				wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
-			_ = wrappedClient
-			cmd := cmd.RootCmd(aerospaceClient)
+				_ = wrappedClient
+				cmd := cmd.RootCmd(aerospaceClient)
 				out, err := testutils.CmdExecute(cmd, args...)
 				if err != nil {
 					t.Errorf("Expected no error, got %v", err)
@@ -1002,8 +971,8 @@ func TestShowCmd(t *testing.T) {
 				)
 
 				wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
-			_ = wrappedClient
-			cmd := cmd.RootCmd(aerospaceClient)
+				_ = wrappedClient
+				cmd := cmd.RootCmd(aerospaceClient)
 				out, err := testutils.CmdExecute(cmd, args...)
 				if err != nil {
 					t.Errorf("Expected no error, got %v", err)
@@ -1120,8 +1089,8 @@ func TestShowCmd(t *testing.T) {
 				)
 
 				wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
-			_ = wrappedClient
-			cmd := cmd.RootCmd(aerospaceClient)
+				_ = wrappedClient
+				cmd := cmd.RootCmd(aerospaceClient)
 				out, err := testutils.CmdExecute(cmd, args...)
 				if err != nil {
 					t.Errorf("Expected no error, got %v", err)
@@ -1192,8 +1161,8 @@ func TestShowCmd(t *testing.T) {
 					Times(1)
 
 				wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
-			_ = wrappedClient
-			cmd := cmd.RootCmd(aerospaceClient)
+				_ = wrappedClient
+				cmd := cmd.RootCmd(aerospaceClient)
 				out, err := testutils.CmdExecute(cmd, args...)
 				if err == nil {
 					t.Errorf("Expected error, got %v", out)
@@ -1280,8 +1249,8 @@ func TestShowCmd(t *testing.T) {
 					Times(1)
 
 				wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
-			_ = wrappedClient
-			cmd := cmd.RootCmd(aerospaceClient)
+				_ = wrappedClient
+				cmd := cmd.RootCmd(aerospaceClient)
 				out, err := testutils.CmdExecute(cmd, args...)
 				if err == nil {
 					t.Errorf("Expected no error, got %v", err)

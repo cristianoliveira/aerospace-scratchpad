@@ -442,10 +442,12 @@ linters:
       - path: '_test\.go'
         linters:
           - bodyclose
+          - cyclop
           - dupl
           - errcheck
           - funlen
           - goconst
           - gosec
+          - mnd
           - noctx
           - wrapcheck

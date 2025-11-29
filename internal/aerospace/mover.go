@@ -121,25 +121,33 @@ func (a *MoverAeroSpace) MoveWindowToWorkspace(
 		}
 	}
 
-	if shouldSetFocus {
-		// Use wrapper's SetFocusByWindowID if available (for dry-run support)
-		if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
-			if err := wrapper.SetFocusByWindowID(window.WindowID); err != nil {
-				return fmt.Errorf(
-					"unable to set focus to window '%+v': %w",
-					window,
-					err,
-				)
-			}
-		} else {
-			// Fallback to direct service call
-			if err := a.aerospace.Windows().SetFocusByWindowID(window.WindowID); err != nil {
-				return fmt.Errorf(
-					"unable to set focus to window '%+v': %w",
-					window,
-					err,
-				)
-			}
+	if !shouldSetFocus {
+		fmt.Fprintf(
+			os.Stdout,
+			"Window '%+v' is moved to workspace '%s'\n",
+			window,
+			workspace.Workspace,
+		)
+		return nil
+	}
+
+	// Use wrapper's SetFocusByWindowID if available (for dry-run support)
+	if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
+		if err := wrapper.SetFocusByWindowID(window.WindowID); err != nil {
+			return fmt.Errorf(
+				"unable to set focus to window '%+v': %w",
+				window,
+				err,
+			)
+		}
+	} else {
+		// Fallback to direct service call
+		if err := a.aerospace.Windows().SetFocusByWindowID(window.WindowID); err != nil {
+			return fmt.Errorf(
+				"unable to set focus to window '%+v': %w",
+				window,
+				err,
+			)
 		}
 	}
 

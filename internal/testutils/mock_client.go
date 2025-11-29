@@ -4,17 +4,18 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/cristianoliveira/aerospace-ipc/mocks/aerospace"
+	"go.uber.org/mock/gomock"
+
+	aerospace_mock "github.com/cristianoliveira/aerospace-ipc/mocks/aerospace"
 	windows_mock "github.com/cristianoliveira/aerospace-ipc/mocks/aerospace/windows"
 	workspaces_mock "github.com/cristianoliveira/aerospace-ipc/mocks/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/client"
-	"go.uber.org/mock/gomock"
 )
 
 // MockAeroSpaceWM wraps the aerospace-ipc MockClient to make it compatible with *AeroSpaceWM
-// It creates real Service instances that use a routing connection to delegate to mocks
+// It creates real Service instances that use a routing connection to delegate to mocks.
 type MockAeroSpaceWM struct {
 	conn              client.AeroSpaceConnection
 	routingConn       *routingConnection
@@ -24,21 +25,21 @@ type MockAeroSpaceWM struct {
 	workspacesSvc     *workspaces.Service
 }
 
-// NewMockAeroSpaceWM creates a new mock AeroSpaceWM instance
+// NewMockAeroSpaceWM creates a new mock AeroSpaceWM instance.
 func NewMockAeroSpaceWM(ctrl *gomock.Controller) *MockAeroSpaceWM {
 	mockClient := aerospace_mock.NewMockClient(ctrl)
-	
+
 	// Create routing connection that delegates to service mocks
 	routingConn := &routingConnection{
 		windowsMock:    mockClient.Windows,
 		workspacesMock: mockClient.Workspaces,
 		ctrl:           ctrl,
 	}
-	
+
 	// Create real Service instances with the routing connection
 	windowsSvc := windows.NewService(routingConn)
 	workspacesSvc := workspaces.NewService(routingConn)
-	
+
 	return &MockAeroSpaceWM{
 		conn:              mockClient.Conn,
 		routingConn:       routingConn,
@@ -49,38 +50,43 @@ func NewMockAeroSpaceWM(ctrl *gomock.Controller) *MockAeroSpaceWM {
 	}
 }
 
-// Windows returns the windows service (which routes to the mock via connection)
+// Windows returns the windows service (which routes to the mock via connection).
 func (m *MockAeroSpaceWM) Windows() *windows.Service {
 	return m.windowsSvc
 }
 
-// Workspaces returns the workspaces service (which routes to the mock via connection)
+// Workspaces returns the workspaces service (which routes to the mock via connection).
 func (m *MockAeroSpaceWM) Workspaces() *workspaces.Service {
 	return m.workspacesSvc
 }
 
-// Connection returns the routing connection that delegates to mocks
+// Connection returns the routing connection that delegates to mocks.
 func (m *MockAeroSpaceWM) Connection() client.AeroSpaceConnection {
 	return m.routingConn
 }
 
-// CloseConnection mocks closing the connection
+// CloseConnection mocks closing the connection.
 func (m *MockAeroSpaceWM) CloseConnection() error {
 	return nil
 }
 
-// GetWindowsMock returns the underlying windows mock for setting expectations
+// GetWindowsMock returns the underlying windows mock for setting expectations.
 func (m *MockAeroSpaceWM) GetWindowsMock() *windows_mock.MockWindowsService {
 	return m.windowsService
 }
 
-// GetWorkspacesMock returns the underlying workspaces mock for setting expectations
+// GetWorkspacesMock returns the underlying workspaces mock for setting expectations.
 func (m *MockAeroSpaceWM) GetWorkspacesMock() *workspaces_mock.MockWorkspacesService {
 	return m.workspacesService
 }
 
+const (
+	minArgsForMoveCommand = 3
+	windowIDFlag          = "--window-id"
+)
+
 // routingConnection is a connection that routes Service method calls to the appropriate mocks
-// It intercepts SendCommand calls and routes them to the service mocks
+// It intercepts SendCommand calls and routes them to the service mocks.
 type routingConnection struct {
 	windowsMock    *windows_mock.MockWindowsService
 	workspacesMock *workspaces_mock.MockWorkspacesService
@@ -112,7 +118,7 @@ func (r *routingConnection) handleListWindows(args []string) (*client.Response, 
 			// GetAllWindows
 			wins, err := r.windowsMock.GetAllWindows()
 			if err != nil {
-				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, nil
+				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, err
 			}
 			jsonData, _ := json.Marshal(wins)
 			return &client.Response{ExitCode: 0, StdOut: string(jsonData), StdErr: ""}, nil
@@ -122,7 +128,7 @@ func (r *routingConnection) handleListWindows(args []string) (*client.Response, 
 			workspace := args[i+1]
 			wins, err := r.windowsMock.GetAllWindowsByWorkspace(workspace)
 			if err != nil {
-				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, nil
+				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, err
 			}
 			jsonData, _ := json.Marshal(wins)
 			return &client.Response{ExitCode: 0, StdOut: string(jsonData), StdErr: ""}, nil
@@ -131,7 +137,7 @@ func (r *routingConnection) handleListWindows(args []string) (*client.Response, 
 			// GetFocusedWindow
 			win, err := r.windowsMock.GetFocusedWindow()
 			if err != nil {
-				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, nil
+				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, err
 			}
 			jsonData, _ := json.Marshal([]windows.Window{*win})
 			return &client.Response{ExitCode: 0, StdOut: string(jsonData), StdErr: ""}, nil
@@ -143,11 +149,11 @@ func (r *routingConnection) handleListWindows(args []string) (*client.Response, 
 func (r *routingConnection) handleFocus(args []string) (*client.Response, error) {
 	// Find --window-id
 	for i, arg := range args {
-		if arg == "--window-id" && i+1 < len(args) {
+		if arg == windowIDFlag && i+1 < len(args) {
 			windowID, _ := strconv.Atoi(args[i+1])
 			err := r.windowsMock.SetFocusByWindowID(windowID)
 			if err != nil {
-				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, nil
+				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, err
 			}
 			return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
 		}
@@ -157,16 +163,16 @@ func (r *routingConnection) handleFocus(args []string) (*client.Response, error)
 
 func (r *routingConnection) handleLayout(args []string) (*client.Response, error) {
 	// Layout command: layout <layout-name> --window-id <id>
-	if len(args) < 3 {
+	if len(args) < minArgsForMoveCommand {
 		return &client.Response{ExitCode: 1, StdOut: "", StdErr: "invalid layout command"}, nil
 	}
 	layout := args[0]
 	for i, arg := range args {
-		if arg == "--window-id" && i+1 < len(args) {
+		if arg == windowIDFlag && i+1 < len(args) {
 			windowID, _ := strconv.Atoi(args[i+1])
 			err := r.windowsMock.SetLayout(windowID, layout)
 			if err != nil {
-				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, nil
+				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, err
 			}
 			return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
 		}
@@ -181,7 +187,7 @@ func (r *routingConnection) handleListWorkspaces(args []string) (*client.Respons
 			// GetFocusedWorkspace
 			ws, err := r.workspacesMock.GetFocusedWorkspace()
 			if err != nil {
-				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, nil
+				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, err
 			}
 			jsonData, _ := json.Marshal([]workspaces.Workspace{*ws})
 			return &client.Response{ExitCode: 0, StdOut: string(jsonData), StdErr: ""}, nil
@@ -192,16 +198,16 @@ func (r *routingConnection) handleListWorkspaces(args []string) (*client.Respons
 
 func (r *routingConnection) handleMoveNodeToWorkspace(args []string) (*client.Response, error) {
 	// move-node-to-workspace <workspace> --window-id <id>
-	if len(args) < 3 {
+	if len(args) < minArgsForMoveCommand {
 		return &client.Response{ExitCode: 1, StdOut: "", StdErr: "invalid move command"}, nil
 	}
 	workspace := args[0]
 	for i, arg := range args {
-		if arg == "--window-id" && i+1 < len(args) {
+		if arg == windowIDFlag && i+1 < len(args) {
 			windowID, _ := strconv.Atoi(args[i+1])
 			err := r.workspacesMock.MoveWindowToWorkspace(windowID, workspace)
 			if err != nil {
-				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, nil
+				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, err
 			}
 			return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
 		}
