@@ -8,13 +8,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 )
 
 // RootCmd represents the base command when called without any subcommands.
 func RootCmd(
-	aerospaceClient *aerospacecli.AeroSpaceWM,
+	aerospaceClient aerospace.AeroSpaceWMClient,
 ) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "aerospace-scratchpad",
@@ -34,7 +33,7 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 	rootCmd.PersistentFlags().
 		BoolP("dry-run", "n", false, "Run the command without moving windows (dry run mode)")
 
-	// Create custom client with custom options
+	// Create custom client wrapper - now works with interface
 	customClient := aerospace.NewAeroSpaceClient(aerospaceClient)
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		dry, _ := cmd.Flags().GetBool("dry-run")
@@ -48,8 +47,8 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 	rootCmd.AddCommand(enableFilterFlag(ShowCmd(customClient)))
 	rootCmd.AddCommand(enableFilterFlag(SummonCmd(customClient)))
 	rootCmd.AddCommand(NextCmd(customClient))
-	rootCmd.AddCommand(InfoCmd(customClient.GetUnderlyingClient()))
-	rootCmd.AddCommand(HookCmd(customClient.GetUnderlyingClient()))
+	rootCmd.AddCommand(InfoCmd(aerospaceClient))
+	rootCmd.AddCommand(HookCmd(aerospaceClient))
 
 	return rootCmd
 }
@@ -64,7 +63,7 @@ Requires a key=value format. Can be used multiple times. `,
 }
 
 func Execute(
-	aerospaceClient *aerospacecli.AeroSpaceWM,
+	aerospaceClient aerospace.AeroSpaceWMClient,
 ) {
 	rootCmd := RootCmd(aerospaceClient)
 

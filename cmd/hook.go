@@ -12,7 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	aerospaceipc "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
@@ -25,7 +25,7 @@ const (
 )
 
 func HookCmd(
-	aerospaceClient *aerospaceipc.AeroSpaceWM,
+	aerospaceClient aerospace.AeroSpaceWMClient,
 ) *cobra.Command {
 	hookCmd := &cobra.Command{
 		Use:   "hook",
@@ -42,7 +42,7 @@ when a program is focused by the launcher (alfred, raycast, etc).
 }
 
 func newPullWindowCmd(
-	aerospaceClient *aerospaceipc.AeroSpaceWM,
+	aerospaceClient aerospace.AeroSpaceWMClient,
 ) *cobra.Command {
 	return &cobra.Command{
 		Use:   fmt.Sprintf("%s <previous-workspace> <focused-workspace>", pullWindowSubcommand),
@@ -69,13 +69,13 @@ exec-on-workspace-change = ["/bin/bash", "-c",
 
 type hookHandler struct {
 	cmd    *cobra.Command
-	client *aerospaceipc.AeroSpaceWM
+	client aerospace.AeroSpaceWMClient
 	logger logger.Logger
 }
 
 func newHookHandler(
 	cmd *cobra.Command,
-	client *aerospaceipc.AeroSpaceWM,
+	client aerospace.AeroSpaceWMClient,
 ) *hookHandler {
 	return &hookHandler{
 		cmd:    cmd,

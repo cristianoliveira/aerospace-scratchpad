@@ -6,7 +6,7 @@
             {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
     },
 }
@@ -26,7 +26,7 @@ Error
             {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
     },
 }
@@ -46,7 +46,9 @@ aerospace-scratchpad move test
 Output
 
 Error
- Error: unable to get windows: mocked_error
+ Error: unable to get windows: failed to unmarshal windows: unexpected end of JSON input
+Out:
+Err:mocked_error
 
 ---
 
@@ -57,7 +59,7 @@ Error
             {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
     },
 }
@@ -78,7 +80,7 @@ Error
             {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
     },
 }
@@ -87,7 +89,7 @@ aerospace-scratchpad move Finder
 Output
 
 Error
-Error: Window '5678 | Finder ' already belongs to scratchpad
+Error: failed to move window to workspace: Window '5678 | Finder ' already belongs to scratchpad
 
 ---
 
@@ -98,7 +100,7 @@ Error: Window '5678 | Finder ' already belongs to scratchpad
             {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
     },
 }
@@ -122,7 +124,7 @@ Error
             {WindowID:1111, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
     },
 }
@@ -143,7 +145,7 @@ Error
             {WindowID:1111, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
     },
 }
@@ -171,7 +173,7 @@ Error
             {WindowID:1111, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
     },
 }

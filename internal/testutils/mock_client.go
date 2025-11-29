@@ -1,0 +1,226 @@
+package testutils
+
+import (
+	"encoding/json"
+	"strconv"
+
+	"github.com/cristianoliveira/aerospace-ipc/mocks/aerospace"
+	windows_mock "github.com/cristianoliveira/aerospace-ipc/mocks/aerospace/windows"
+	workspaces_mock "github.com/cristianoliveira/aerospace-ipc/mocks/aerospace/workspaces"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/client"
+	"go.uber.org/mock/gomock"
+)
+
+// MockAeroSpaceWM wraps the aerospace-ipc MockClient to make it compatible with *AeroSpaceWM
+// It creates real Service instances that use a routing connection to delegate to mocks
+type MockAeroSpaceWM struct {
+	conn              client.AeroSpaceConnection
+	routingConn       *routingConnection
+	windowsService    *windows_mock.MockWindowsService
+	workspacesService *workspaces_mock.MockWorkspacesService
+	windowsSvc        *windows.Service
+	workspacesSvc     *workspaces.Service
+}
+
+// NewMockAeroSpaceWM creates a new mock AeroSpaceWM instance
+func NewMockAeroSpaceWM(ctrl *gomock.Controller) *MockAeroSpaceWM {
+	mockClient := aerospace_mock.NewMockClient(ctrl)
+	
+	// Create routing connection that delegates to service mocks
+	routingConn := &routingConnection{
+		windowsMock:    mockClient.Windows,
+		workspacesMock: mockClient.Workspaces,
+		ctrl:           ctrl,
+	}
+	
+	// Create real Service instances with the routing connection
+	windowsSvc := windows.NewService(routingConn)
+	workspacesSvc := workspaces.NewService(routingConn)
+	
+	return &MockAeroSpaceWM{
+		conn:              mockClient.Conn,
+		routingConn:       routingConn,
+		windowsService:    mockClient.Windows,
+		workspacesService: mockClient.Workspaces,
+		windowsSvc:        windowsSvc,
+		workspacesSvc:     workspacesSvc,
+	}
+}
+
+// Windows returns the windows service (which routes to the mock via connection)
+func (m *MockAeroSpaceWM) Windows() *windows.Service {
+	return m.windowsSvc
+}
+
+// Workspaces returns the workspaces service (which routes to the mock via connection)
+func (m *MockAeroSpaceWM) Workspaces() *workspaces.Service {
+	return m.workspacesSvc
+}
+
+// Connection returns the routing connection that delegates to mocks
+func (m *MockAeroSpaceWM) Connection() client.AeroSpaceConnection {
+	return m.routingConn
+}
+
+// CloseConnection mocks closing the connection
+func (m *MockAeroSpaceWM) CloseConnection() error {
+	return nil
+}
+
+// GetWindowsMock returns the underlying windows mock for setting expectations
+func (m *MockAeroSpaceWM) GetWindowsMock() *windows_mock.MockWindowsService {
+	return m.windowsService
+}
+
+// GetWorkspacesMock returns the underlying workspaces mock for setting expectations
+func (m *MockAeroSpaceWM) GetWorkspacesMock() *workspaces_mock.MockWorkspacesService {
+	return m.workspacesService
+}
+
+// routingConnection is a connection that routes Service method calls to the appropriate mocks
+// It intercepts SendCommand calls and routes them to the service mocks
+type routingConnection struct {
+	windowsMock    *windows_mock.MockWindowsService
+	workspacesMock *workspaces_mock.MockWorkspacesService
+	ctrl           *gomock.Controller
+}
+
+func (r *routingConnection) SendCommand(command string, args []string) (*client.Response, error) {
+	// Route commands to the appropriate mock based on command name and args
+	switch command {
+	case "list-windows":
+		return r.handleListWindows(args)
+	case "focus":
+		return r.handleFocus(args)
+	case "layout":
+		return r.handleLayout(args)
+	case "list-workspaces":
+		return r.handleListWorkspaces(args)
+	case "move-node-to-workspace":
+		return r.handleMoveNodeToWorkspace(args)
+	default:
+		return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
+	}
+}
+
+func (r *routingConnection) handleListWindows(args []string) (*client.Response, error) {
+	// Check for --all flag
+	for i, arg := range args {
+		if arg == "--all" {
+			// GetAllWindows
+			wins, err := r.windowsMock.GetAllWindows()
+			if err != nil {
+				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, nil
+			}
+			jsonData, _ := json.Marshal(wins)
+			return &client.Response{ExitCode: 0, StdOut: string(jsonData), StdErr: ""}, nil
+		}
+		if arg == "--workspace" && i+1 < len(args) {
+			// GetAllWindowsByWorkspace
+			workspace := args[i+1]
+			wins, err := r.windowsMock.GetAllWindowsByWorkspace(workspace)
+			if err != nil {
+				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, nil
+			}
+			jsonData, _ := json.Marshal(wins)
+			return &client.Response{ExitCode: 0, StdOut: string(jsonData), StdErr: ""}, nil
+		}
+		if arg == "--focused" {
+			// GetFocusedWindow
+			win, err := r.windowsMock.GetFocusedWindow()
+			if err != nil {
+				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, nil
+			}
+			jsonData, _ := json.Marshal([]windows.Window{*win})
+			return &client.Response{ExitCode: 0, StdOut: string(jsonData), StdErr: ""}, nil
+		}
+	}
+	return &client.Response{ExitCode: 0, StdOut: "[]", StdErr: ""}, nil
+}
+
+func (r *routingConnection) handleFocus(args []string) (*client.Response, error) {
+	// Find --window-id
+	for i, arg := range args {
+		if arg == "--window-id" && i+1 < len(args) {
+			windowID, _ := strconv.Atoi(args[i+1])
+			err := r.windowsMock.SetFocusByWindowID(windowID)
+			if err != nil {
+				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, nil
+			}
+			return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
+		}
+	}
+	return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
+}
+
+func (r *routingConnection) handleLayout(args []string) (*client.Response, error) {
+	// Layout command: layout <layout-name> --window-id <id>
+	if len(args) < 3 {
+		return &client.Response{ExitCode: 1, StdOut: "", StdErr: "invalid layout command"}, nil
+	}
+	layout := args[0]
+	for i, arg := range args {
+		if arg == "--window-id" && i+1 < len(args) {
+			windowID, _ := strconv.Atoi(args[i+1])
+			err := r.windowsMock.SetLayout(windowID, layout)
+			if err != nil {
+				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, nil
+			}
+			return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
+		}
+	}
+	return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
+}
+
+func (r *routingConnection) handleListWorkspaces(args []string) (*client.Response, error) {
+	// Check for --focused flag
+	for _, arg := range args {
+		if arg == "--focused" {
+			// GetFocusedWorkspace
+			ws, err := r.workspacesMock.GetFocusedWorkspace()
+			if err != nil {
+				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, nil
+			}
+			jsonData, _ := json.Marshal([]workspaces.Workspace{*ws})
+			return &client.Response{ExitCode: 0, StdOut: string(jsonData), StdErr: ""}, nil
+		}
+	}
+	return &client.Response{ExitCode: 0, StdOut: "[]", StdErr: ""}, nil
+}
+
+func (r *routingConnection) handleMoveNodeToWorkspace(args []string) (*client.Response, error) {
+	// move-node-to-workspace <workspace> --window-id <id>
+	if len(args) < 3 {
+		return &client.Response{ExitCode: 1, StdOut: "", StdErr: "invalid move command"}, nil
+	}
+	workspace := args[0]
+	for i, arg := range args {
+		if arg == "--window-id" && i+1 < len(args) {
+			windowID, _ := strconv.Atoi(args[i+1])
+			err := r.workspacesMock.MoveWindowToWorkspace(windowID, workspace)
+			if err != nil {
+				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, nil
+			}
+			return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
+		}
+	}
+	return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
+}
+
+func (r *routingConnection) GetSocketPath() (string, error) {
+	return "/tmp/test.sock", nil
+}
+
+func (r *routingConnection) CheckServerVersion() error {
+	return nil
+}
+
+func (r *routingConnection) GetServerVersion() (string, error) {
+	return "0.3.0", nil
+}
+
+func (r *routingConnection) CloseConnection() error {
+	return nil
+}

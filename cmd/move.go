@@ -92,8 +92,8 @@ To move all windows that match the focused window's app name to the scratchpad, 
 			}
 
 			// Query windows matching pattern and filters
-			querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
-			mover := aerospace.NewAeroSpaceMover(aerospaceClient.GetUnderlyingClient())
+		querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
+		mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 
 			windows, err := querier.GetFilteredWindows(
 				windowNamePattern,

@@ -7,6 +7,7 @@ import (
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/client"
 	socketcli "github.com/cristianoliveira/aerospace-ipc/pkg/client"
 )
 
@@ -15,6 +16,7 @@ import (
 //revive:disable:exported
 type AeroSpaceClient struct {
 	ogClient *aerospacecli.AeroSpaceWM
+	client   AeroSpaceWMClient // Interface for Windows()/Workspaces() access
 	dryRun   bool
 }
 
@@ -24,9 +26,15 @@ type ClientOpts struct {
 }
 
 // NewAeroSpaceClient creates a new AeroSpaceClient with the default settings.
-func NewAeroSpaceClient(client *aerospacecli.AeroSpaceWM) *AeroSpaceClient {
+func NewAeroSpaceClient(client AeroSpaceWMClient) *AeroSpaceClient {
+	// Type assert to get the underlying *AeroSpaceWM for storage
+	var ogClient *aerospacecli.AeroSpaceWM
+	if realClient, ok := client.(*aerospacecli.AeroSpaceWM); ok {
+		ogClient = realClient
+	}
 	return &AeroSpaceClient{
-		ogClient: client,
+		ogClient: ogClient,
+		client:   client,
 		dryRun:   false, // Default dry-run is false
 	}
 }
@@ -36,19 +44,29 @@ func (c *AeroSpaceClient) SetOptions(opts ClientOpts) {
 	c.dryRun = opts.DryRun
 }
 
+// Windows returns the windows service
+func (c *AeroSpaceClient) Windows() *windows.Service {
+	return c.client.Windows()
+}
+
+// Workspaces returns the workspaces service
+func (c *AeroSpaceClient) Workspaces() *workspaces.Service {
+	return c.client.Workspaces()
+}
+
 // GetAllWindows retrieves all windows managed by AeroSpaceWM.
 func (c *AeroSpaceClient) GetAllWindows() ([]windows.Window, error) {
-	return c.ogClient.Windows().GetAllWindows()
+	return c.client.Windows().GetAllWindows()
 }
 
 func (c *AeroSpaceClient) GetAllWindowsByWorkspace(
 	workspaceName string,
 ) ([]windows.Window, error) {
-	return c.ogClient.Windows().GetAllWindowsByWorkspace(workspaceName)
+	return c.client.Windows().GetAllWindowsByWorkspace(workspaceName)
 }
 
 func (c *AeroSpaceClient) GetFocusedWindow() (*windows.Window, error) {
-	return c.ogClient.Windows().GetFocusedWindow()
+	return c.client.Windows().GetFocusedWindow()
 }
 
 func (c *AeroSpaceClient) SetFocusByWindowID(windowID int) error {
@@ -56,7 +74,7 @@ func (c *AeroSpaceClient) SetFocusByWindowID(windowID int) error {
 		fmt.Fprintf(os.Stdout, "[dry-run] SetFocusByWindowID(%d)\n", windowID)
 		return nil
 	}
-	return c.ogClient.Windows().SetFocusByWindowID(windowID)
+	return c.client.Windows().SetFocusByWindowID(windowID)
 }
 
 // FocusNextTilingWindow moves focus to the next tiled window in depth-first order, ignoring floating windows.
@@ -66,7 +84,7 @@ func (c *AeroSpaceClient) FocusNextTilingWindow() error {
 		fmt.Fprintln(os.Stdout, "[dry-run] FocusNextTilingWindow()")
 		return nil
 	}
-	client := c.ogClient.Connection()
+	client := c.Connection()
 	response, err := client.SendCommand(
 		"focus",
 		[]string{
@@ -93,7 +111,7 @@ func (c *AeroSpaceClient) FocusNextTilingWindow() error {
 }
 
 func (c *AeroSpaceClient) GetFocusedWorkspace() (*workspaces.Workspace, error) {
-	return c.ogClient.Workspaces().GetFocusedWorkspace()
+	return c.client.Workspaces().GetFocusedWorkspace()
 }
 
 func (c *AeroSpaceClient) MoveWindowToWorkspace(
@@ -109,7 +127,7 @@ func (c *AeroSpaceClient) MoveWindowToWorkspace(
 		)
 		return nil
 	}
-	return c.ogClient.Workspaces().MoveWindowToWorkspace(windowID, workspaceName)
+	return c.client.Workspaces().MoveWindowToWorkspace(windowID, workspaceName)
 }
 
 func (c *AeroSpaceClient) SetLayout(windowID int, layout string) error {
@@ -122,10 +140,13 @@ func (c *AeroSpaceClient) SetLayout(windowID int, layout string) error {
 		)
 		return nil
 	}
-	return c.ogClient.Windows().SetLayout(windowID, layout)
+	return c.client.Windows().SetLayout(windowID, layout)
 }
 
 func (c *AeroSpaceClient) Connection() socketcli.AeroSpaceConnection {
+	if c.client != nil {
+		return c.client.Connection()
+	}
 	return c.ogClient.Connection()
 }
 
@@ -134,11 +155,24 @@ func (c *AeroSpaceClient) CloseConnection() error {
 		fmt.Fprintln(os.Stdout, "[dry-run] CloseConnection()")
 		return nil
 	}
+	if c.client != nil {
+		return c.client.(interface{ CloseConnection() error }).CloseConnection()
+	}
 	return c.ogClient.CloseConnection()
+}
+
+// AeroSpaceWMClient defines the interface for clients that provide Windows() and Workspaces() services
+type AeroSpaceWMClient interface {
+	Windows() *windows.Service
+	Workspaces() *workspaces.Service
+	Connection() client.AeroSpaceConnection
 }
 
 // GetUnderlyingClient returns the underlying AeroSpaceWM client.
 // This is needed for components that need direct access to Windows() and Workspaces() methods.
-func (c *AeroSpaceClient) GetUnderlyingClient() *aerospacecli.AeroSpaceWM {
+func (c *AeroSpaceClient) GetUnderlyingClient() AeroSpaceWMClient {
+	if c.client != nil {
+		return c.client
+	}
 	return c.ogClient
 }

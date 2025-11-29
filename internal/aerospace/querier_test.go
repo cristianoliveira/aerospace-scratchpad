@@ -6,10 +6,10 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
-	mock_aerospace "github.com/cristianoliveira/aerospace-scratchpad/internal/mocks/aerospacecli"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
@@ -22,15 +22,15 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		defer ctrl.Finish()
 
 		workspace := "ws1"
-		windows := []aerospacecli.Window{{WindowID: 1}, {WindowID: 2}}
+		windowsList := []windows.Window{{WindowID: 1}, {WindowID: 2}}
 
-		client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-		client.EXPECT().
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		mockClient.GetWindowsMock().EXPECT().
 			GetAllWindowsByWorkspace(workspace).
-			Return(windows, nil).
+			Return(windowsList, nil).
 			Times(1)
 
-		q := aerospace.NewAerospaceQuerier(client)
+		q := aerospace.NewAerospaceQuerier(mockClient)
 		in, err := q.IsWindowInWorkspace(2, workspace)
 		if err != nil {
 			t.Fatalf("unexpected err: %v", err)
@@ -45,14 +45,14 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		defer ctrl.Finish()
 
 		workspace := "ws1"
-		windows := []aerospacecli.Window{{WindowID: 1}, {WindowID: 2}}
+		windowsList := []windows.Window{{WindowID: 1}, {WindowID: 2}}
 
-		client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-		client.EXPECT().
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		mockClient.GetWindowsMock().EXPECT().
 			GetAllWindowsByWorkspace(workspace).
-			Return(windows, nil).
+			Return(windowsList, nil).
 			Times(1)
-		q := aerospace.NewAerospaceQuerier(client)
+		q := aerospace.NewAerospaceQuerier(mockClient)
 		in, err := q.IsWindowInWorkspace(3, workspace)
 		if err != nil {
 			t.Fatalf("unexpected err: %v", err)
@@ -66,22 +66,22 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		ws := &aerospacecli.Workspace{Workspace: "wsX"}
-		windows := []aerospacecli.Window{{WindowID: 5}}
+		ws := &workspaces.Workspace{Workspace: "wsX"}
+		windowsList := []windows.Window{{WindowID: 5}}
 
-		client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
 		gomock.InOrder(
-			client.EXPECT().
+			mockClient.GetWorkspacesMock().EXPECT().
 				GetFocusedWorkspace().
 				Return(ws, nil).
 				Times(1),
-			client.EXPECT().
+			mockClient.GetWindowsMock().EXPECT().
 				GetAllWindowsByWorkspace(ws.Workspace).
-				Return(windows, nil).
+				Return(windowsList, nil).
 				Times(1),
 		)
 
-		q := aerospace.NewAerospaceQuerier(client)
+		q := aerospace.NewAerospaceQuerier(mockClient)
 		in, err := q.IsWindowInFocusedWorkspace(5)
 		if err != nil || !in {
 			t.Fatalf("expected true, got %v err=%v", in, err)
@@ -92,13 +92,13 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		focused := &aerospacecli.Window{WindowID: 10}
-		client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-		client.EXPECT().
+		focused := &windows.Window{WindowID: 10}
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		mockClient.GetWindowsMock().EXPECT().
 			GetFocusedWindow().
 			Return(focused, nil).
 			Times(1)
-		q := aerospace.NewAerospaceQuerier(client)
+		q := aerospace.NewAerospaceQuerier(mockClient)
 		is, err := q.IsWindowFocused(10)
 		if err != nil || !is {
 			t.Fatalf("expected true, got %v err=%v", is, err)
@@ -109,13 +109,13 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		focused := &aerospacecli.Window{WindowID: 10}
-		client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-		client.EXPECT().
+		focused := &windows.Window{WindowID: 10}
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		mockClient.GetWindowsMock().EXPECT().
 			GetFocusedWindow().
 			Return(focused, nil).
 			Times(1)
-		q := aerospace.NewAerospaceQuerier(client)
+		q := aerospace.NewAerospaceQuerier(mockClient)
 		is, err := q.IsWindowFocused(11)
 		if err != nil || is {
 			t.Fatalf("expected false, got %v err=%v", is, err)
@@ -126,13 +126,13 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		spWin := []aerospacecli.Window{{WindowID: 77}}
-		client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-		client.EXPECT().
+		spWin := []windows.Window{{WindowID: 77}}
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		mockClient.GetWindowsMock().EXPECT().
 			GetAllWindowsByWorkspace(".scratchpad").
 			Return(spWin, nil).
 			Times(1)
-		q := aerospace.NewAerospaceQuerier(client)
+		q := aerospace.NewAerospaceQuerier(mockClient)
 		w, err := q.GetNextScratchpadWindow()
 		if err != nil || w == nil || w.WindowID != 77 {
 			t.Fatalf("expected 77, got %v err=%v", w, err)
@@ -145,26 +145,26 @@ func TestAeroSpaceQuerier(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-			client.EXPECT().
+			mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+			mockClient.GetWindowsMock().EXPECT().
 				GetAllWindowsByWorkspace(".scratchpad").
-				Return([]aerospacecli.Window{}, nil).
+				Return([]windows.Window{}, nil).
 				Times(1)
-			q := aerospace.NewAerospaceQuerier(client)
+			q := aerospace.NewAerospaceQuerier(mockClient)
 			if _, err := q.GetNextScratchpadWindow(); err == nil {
 				t.Fatalf("expected error when no scratchpad windows")
 			}
 		},
 	)
 
-	t.Run(
+		t.Run(
 		"GetFilteredWindows returns two matches with pattern only",
 		func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
 			tree := []testutils.AeroSpaceTree{{
-				Windows: []aerospacecli.Window{
+				Windows: []windows.Window{
 					{
 						AppName:     "Finder1",
 						WindowID:    1,
@@ -184,16 +184,16 @@ func TestAeroSpaceQuerier(t *testing.T) {
 						AppBundleID: "com.apple.terminal",
 					},
 				},
-				Workspace: &aerospacecli.Workspace{Workspace: "ws1"},
+				Workspace: &workspaces.Workspace{Workspace: "ws1"},
 			}}
 			all := testutils.ExtractAllWindows(tree)
 
-			client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-			client.EXPECT().
+			mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+			mockClient.GetWindowsMock().EXPECT().
 				GetAllWindows().
 				Return(all, nil).
 				Times(1)
-			q := aerospace.NewAerospaceQuerier(client)
+			q := aerospace.NewAerospaceQuerier(mockClient)
 			wins, err := q.GetFilteredWindows("Finder", nil)
 			if err != nil || len(wins) != 2 {
 				t.Fatalf(
@@ -210,7 +210,7 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		defer ctrl.Finish()
 
 		tree := []testutils.AeroSpaceTree{{
-			Windows: []aerospacecli.Window{
+			Windows: []windows.Window{
 				{
 					AppName:     "Finder1",
 					WindowID:    1,
@@ -230,16 +230,16 @@ func TestAeroSpaceQuerier(t *testing.T) {
 					AppBundleID: "com.apple.terminal",
 				},
 			},
-			Workspace: &aerospacecli.Workspace{Workspace: "ws1"},
+			Workspace: &workspaces.Workspace{Workspace: "ws1"},
 		}}
 		all := testutils.ExtractAllWindows(tree)
 
-		client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-		client.EXPECT().
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		mockClient.GetWindowsMock().EXPECT().
 			GetAllWindows().
 			Return(all, nil).
 			Times(1)
-		q := aerospace.NewAerospaceQuerier(client)
+		q := aerospace.NewAerospaceQuerier(mockClient)
 		wins, err := q.GetFilteredWindows(
 			"Finder",
 			[]string{"window-title=foo", "app-bundle-id=apple"},
@@ -253,8 +253,8 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-		q := aerospace.NewAerospaceQuerier(client)
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		q := aerospace.NewAerospaceQuerier(mockClient)
 		if _, err := q.GetFilteredWindows("[invalid", nil); err == nil {
 			t.Fatalf("expected invalid pattern error")
 		}
@@ -269,12 +269,12 @@ func TestAeroSpaceQuerier(t *testing.T) {
 			tree := []testutils.AeroSpaceTree{{}}
 			all := testutils.ExtractAllWindows(tree)
 
-			client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-			client.EXPECT().
+			mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+			mockClient.GetWindowsMock().EXPECT().
 				GetAllWindows().
 				Return(all, nil).
 				Times(1)
-			q := aerospace.NewAerospaceQuerier(client)
+			q := aerospace.NewAerospaceQuerier(mockClient)
 			if _, err := q.GetFilteredWindows("Finder", []string{"unknown=foo"}); err == nil {
 				t.Fatalf("expected unknown property error")
 			}
@@ -288,7 +288,7 @@ func TestAeroSpaceQuerier(t *testing.T) {
 			defer ctrl.Finish()
 
 			tree := []testutils.AeroSpaceTree{{
-				Windows: []aerospacecli.Window{
+				Windows: []windows.Window{
 					{
 						AppName:     "Terminal",
 						WindowID:    3,
@@ -296,16 +296,16 @@ func TestAeroSpaceQuerier(t *testing.T) {
 						AppBundleID: "com.apple.terminal",
 					},
 				},
-				Workspace: &aerospacecli.Workspace{Workspace: "ws1"},
+				Workspace: &workspaces.Workspace{Workspace: "ws1"},
 			}}
 			all := testutils.ExtractAllWindows(tree)
 
-			client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-			client.EXPECT().
+			mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+			mockClient.GetWindowsMock().EXPECT().
 				GetAllWindows().
 				Return(all, nil).
 				Times(1)
-			q := aerospace.NewAerospaceQuerier(client)
+			q := aerospace.NewAerospaceQuerier(mockClient)
 			if _, err := q.GetFilteredWindows("Finder", nil); err == nil {
 				t.Fatalf("expected no match error")
 			}
@@ -318,12 +318,12 @@ func TestAeroSpaceQuerier(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-			client.EXPECT().
+			mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+			mockClient.GetWindowsMock().EXPECT().
 				GetAllWindows().
 				Return(nil, errors.New("mocked_error")).
 				Times(1)
-			q := aerospace.NewAerospaceQuerier(client)
+			q := aerospace.NewAerospaceQuerier(mockClient)
 			if _, err := q.GetFilteredWindows("Finder", nil); err == nil {
 				t.Fatalf("expected get windows error")
 			}
@@ -337,7 +337,7 @@ func TestAeroSpaceQuerier(t *testing.T) {
 			defer ctrl.Finish()
 
 			tree := []testutils.AeroSpaceTree{{
-				Windows: []aerospacecli.Window{
+				Windows: []windows.Window{
 					{
 						AppName:     "Terminal",
 						WindowID:    1,
@@ -351,16 +351,16 @@ func TestAeroSpaceQuerier(t *testing.T) {
 						AppBundleID: "com.apple.finder",
 					},
 				},
-				Workspace: &aerospacecli.Workspace{Workspace: "ws1"},
+				Workspace: &workspaces.Workspace{Workspace: "ws1"},
 			}}
 			all := testutils.ExtractAllWindows(tree)
 
-			client := mock_aerospace.NewMockAeroSpaceClient(ctrl)
-			client.EXPECT().
+			mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+			mockClient.GetWindowsMock().EXPECT().
 				GetAllWindows().
 				Return(all, nil).
 				Times(1)
-			q := aerospace.NewAerospaceQuerier(client)
+			q := aerospace.NewAerospaceQuerier(mockClient)
 			wins, err := q.GetFilteredWindows(
 				"Terminal",
 				[]string{"window-id=1"},

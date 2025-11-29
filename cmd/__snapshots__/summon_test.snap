@@ -6,7 +6,7 @@
             {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
     },
 }
@@ -26,7 +26,7 @@ Error
             {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
     },
 }
@@ -45,7 +45,9 @@ aerospace-scratchpad summon test
 Output
 
 Error
- Error: unable to get windows: mocked_error
+ Error: unable to get windows: failed to unmarshal windows: unexpected end of JSON input
+Out:
+Err:mocked_error
 
 ---
 
@@ -75,7 +77,7 @@ aerospace-scratchpad summon Notepad
 Output
 
 Error
- Error: unable to move window '1234 | Notepad ' to workspace 'ws1': mocked_move_error
+ Error: unable to move window '1234 | Notepad ' to workspace 'ws1': failed to move window to workspace: mocked_move_error
 
 ---
 
@@ -85,7 +87,8 @@ aerospace-scratchpad summon Notepad
 Output
 
 Error
- Error: unable to set focus to window '1234 | Notepad ': mocked_focus_error
+ Error: unable to set focus to window '1234 | Notepad ': failed to focus window with ID 1234
+mocked_focus_error
 
 ---
 
@@ -97,7 +100,7 @@ Error
             {WindowID:5678, WindowTitle:"", AppName:"TextEdit", AppBundleID:"", Workspace:""},
             {WindowID:9012, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 9012,
     },
 }
@@ -136,7 +139,7 @@ Error
             {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
     },
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
@@ -25,10 +24,10 @@ type Mover interface {
 }
 
 type MoverAeroSpace struct {
-	aerospace *aerospacecli.AeroSpaceWM
+	aerospace AeroSpaceWMClient
 }
 
-func NewAeroSpaceMover(aerospace *aerospacecli.AeroSpaceWM) MoverAeroSpace {
+func NewAeroSpaceMover(aerospace AeroSpaceWMClient) MoverAeroSpace {
 	return MoverAeroSpace{
 		aerospace: aerospace,
 	}
@@ -40,10 +39,19 @@ func (a *MoverAeroSpace) MoveWindowToScratchpad(
 	logger := logger.GetDefaultLogger()
 	logger.LogDebug("MOVING: MoveWindowToScratchpad", "window", window)
 
-	err := a.aerospace.Workspaces().MoveWindowToWorkspace(
-		window.WindowID,
-		constants.DefaultScratchpadWorkspaceName,
-	)
+	// Use wrapper's MoveWindowToWorkspace if available (for dry-run support)
+	var err error
+	if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
+		err = wrapper.MoveWindowToWorkspace(
+			window.WindowID,
+			constants.DefaultScratchpadWorkspaceName,
+		)
+	} else {
+		err = a.aerospace.Workspaces().MoveWindowToWorkspace(
+			window.WindowID,
+			constants.DefaultScratchpadWorkspaceName,
+		)
+	}
 	logger.LogDebug(
 		"MOVING: after MoveWindowToWorkspace",
 		"window", window,
@@ -54,10 +62,12 @@ func (a *MoverAeroSpace) MoveWindowToScratchpad(
 		return err
 	}
 
-	err = a.aerospace.Windows().SetLayout(
-		window.WindowID,
-		"floating",
-	)
+	// Use wrapper's SetLayout if available (for dry-run support)
+	if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
+		err = wrapper.SetLayout(window.WindowID, "floating")
+	} else {
+		err = a.aerospace.Windows().SetLayout(window.WindowID, "floating")
+	}
 	if err != nil {
 		fmt.Fprintf(
 			os.Stdout,
@@ -83,25 +93,53 @@ func (a *MoverAeroSpace) MoveWindowToWorkspace(
 		return errors.New("workspace is nil")
 	}
 
-	if err := a.aerospace.Workspaces().MoveWindowToWorkspace(
-		window.WindowID,
-		workspace.Workspace,
-	); err != nil {
-		return fmt.Errorf(
-			"unable to move window '%+v' to workspace '%s': %w",
-			window,
+	// Use wrapper's MoveWindowToWorkspace if available (for dry-run support)
+	if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
+		if err := wrapper.MoveWindowToWorkspace(
+			window.WindowID,
 			workspace.Workspace,
-			err,
-		)
+		); err != nil {
+			return fmt.Errorf(
+				"unable to move window '%+v' to workspace '%s': %w",
+				window,
+				workspace.Workspace,
+				err,
+			)
+		}
+	} else {
+		// Fallback to direct service call
+		if err := a.aerospace.Workspaces().MoveWindowToWorkspace(
+			window.WindowID,
+			workspace.Workspace,
+		); err != nil {
+			return fmt.Errorf(
+				"unable to move window '%+v' to workspace '%s': %w",
+				window,
+				workspace.Workspace,
+				err,
+			)
+		}
 	}
 
 	if shouldSetFocus {
-		if err := a.aerospace.Windows().SetFocusByWindowID(window.WindowID); err != nil {
-			return fmt.Errorf(
-				"unable to set focus to window '%+v': %w",
-				window,
-				err,
-			)
+		// Use wrapper's SetFocusByWindowID if available (for dry-run support)
+		if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
+			if err := wrapper.SetFocusByWindowID(window.WindowID); err != nil {
+				return fmt.Errorf(
+					"unable to set focus to window '%+v': %w",
+					window,
+					err,
+				)
+			}
+		} else {
+			// Fallback to direct service call
+			if err := a.aerospace.Windows().SetFocusByWindowID(window.WindowID); err != nil {
+				return fmt.Errorf(
+					"unable to set focus to window '%+v': %w",
+					window,
+					err,
+				)
+			}
 		}
 	}
 

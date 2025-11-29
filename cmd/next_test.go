@@ -8,10 +8,11 @@ import (
 	"github.com/gkampitakis/go-snaps/snaps"
 	"go.uber.org/mock/gomock"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
-	mock_aerospace "github.com/cristianoliveira/aerospace-scratchpad/internal/mocks/aerospacecli"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
@@ -25,7 +26,7 @@ func TestNextCmd(t *testing.T) {
 
 		tree := []testutils.AeroSpaceTree{
 			{
-				Windows: []aerospacecli.Window{
+				Windows: []windows.Window{
 					{
 						AppName:  "Notepad",
 						WindowID: 1234,
@@ -35,14 +36,14 @@ func TestNextCmd(t *testing.T) {
 						WindowID: 5678,
 					},
 				},
-				Workspace: &aerospacecli.Workspace{
+				Workspace: &workspaces.Workspace{
 					Workspace: "ws1",
 				},
 
 				FocusedWindowID: 5678,
 			},
 			{
-				Windows: []aerospacecli.Window{
+				Windows: []windows.Window{
 					{
 						AppName:  "Scratchpad Window",
 						WindowID: 9999,
@@ -52,7 +53,7 @@ func TestNextCmd(t *testing.T) {
 						WindowID: 8888,
 					},
 				},
-				Workspace: &aerospacecli.Workspace{
+				Workspace: &workspaces.Workspace{
 					Workspace: constants.DefaultScratchpadWorkspaceName,
 				},
 
@@ -63,29 +64,31 @@ func TestNextCmd(t *testing.T) {
 		focusedTree := testutils.ExtractFocusedTree(tree)
 		scratchpadWindows := testutils.ExtractScratchpadWindows(tree)
 
-		aerospaceClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
 		gomock.InOrder(
-			aerospaceClient.EXPECT().
-				GetFocusedWorkspace().
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			GetFocusedWorkspace().
 				Return(focusedTree.Workspace, nil).
 				Times(1),
-			aerospaceClient.EXPECT().
+			aerospaceClient.GetWindowsMock().EXPECT().
 				GetAllWindowsByWorkspace(constants.DefaultScratchpadWorkspaceName).
 				Return(scratchpadWindows.Windows, nil).
 				Times(1),
-			aerospaceClient.EXPECT().
+			aerospaceClient.GetWorkspacesMock().EXPECT().
 				MoveWindowToWorkspace(
 					9999, // The ID of the first scratchpad window
 					focusedTree.Workspace.Workspace,
 				).
 				Return(nil).
 				Times(1),
-			aerospaceClient.EXPECT().
+			aerospaceClient.GetWindowsMock().EXPECT().
 				SetFocusByWindowID(9999). // Focus the moved window
 				Return(nil).
 				Times(1),
 		)
 
+		wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
+		_ = wrappedClient
 		cmd := cmd.RootCmd(aerospaceClient)
 		out, err := testutils.CmdExecute(cmd, args...)
 		if err != nil {

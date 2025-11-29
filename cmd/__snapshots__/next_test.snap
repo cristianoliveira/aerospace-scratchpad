@@ -6,7 +6,7 @@
             {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
             {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
-        Workspace:       &aerospace.Workspace{Workspace:"ws1"},
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
     },
     {
@@ -14,7 +14,7 @@
             {WindowID:9999, WindowTitle:"", AppName:"Scratchpad Window", AppBundleID:"", Workspace:""},
             {WindowID:8888, WindowTitle:"", AppName:"Another Scratchpad Window", AppBundleID:"", Workspace:""},
         },
-        Workspace:       &aerospace.Workspace{Workspace:".scratchpad"},
+        Workspace:       &workspaces.Workspace{Workspace:".scratchpad"},
         FocusedWindowID: 0,
     },
 }

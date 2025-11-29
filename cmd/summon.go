@@ -63,7 +63,7 @@ If no pattern is provided, it summons the first window in the scratchpad.
 
 			// Filter windows using the shared querier
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
-			mover := aerospace.NewAeroSpaceMover(aerospaceClient.GetUnderlyingClient())
+			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 
 			windows, err := querier.GetFilteredWindows(
 				windowNamePattern,

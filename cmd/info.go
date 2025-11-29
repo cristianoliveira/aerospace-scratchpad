@@ -8,13 +8,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	aerospaceipc "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 )
 
 // InfoCmd represents the info command.
 func InfoCmd(
-	aerospace *aerospaceipc.AeroSpaceWM,
+	aerospace aerospace.AeroSpaceWMClient,
 ) *cobra.Command {
 	infoCmd := &cobra.Command{
 		Use:   "info",

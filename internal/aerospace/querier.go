@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
@@ -40,7 +39,7 @@ type Querier interface {
 }
 
 type QueryMaker struct {
-	cli *aerospacecli.AeroSpaceWM
+	cli AeroSpaceWMClient
 }
 
 func (a *QueryMaker) IsWindowInWorkspace(
@@ -280,7 +279,7 @@ func applyFilters(window windows.Window, filters []Filter) (bool, error) {
 }
 
 // NewAerospaceQuerier creates a new AerospaceQuerier.
-func NewAerospaceQuerier(cli *aerospacecli.AeroSpaceWM) Querier {
+func NewAerospaceQuerier(cli AeroSpaceWMClient) Querier {
 	return &QueryMaker{
 		cli: cli,
 	}

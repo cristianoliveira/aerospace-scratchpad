@@ -3,17 +3,16 @@ package cmd_test
 import (
 	"os"
 	"reflect"
-	"strconv"
 	"testing"
 
 	"go.uber.org/mock/gomock"
 
-	aerospacecli "github.com/cristianoliveira/aerospace-ipc"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	clientipc "github.com/cristianoliveira/aerospace-ipc/pkg/client"
 	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
-	mock_aerospace "github.com/cristianoliveira/aerospace-scratchpad/internal/mocks/aerospacecli"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
@@ -64,28 +63,23 @@ func TestHookPullWindow(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
 
-		focusedWindow := &aerospacecli.Window{
+		focusedWindow := &windows.Window{
 			WindowID:  99,
 			Workspace: constants.DefaultScratchpadWorkspaceName,
 		}
 
-		conn := &stubConnection{
-			t:               t,
-			expectedCommand: "move-node-to-workspace",
-			expectedArgs: []string{
-				"prev-ws",
-				"--window-id", strconv.Itoa(focusedWindow.WindowID),
-				"--focus-follows-window",
-			},
-		}
-
 		gomock.InOrder(
-			mockClient.EXPECT().GetFocusedWindow().Return(focusedWindow, nil).Times(1),
-			mockClient.EXPECT().Connection().Return(conn).Times(1),
+			mockClient.GetWindowsMock().EXPECT().GetFocusedWindow().Return(focusedWindow, nil).Times(1),
+			mockClient.GetWorkspacesMock().EXPECT().
+				MoveWindowToWorkspace(focusedWindow.WindowID, "prev-ws").
+				Return(nil).
+				Times(1),
 		)
 
+		wrappedClient := aerospace.NewAeroSpaceClient(mockClient)
+		_ = wrappedClient
 		rootCmd := cmd.RootCmd(mockClient)
 		_, err := testutils.CmdExecute(
 			rootCmd,
@@ -98,10 +92,6 @@ func TestHookPullWindow(t *testing.T) {
 		if err != nil {
 			t.Fatalf("expected success, got error %v", err)
 		}
-
-		if !conn.called {
-			t.Fatalf("expected SendCommand to be called")
-		}
 	})
 
 	t.Run("skips when previous workspace is scratchpad", func(t *testing.T) {
@@ -110,7 +100,7 @@ func TestHookPullWindow(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
 
 		rootCmd := cmd.RootCmd(mockClient)
 		_, err := testutils.CmdExecute(
@@ -140,15 +130,17 @@ func TestHookPullWindow(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
-		mockClient := mock_aerospace.NewMockAeroSpaceClient(ctrl)
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
 
-		focusedWindow := &aerospacecli.Window{
+		focusedWindow := &windows.Window{
 			WindowID:  124,
 			Workspace: constants.DefaultScratchpadWorkspaceName,
 		}
 
-		mockClient.EXPECT().GetFocusedWindow().Return(focusedWindow, nil).Times(1)
+		mockClient.GetWindowsMock().EXPECT().GetFocusedWindow().Return(focusedWindow, nil).Times(1)
 
+		wrappedClient := aerospace.NewAeroSpaceClient(mockClient)
+		_ = wrappedClient
 		rootCmd := cmd.RootCmd(mockClient)
 		_, execErr := testutils.CmdExecute(
 			rootCmd,

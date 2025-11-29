@@ -30,8 +30,8 @@ It does not send the windows back to the scratchpad, but rather focuses the next
 				return
 			}
 
-			querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
-			mover := aerospace.NewAeroSpaceMover(aerospaceClient.GetUnderlyingClient())
+		querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
+		mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 
 			window, err := querier.GetNextScratchpadWindow()
 			if err != nil {
