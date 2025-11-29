@@ -9,6 +9,11 @@ assignees: ''
 **Describe the bug**
 A clear and concise description of what the bug is.
 
+**Provide logs**
+In order to allow me understand what is happening, please provide the logs.
+For standard logs: instructions here https://github.com/cristianoliveira/aerospace-scratchpad?tab=readme-ov-file#troubleshooting
+For output: Run the command you have in the shortcut in a terminal and share the output.
+
 **To Reproduce**
 Steps to reproduce the behavior:
 1. Go to '...'
