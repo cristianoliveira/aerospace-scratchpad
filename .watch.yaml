@@ -6,8 +6,6 @@
 
 - name: quick checks
   run: 
-    - go fmt ./...
-    - make fmt
     - gotestsum --format pkgname
   run_on_init: true
   change: 
@@ -26,6 +24,19 @@
   change: 
     - '**/*.go'
     - '**/*.snap'
+  ignore: 
+    - '.tmp/**/*'
+    - '**/*.log'
+
+- name: quick checks style
+  run: 
+    - go fmt ./...
+    - make fmt
+  run_on_init: true
+  change: 
+    - '**/*.go'
+    - '**/*.snap'
+    - '.golangci.yml'
   ignore: 
     - '.tmp/**/*'
     - '**/*.log'

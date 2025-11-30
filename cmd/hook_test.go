@@ -7,6 +7,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
@@ -46,7 +47,14 @@ func TestHookPullWindow(t *testing.T) {
 				Return(focusedWindow, nil).
 				Times(1),
 			mockClient.GetWorkspacesMock().EXPECT().
-				MoveWindowToWorkspace(focusedWindow.WindowID, "prev-ws").
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: "prev-ws",
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &focusedWindow.WindowID,
+					},
+				).
 				Return(nil).
 				Times(1),
 		)

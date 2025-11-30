@@ -6,7 +6,6 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	aerospace_mock "github.com/cristianoliveira/aerospace-ipc/mocks/aerospace"
 	windows_mock "github.com/cristianoliveira/aerospace-ipc/mocks/aerospace/windows"
 	workspaces_mock "github.com/cristianoliveira/aerospace-ipc/mocks/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
@@ -27,12 +26,14 @@ type MockAeroSpaceWM struct {
 
 // NewMockAeroSpaceWM creates a new mock AeroSpaceWM instance.
 func NewMockAeroSpaceWM(ctrl *gomock.Controller) *MockAeroSpaceWM {
-	mockClient := aerospace_mock.NewMockClient(ctrl)
+	// Create separate mock services
+	windowsMock := windows_mock.NewMockWindowsService(ctrl)
+	workspacesMock := workspaces_mock.NewMockWorkspacesService(ctrl)
 
 	// Create routing connection that delegates to service mocks
 	routingConn := &routingConnection{
-		windowsMock:    mockClient.Windows,
-		workspacesMock: mockClient.Workspaces,
+		windowsMock:    windowsMock,
+		workspacesMock: workspacesMock,
 		ctrl:           ctrl,
 	}
 
@@ -41,10 +42,10 @@ func NewMockAeroSpaceWM(ctrl *gomock.Controller) *MockAeroSpaceWM {
 	workspacesSvc := workspaces.NewService(routingConn)
 
 	return &MockAeroSpaceWM{
-		conn:              mockClient.Conn,
+		conn:              routingConn,
 		routingConn:       routingConn,
-		windowsService:    mockClient.Windows,
-		workspacesService: mockClient.Workspaces,
+		windowsService:    windowsMock,
+		workspacesService: workspacesMock,
 		windowsSvc:        windowsSvc,
 		workspacesSvc:     workspacesSvc,
 	}
@@ -151,7 +152,9 @@ func (r *routingConnection) handleFocus(args []string) (*client.Response, error)
 	for i, arg := range args {
 		if arg == windowIDFlag && i+1 < len(args) {
 			windowID, _ := strconv.Atoi(args[i+1])
-			err := r.windowsMock.SetFocusByWindowID(windowID)
+			err := r.windowsMock.SetFocusByWindowID(windows.SetFocusArgs{
+				WindowID: windowID,
+			})
 			if err != nil {
 				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, err
 			}
@@ -170,7 +173,15 @@ func (r *routingConnection) handleLayout(args []string) (*client.Response, error
 	for i, arg := range args {
 		if arg == windowIDFlag && i+1 < len(args) {
 			windowID, _ := strconv.Atoi(args[i+1])
-			err := r.windowsMock.SetLayout(windowID, layout)
+			windowIDPtr := &windowID
+			err := r.windowsMock.SetLayoutWithOpts(
+				windows.SetLayoutArgs{
+					Layouts: []string{layout},
+				},
+				windows.SetLayoutOpts{
+					WindowID: windowIDPtr,
+				},
+			)
 			if err != nil {
 				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, err
 			}
@@ -205,7 +216,15 @@ func (r *routingConnection) handleMoveNodeToWorkspace(args []string) (*client.Re
 	for i, arg := range args {
 		if arg == windowIDFlag && i+1 < len(args) {
 			windowID, _ := strconv.Atoi(args[i+1])
-			err := r.workspacesMock.MoveWindowToWorkspace(windowID, workspace)
+			windowIDPtr := &windowID
+			err := r.workspacesMock.MoveWindowToWorkspaceWithOpts(
+				workspaces.MoveWindowToWorkspaceArgs{
+					WorkspaceName: workspace,
+				},
+				workspaces.MoveWindowToWorkspaceOpts{
+					WindowID: windowIDPtr,
+				},
+			)
 			if err != nil {
 				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, err
 			}

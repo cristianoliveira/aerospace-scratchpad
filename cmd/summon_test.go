@@ -50,11 +50,11 @@ func TestSummonCmd(t *testing.T) {
 		}
 		allWindows := testutils.ExtractAllWindows(tree)
 		focusedWorkspace := &workspaces.Workspace{Workspace: "ws1"}
-		windows := testutils.ExtractWindowsByName(tree, "Notepad")
-		if len(windows) != 1 {
-			t.Fatalf("Expected 1 Notepad window, got %d", len(windows))
+		matchedWindows := testutils.ExtractWindowsByName(tree, "Notepad")
+		if len(matchedWindows) != 1 {
+			t.Fatalf("Expected 1 Notepad window, got %d", len(matchedWindows))
 		}
-		notepadWindow := windows[0]
+		notepadWindow := matchedWindows[0]
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
 		gomock.InOrder(
@@ -70,12 +70,21 @@ func TestSummonCmd(t *testing.T) {
 				Times(1),
 
 			aerospaceClient.GetWorkspacesMock().EXPECT().
-				MoveWindowToWorkspace(notepadWindow.WindowID, focusedWorkspace.Workspace).
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: focusedWorkspace.Workspace,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &notepadWindow.WindowID,
+					},
+				).
 				Return(nil).
 				Times(1),
 
 			aerospaceClient.GetWindowsMock().EXPECT().
-				SetFocusByWindowID(notepadWindow.WindowID).
+				SetFocusByWindowID(windows.SetFocusArgs{
+					WindowID: notepadWindow.WindowID,
+				}).
 				Return(nil).
 				Times(1),
 		)
@@ -319,7 +328,14 @@ func TestSummonCmd(t *testing.T) {
 					Times(1),
 
 				aerospaceClient.GetWorkspacesMock().EXPECT().
-					MoveWindowToWorkspace(notepadWindow.WindowID, focusedWorkspace.Workspace).
+					MoveWindowToWorkspaceWithOpts(
+						workspaces.MoveWindowToWorkspaceArgs{
+							WorkspaceName: focusedWorkspace.Workspace,
+						},
+						workspaces.MoveWindowToWorkspaceOpts{
+							WindowID: &notepadWindow.WindowID,
+						},
+					).
 					Return(errors.New("mocked_move_error")).
 					Times(1),
 			)
@@ -368,11 +384,11 @@ func TestSummonCmd(t *testing.T) {
 		}
 		allWindows := testutils.ExtractAllWindows(tree)
 		focusedWorkspace := &workspaces.Workspace{Workspace: "ws1"}
-		windows := testutils.ExtractWindowsByName(tree, "Notepad")
-		if len(windows) != 1 {
-			t.Fatalf("Expected 1 Notepad window, got %d", len(windows))
+		matchedWindows := testutils.ExtractWindowsByName(tree, "Notepad")
+		if len(matchedWindows) != 1 {
+			t.Fatalf("Expected 1 Notepad window, got %d", len(matchedWindows))
 		}
-		notepadWindow := windows[0]
+		notepadWindow := matchedWindows[0]
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
 		gomock.InOrder(
@@ -387,12 +403,21 @@ func TestSummonCmd(t *testing.T) {
 				Times(1),
 
 			aerospaceClient.GetWorkspacesMock().EXPECT().
-				MoveWindowToWorkspace(notepadWindow.WindowID, focusedWorkspace.Workspace).
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: focusedWorkspace.Workspace,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &notepadWindow.WindowID,
+					},
+				).
 				Return(nil).
 				Times(1),
 
 			aerospaceClient.GetWindowsMock().EXPECT().
-				SetFocusByWindowID(notepadWindow.WindowID).
+				SetFocusByWindowID(windows.SetFocusArgs{
+					WindowID: notepadWindow.WindowID,
+				}).
 				Return(errors.New("mocked_focus_error")).
 				Times(1),
 		)
@@ -445,14 +470,14 @@ func TestSummonCmd(t *testing.T) {
 		}
 		allWindows := testutils.ExtractAllWindows(tree)
 		focusedWorkspace := &workspaces.Workspace{Workspace: "ws1"}
-		windows := testutils.ExtractWindowsByName(
+		matchedWindows := testutils.ExtractWindowsByName(
 			tree,
 			".*(Notepad|TextEdit).*",
 		)
-		if len(windows) != 2 {
+		if len(matchedWindows) != 2 {
 			t.Fatalf(
 				"Expected 2 windows matching pattern, got %d",
-				len(windows),
+				len(matchedWindows),
 			)
 		}
 
@@ -469,22 +494,40 @@ func TestSummonCmd(t *testing.T) {
 				Times(1),
 
 			aerospaceClient.GetWorkspacesMock().EXPECT().
-				MoveWindowToWorkspace(windows[0].WindowID, focusedWorkspace.Workspace).
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: focusedWorkspace.Workspace,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &matchedWindows[0].WindowID,
+					},
+				).
 				Return(nil).
 				Times(1),
 
 			aerospaceClient.GetWindowsMock().EXPECT().
-				SetFocusByWindowID(windows[0].WindowID).
+				SetFocusByWindowID(windows.SetFocusArgs{
+					WindowID: matchedWindows[0].WindowID,
+				}).
 				Return(nil).
 				Times(1),
 
 			aerospaceClient.GetWorkspacesMock().EXPECT().
-				MoveWindowToWorkspace(windows[1].WindowID, focusedWorkspace.Workspace).
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: focusedWorkspace.Workspace,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &matchedWindows[1].WindowID,
+					},
+				).
 				Return(nil).
 				Times(1),
 
 			aerospaceClient.GetWindowsMock().EXPECT().
-				SetFocusByWindowID(windows[1].WindowID).
+				SetFocusByWindowID(windows.SetFocusArgs{
+					WindowID: matchedWindows[1].WindowID,
+				}).
 				Return(nil).
 				Times(1),
 		)
@@ -573,11 +616,6 @@ func TestSummonCmd(t *testing.T) {
 		}
 		allWindows := testutils.ExtractAllWindows(tree)
 		focusedWorkspace := &workspaces.Workspace{Workspace: "ws1"}
-		windows := testutils.ExtractWindowsByName(tree, "Notepad")
-		if len(windows) != 1 {
-			t.Fatalf("Expected 1 Notepad window, got %d", len(windows))
-		}
-		notepadWindow := windows[0]
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
 		gomock.InOrder(
@@ -594,12 +632,12 @@ func TestSummonCmd(t *testing.T) {
 			// In dry-run mode, the aerospace client wrapper intercepts these calls
 			// and prints debug messages instead of calling the actual methods
 			aerospaceClient.GetWorkspacesMock().EXPECT().
-				MoveWindowToWorkspace(notepadWindow.WindowID, focusedWorkspace.Workspace).
+				MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
 				Return(nil).
 				Times(0), // DO NOT RUN in dry-run mode
 
 			aerospaceClient.GetWindowsMock().EXPECT().
-				SetFocusByWindowID(notepadWindow.WindowID).
+				SetFocusByWindowID(gomock.Any()).
 				Return(nil).
 				Times(0), // DO NOT RUN in dry-run mode
 		)

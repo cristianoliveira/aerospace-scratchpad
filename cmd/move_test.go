@@ -60,10 +60,6 @@ func TestMoveCmd(t *testing.T) {
 			},
 		}
 		allWindows := testutils.ExtractAllWindows(tree)
-		windows := testutils.ExtractWindowsByName(tree, "Notepad")
-		if len(windows) != 1 {
-			t.Fatalf("Expected 1 Notepad window, got %d", len(windows))
-		}
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
 		// Connection() is handled by routing connection, no need to mock
@@ -131,15 +127,26 @@ func TestMoveCmd(t *testing.T) {
 				Times(1),
 
 			aerospaceClient.GetWorkspacesMock().EXPECT().
-				MoveWindowToWorkspace(
-					focusedWindow.WindowID,
-					constants.DefaultScratchpadWorkspaceName,
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: constants.DefaultScratchpadWorkspaceName,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &focusedWindow.WindowID,
+					},
 				).
 				Return(nil).
 				Times(1),
 
 			aerospaceClient.GetWindowsMock().EXPECT().
-				SetLayout(focusedWindow.WindowID, "floating").
+				SetLayoutWithOpts(
+					windows.SetLayoutArgs{
+						Layouts: []string{"floating"},
+					},
+					windows.SetLayoutOpts{
+						WindowID: &focusedWindow.WindowID,
+					},
+				).
 				Return(nil).
 				Times(1),
 		)
@@ -205,15 +212,26 @@ func TestMoveCmd(t *testing.T) {
 				Times(1),
 
 			aerospaceClient.GetWorkspacesMock().EXPECT().
-				MoveWindowToWorkspace(
-					focusedWindow.WindowID,
-					constants.DefaultScratchpadWorkspaceName,
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: constants.DefaultScratchpadWorkspaceName,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &focusedWindow.WindowID,
+					},
 				).
 				Return(nil).
 				Times(1),
 
 			aerospaceClient.GetWindowsMock().EXPECT().
-				SetLayout(focusedWindow.WindowID, "floating").
+				SetLayoutWithOpts(
+					windows.SetLayoutArgs{
+						Layouts: []string{"floating"},
+					},
+					windows.SetLayoutOpts{
+						WindowID: &focusedWindow.WindowID,
+					},
+				).
 				Return(nil).
 				Times(1),
 		)
@@ -305,11 +323,11 @@ func TestMoveCmd(t *testing.T) {
 			},
 		}
 		allWindows := testutils.ExtractAllWindows(tree)
-		windows := testutils.ExtractWindowsByName(tree, "Notepad")
-		if len(windows) != 1 {
-			t.Fatalf("Expected 1 Notepad window, got %d", len(windows))
+		matchedWindows := testutils.ExtractWindowsByName(tree, "Notepad")
+		if len(matchedWindows) != 1 {
+			t.Fatalf("Expected 1 Notepad window, got %d", len(matchedWindows))
 		}
-		notepadWindow := windows[0]
+		notepadWindow := matchedWindows[0]
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
 		// allow FocusNextTilingWindow to run without mocking Connection details
@@ -321,15 +339,26 @@ func TestMoveCmd(t *testing.T) {
 				Times(1),
 
 			aerospaceClient.GetWorkspacesMock().EXPECT().
-				MoveWindowToWorkspace(
-					notepadWindow.WindowID,
-					constants.DefaultScratchpadWorkspaceName,
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: constants.DefaultScratchpadWorkspaceName,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &notepadWindow.WindowID,
+					},
 				).
 				Return(nil).
 				Times(1),
 
 			aerospaceClient.GetWindowsMock().EXPECT().
-				SetLayout(notepadWindow.WindowID, "floating").
+				SetLayoutWithOpts(
+					windows.SetLayoutArgs{
+						Layouts: []string{"floating"},
+					},
+					windows.SetLayoutOpts{
+						WindowID: &notepadWindow.WindowID,
+					},
+				).
 				Return(nil).
 				Times(1),
 		)
@@ -386,9 +415,13 @@ func TestMoveCmd(t *testing.T) {
 				Times(1),
 
 			aerospaceClient.GetWorkspacesMock().EXPECT().
-				MoveWindowToWorkspace(
-					focusedWindow.WindowID,
-					constants.DefaultScratchpadWorkspaceName,
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: constants.DefaultScratchpadWorkspaceName,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &focusedWindow.WindowID,
+					},
 				).
 				Return(
 					fmt.Errorf(
@@ -399,7 +432,7 @@ func TestMoveCmd(t *testing.T) {
 				Times(1),
 
 			aerospaceClient.GetWindowsMock().EXPECT().
-				SetLayout(gomock.Any(), gomock.Any()).
+				SetLayoutWithOpts(gomock.Any(), gomock.Any()).
 				Return(nil).
 				Times(0),
 		)
@@ -444,11 +477,11 @@ func TestMoveCmd(t *testing.T) {
 			},
 		}
 		allWindows := testutils.ExtractAllWindows(tree)
-		windows := testutils.ExtractWindowsByName(tree, "Notepad")
-		if len(windows) != 1 {
-			t.Fatalf("Expected 1 Notepad window, got %d", len(windows))
+		matchedWindows := testutils.ExtractWindowsByName(tree, "Notepad")
+		if len(matchedWindows) != 1 {
+			t.Fatalf("Expected 1 Notepad window, got %d", len(matchedWindows))
 		}
-		notepadWindow := windows[0]
+		notepadWindow := matchedWindows[0]
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
 		// allow wrapper.FocusNextTilingWindow in dry-run (will not call Connection)
@@ -460,15 +493,26 @@ func TestMoveCmd(t *testing.T) {
 				Times(1),
 
 			aerospaceClient.GetWorkspacesMock().EXPECT().
-				MoveWindowToWorkspace(
-					notepadWindow.WindowID,
-					constants.DefaultScratchpadWorkspaceName,
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: constants.DefaultScratchpadWorkspaceName,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &notepadWindow.WindowID,
+					},
 				).
 				Return(nil).
 				Times(0), // DO NOT RUN
 
 			aerospaceClient.GetWindowsMock().EXPECT().
-				SetLayout(notepadWindow.WindowID, "floating").
+				SetLayoutWithOpts(
+					windows.SetLayoutArgs{
+						Layouts: []string{"floating"},
+					},
+					windows.SetLayoutOpts{
+						WindowID: &notepadWindow.WindowID,
+					},
+				).
 				Return(nil).
 				Times(0), // DO NOT RUN
 		)
@@ -536,19 +580,49 @@ func TestMoveCmd(t *testing.T) {
 
 			// For each window, expect a pair of calls (MoveWindowToWorkspace followed by SetLayout)
 			// Window 1 (5678)
+			windowID1 := 5678
 			aerospaceClient.GetWorkspacesMock().EXPECT().
-				MoveWindowToWorkspace(5678, constants.DefaultScratchpadWorkspaceName).
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: constants.DefaultScratchpadWorkspaceName,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &windowID1,
+					},
+				).
 				Return(nil)
 			aerospaceClient.GetWindowsMock().EXPECT().
-				SetLayout(5678, "floating").
+				SetLayoutWithOpts(
+					windows.SetLayoutArgs{
+						Layouts: []string{"floating"},
+					},
+					windows.SetLayoutOpts{
+						WindowID: &windowID1,
+					},
+				).
 				Return(nil)
 
 			// Window 2 (1111)
+			windowID2 := 1111
 			aerospaceClient.GetWorkspacesMock().EXPECT().
-				MoveWindowToWorkspace(1111, constants.DefaultScratchpadWorkspaceName).
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: constants.DefaultScratchpadWorkspaceName,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &windowID2,
+					},
+				).
 				Return(nil)
 			aerospaceClient.GetWindowsMock().EXPECT().
-				SetLayout(1111, "floating").
+				SetLayoutWithOpts(
+					windows.SetLayoutArgs{
+						Layouts: []string{"floating"},
+					},
+					windows.SetLayoutOpts{
+						WindowID: &windowID2,
+					},
+				).
 				Return(nil)
 
 			wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
@@ -616,12 +690,12 @@ func TestMoveCmd(t *testing.T) {
 
 				// DO NOT RUN in dry-run mode
 				aerospaceClient.GetWorkspacesMock().EXPECT().
-					MoveWindowToWorkspace(gomock.Any(), gomock.Any()).
+					MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
 					Return(nil).
 					Times(0),
 
 				aerospaceClient.GetWindowsMock().EXPECT().
-					SetLayout(gomock.Any(), gomock.Any()).
+					SetLayoutWithOpts(gomock.Any(), gomock.Any()).
 					Return(nil).
 					Times(0),
 			)

@@ -73,7 +73,9 @@ func (c *AeroSpaceClient) SetFocusByWindowID(windowID int) error {
 		fmt.Fprintf(os.Stdout, "[dry-run] SetFocusByWindowID(%d)\n", windowID)
 		return nil
 	}
-	return c.client.Windows().SetFocusByWindowID(windowID)
+	return c.client.Windows().SetFocusByWindowID(windows.SetFocusArgs{
+		WindowID: windowID,
+	})
 }
 
 // FocusNextTilingWindow moves focus to the next tiled window in depth-first order, ignoring floating windows.
@@ -83,26 +85,28 @@ func (c *AeroSpaceClient) FocusNextTilingWindow() error {
 		fmt.Fprintln(os.Stdout, "[dry-run] FocusNextTilingWindow()")
 		return nil
 	}
-	client := c.Connection()
-	response, err := client.SendCommand(
-		"focus",
-		[]string{
-			"dfs-next",
+	dfsDir := "dfs-next"
+	err := c.client.Windows().SetFocusByDFSWithOpts(
+		windows.SetFocusByDFSArgs{
+			Direction: dfsDir,
+		},
+		windows.SetFocusByDFSOpts{
+			IgnoreFloating: true,
 		},
 	)
-	if err != nil || response.ExitCode != 0 {
-		response, err = client.SendCommand(
-			"focus",
-			[]string{
-				"dfs-prev",
+	if err != nil {
+		// Try dfs-prev if dfs-next fails
+		dfsDir = "dfs-prev"
+		err = c.client.Windows().SetFocusByDFSWithOpts(
+			windows.SetFocusByDFSArgs{
+				Direction: dfsDir,
+			},
+			windows.SetFocusByDFSOpts{
+				IgnoreFloating: true,
 			},
 		)
 		if err != nil {
-			return err
-		}
-
-		if response.ExitCode != 0 {
-			return fmt.Errorf("failed to focus next tiling window: %s", response.StdErr)
+			return fmt.Errorf("failed to focus next tiling window: %w", err)
 		}
 	}
 
@@ -126,7 +130,14 @@ func (c *AeroSpaceClient) MoveWindowToWorkspace(
 		)
 		return nil
 	}
-	return c.client.Workspaces().MoveWindowToWorkspace(windowID, workspaceName)
+	return c.client.Workspaces().MoveWindowToWorkspaceWithOpts(
+		workspaces.MoveWindowToWorkspaceArgs{
+			WorkspaceName: workspaceName,
+		},
+		workspaces.MoveWindowToWorkspaceOpts{
+			WindowID: &windowID,
+		},
+	)
 }
 
 func (c *AeroSpaceClient) SetLayout(windowID int, layout string) error {
@@ -139,7 +150,14 @@ func (c *AeroSpaceClient) SetLayout(windowID int, layout string) error {
 		)
 		return nil
 	}
-	return c.client.Windows().SetLayout(windowID, layout)
+	return c.client.Windows().SetLayoutWithOpts(
+		windows.SetLayoutArgs{
+			Layouts: []string{layout},
+		},
+		windows.SetLayoutOpts{
+			WindowID: &windowID,
+		},
+	)
 }
 
 func (c *AeroSpaceClient) Connection() client.AeroSpaceConnection {

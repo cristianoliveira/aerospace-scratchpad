@@ -47,9 +47,14 @@ func (a *MoverAeroSpace) MoveWindowToScratchpad(
 			constants.DefaultScratchpadWorkspaceName,
 		)
 	} else {
-		err = a.aerospace.Workspaces().MoveWindowToWorkspace(
-			window.WindowID,
-			constants.DefaultScratchpadWorkspaceName,
+		windowID := window.WindowID
+		err = a.aerospace.Workspaces().MoveWindowToWorkspaceWithOpts(
+			workspaces.MoveWindowToWorkspaceArgs{
+				WorkspaceName: constants.DefaultScratchpadWorkspaceName,
+			},
+			workspaces.MoveWindowToWorkspaceOpts{
+				WindowID: &windowID,
+			},
 		)
 	}
 	logger.LogDebug(
@@ -66,7 +71,15 @@ func (a *MoverAeroSpace) MoveWindowToScratchpad(
 	if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
 		err = wrapper.SetLayout(window.WindowID, "floating")
 	} else {
-		err = a.aerospace.Windows().SetLayout(window.WindowID, "floating")
+		windowID := window.WindowID
+		err = a.aerospace.Windows().SetLayoutWithOpts(
+			windows.SetLayoutArgs{
+				Layouts: []string{"floating"},
+			},
+			windows.SetLayoutOpts{
+				WindowID: &windowID,
+			},
+		)
 	}
 	if err != nil {
 		fmt.Fprintf(
@@ -108,9 +121,14 @@ func (a *MoverAeroSpace) MoveWindowToWorkspace(
 		}
 	} else {
 		// Fallback to direct service call
-		if err := a.aerospace.Workspaces().MoveWindowToWorkspace(
-			window.WindowID,
-			workspace.Workspace,
+		windowID := window.WindowID
+		if err := a.aerospace.Workspaces().MoveWindowToWorkspaceWithOpts(
+			workspaces.MoveWindowToWorkspaceArgs{
+				WorkspaceName: workspace.Workspace,
+			},
+			workspaces.MoveWindowToWorkspaceOpts{
+				WindowID: &windowID,
+			},
 		); err != nil {
 			return fmt.Errorf(
 				"unable to move window '%+v' to workspace '%s': %w",
@@ -142,7 +160,9 @@ func (a *MoverAeroSpace) MoveWindowToWorkspace(
 		}
 	} else {
 		// Fallback to direct service call
-		if err := a.aerospace.Windows().SetFocusByWindowID(window.WindowID); err != nil {
+		if err := a.aerospace.Windows().SetFocusByWindowID(windows.SetFocusArgs{
+			WindowID: window.WindowID,
+		}); err != nil {
 			return fmt.Errorf(
 				"unable to set focus to window '%+v': %w",
 				window,

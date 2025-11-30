@@ -65,6 +65,7 @@ func TestNextCmd(t *testing.T) {
 		scratchpadWindows := testutils.ExtractScratchpadWindows(tree)
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		windowID := 9999
 		gomock.InOrder(
 			aerospaceClient.GetWorkspacesMock().EXPECT().
 				GetFocusedWorkspace().
@@ -75,14 +76,20 @@ func TestNextCmd(t *testing.T) {
 				Return(scratchpadWindows.Windows, nil).
 				Times(1),
 			aerospaceClient.GetWorkspacesMock().EXPECT().
-				MoveWindowToWorkspace(
-					9999, // The ID of the first scratchpad window
-					focusedTree.Workspace.Workspace,
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: focusedTree.Workspace.Workspace,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &windowID,
+					},
 				).
 				Return(nil).
 				Times(1),
 			aerospaceClient.GetWindowsMock().EXPECT().
-				SetFocusByWindowID(9999). // Focus the moved window
+				SetFocusByWindowID(windows.SetFocusArgs{
+					WindowID: 9999,
+				}). // Focus the moved window
 				Return(nil).
 				Times(1),
 		)
