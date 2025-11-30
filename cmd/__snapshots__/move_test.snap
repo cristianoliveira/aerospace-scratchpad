@@ -46,9 +46,7 @@ aerospace-scratchpad move test
 Output
 
 Error
- Error: unable to get windows: failed to unmarshal windows: unexpected end of JSON input
-Out:
-Err:mocked_error
+ Error: unable to get windows: mocked_error
 
 ---
 
@@ -89,7 +87,7 @@ aerospace-scratchpad move Finder
 Output
 
 Error
-Error: failed to move window to workspace: Window '5678 | Finder ' already belongs to scratchpad
+Error: Window '5678 | Finder ' already belongs to scratchpad
 
 ---
 

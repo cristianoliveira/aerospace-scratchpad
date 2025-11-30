@@ -3,7 +3,7 @@ module github.com/cristianoliveira/aerospace-scratchpad
 go 1.24.2
 
 require (
-	github.com/cristianoliveira/aerospace-ipc v0.3.0
+	github.com/cristianoliveira/aerospace-ipc v0.2.2-0.20251129205702-c6ef7f778136
 	github.com/gkampitakis/go-snaps v0.5.11
 	github.com/spf13/cobra v1.9.1
 	go.uber.org/mock v0.5.2
@@ -25,4 +25,5 @@ require (
 	github.com/tidwall/sjson v1.2.5 // indirect
 )
 
-replace github.com/cristianoliveira/aerospace-ipc => ../aerospace-ipc
+// NOTE: for development
+// replace github.com/cristianoliveira/aerospace-ipc => ../aerospace-ipc
