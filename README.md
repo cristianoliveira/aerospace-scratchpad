@@ -5,6 +5,10 @@
 
 A I3/Sway like scratchpad extension for [AeroSpace WM](https://github.com/nikitabobko/AeroSpace)
 
+# IMPORTANT for AeroSpace v0.20.0
+
+Currently incompatible with AeroSpace v0.20.0 work is being done in and will be release with v0.4.0
+
 ## Summary
 
 - [Demo](#demo)
