@@ -5,6 +5,8 @@ import (
 	"os"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/focus"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/layout"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/client"
@@ -53,6 +55,16 @@ func (c *AeroSpaceClient) Workspaces() *workspaces.Service {
 	return c.client.Workspaces()
 }
 
+// Focus returns the focus service.
+func (c *AeroSpaceClient) Focus() *focus.Service {
+	return c.client.Focus()
+}
+
+// Layout returns the layout service.
+func (c *AeroSpaceClient) Layout() *layout.Service {
+	return c.client.Layout()
+}
+
 // GetAllWindows retrieves all windows managed by AeroSpaceWM.
 func (c *AeroSpaceClient) GetAllWindows() ([]windows.Window, error) {
 	return c.client.Windows().GetAllWindows()
@@ -73,9 +85,7 @@ func (c *AeroSpaceClient) SetFocusByWindowID(windowID int) error {
 		fmt.Fprintf(os.Stdout, "[dry-run] SetFocusByWindowID(%d)\n", windowID)
 		return nil
 	}
-	return c.client.Windows().SetFocusByWindowID(windows.SetFocusArgs{
-		WindowID: windowID,
-	})
+	return c.client.Focus().SetFocusByWindowID(windowID)
 }
 
 // FocusNextTilingWindow moves focus to the next tiled window in depth-first order, ignoring floating windows.
@@ -85,26 +95,14 @@ func (c *AeroSpaceClient) FocusNextTilingWindow() error {
 		fmt.Fprintln(os.Stdout, "[dry-run] FocusNextTilingWindow()")
 		return nil
 	}
-	dfsDir := "dfs-next"
-	err := c.client.Windows().SetFocusByDFSWithOpts(
-		windows.SetFocusByDFSArgs{
-			Direction: dfsDir,
-		},
-		windows.SetFocusByDFSOpts{
-			IgnoreFloating: true,
-		},
-	)
+	err := c.client.Focus().SetFocusByDFS("dfs-next", focus.SetFocusOpts{
+		IgnoreFloating: true,
+	})
 	if err != nil {
 		// Try dfs-prev if dfs-next fails
-		dfsDir = "dfs-prev"
-		err = c.client.Windows().SetFocusByDFSWithOpts(
-			windows.SetFocusByDFSArgs{
-				Direction: dfsDir,
-			},
-			windows.SetFocusByDFSOpts{
-				IgnoreFloating: true,
-			},
-		)
+		err = c.client.Focus().SetFocusByDFS("dfs-prev", focus.SetFocusOpts{
+			IgnoreFloating: true,
+		})
 		if err != nil {
 			return fmt.Errorf("failed to focus next tiling window: %w", err)
 		}
@@ -140,24 +138,19 @@ func (c *AeroSpaceClient) MoveWindowToWorkspace(
 	)
 }
 
-func (c *AeroSpaceClient) SetLayout(windowID int, layout string) error {
+func (c *AeroSpaceClient) SetLayout(windowID int, layoutName string) error {
 	if c.dryRun {
 		fmt.Fprintf(
 			os.Stdout,
 			"[dry-run] SetLayout(windowID=%d, layout=%s)\n",
 			windowID,
-			layout,
+			layoutName,
 		)
 		return nil
 	}
-	return c.client.Windows().SetLayoutWithOpts(
-		windows.SetLayoutArgs{
-			Layouts: []string{layout},
-		},
-		windows.SetLayoutOpts{
-			WindowID: &windowID,
-		},
-	)
+	return c.client.Layout().SetLayout([]string{layoutName}, layout.SetLayoutOpts{
+		WindowID: layout.IntPtr(windowID),
+	})
 }
 
 func (c *AeroSpaceClient) Connection() client.AeroSpaceConnection {
@@ -181,10 +174,12 @@ func (c *AeroSpaceClient) CloseConnection() error {
 	return c.ogClient.CloseConnection()
 }
 
-// AeroSpaceWMClient defines the interface for clients that provide Windows() and Workspaces() services.
+// AeroSpaceWMClient defines the interface for clients that provide Windows(), Workspaces(), Focus(), and Layout() services.
 type AeroSpaceWMClient interface {
 	Windows() *windows.Service
 	Workspaces() *workspaces.Service
+	Focus() *focus.Service
+	Layout() *layout.Service
 	Connection() client.AeroSpaceConnection
 }
 

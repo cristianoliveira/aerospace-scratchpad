@@ -9,6 +9,7 @@ import (
 	"github.com/gkampitakis/go-snaps/snaps"
 	"go.uber.org/mock/gomock"
 
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/layout"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
@@ -138,12 +139,10 @@ func TestMoveCmd(t *testing.T) {
 				Return(nil).
 				Times(1),
 
-			aerospaceClient.GetWindowsMock().EXPECT().
-				SetLayoutWithOpts(
-					windows.SetLayoutArgs{
-						Layouts: []string{"floating"},
-					},
-					windows.SetLayoutOpts{
+			aerospaceClient.GetLayoutMock().EXPECT().
+				SetLayout(
+					[]string{"floating"},
+					layout.SetLayoutOpts{
 						WindowID: &focusedWindow.WindowID,
 					},
 				).
@@ -223,12 +222,10 @@ func TestMoveCmd(t *testing.T) {
 				Return(nil).
 				Times(1),
 
-			aerospaceClient.GetWindowsMock().EXPECT().
-				SetLayoutWithOpts(
-					windows.SetLayoutArgs{
-						Layouts: []string{"floating"},
-					},
-					windows.SetLayoutOpts{
+			aerospaceClient.GetLayoutMock().EXPECT().
+				SetLayout(
+					[]string{"floating"},
+					layout.SetLayoutOpts{
 						WindowID: &focusedWindow.WindowID,
 					},
 				).
@@ -350,12 +347,10 @@ func TestMoveCmd(t *testing.T) {
 				Return(nil).
 				Times(1),
 
-			aerospaceClient.GetWindowsMock().EXPECT().
-				SetLayoutWithOpts(
-					windows.SetLayoutArgs{
-						Layouts: []string{"floating"},
-					},
-					windows.SetLayoutOpts{
+			aerospaceClient.GetLayoutMock().EXPECT().
+				SetLayout(
+					[]string{"floating"},
+					layout.SetLayoutOpts{
 						WindowID: &notepadWindow.WindowID,
 					},
 				).
@@ -431,8 +426,8 @@ func TestMoveCmd(t *testing.T) {
 				).
 				Times(1),
 
-			aerospaceClient.GetWindowsMock().EXPECT().
-				SetLayoutWithOpts(gomock.Any(), gomock.Any()).
+			aerospaceClient.GetLayoutMock().EXPECT().
+				SetLayout(gomock.Any(), gomock.Any()).
 				Return(nil).
 				Times(0),
 		)
@@ -591,12 +586,10 @@ func TestMoveCmd(t *testing.T) {
 					},
 				).
 				Return(nil)
-			aerospaceClient.GetWindowsMock().EXPECT().
-				SetLayoutWithOpts(
-					windows.SetLayoutArgs{
-						Layouts: []string{"floating"},
-					},
-					windows.SetLayoutOpts{
+			aerospaceClient.GetLayoutMock().EXPECT().
+				SetLayout(
+					[]string{"floating"},
+					layout.SetLayoutOpts{
 						WindowID: &windowID1,
 					},
 				).
@@ -614,12 +607,10 @@ func TestMoveCmd(t *testing.T) {
 					},
 				).
 				Return(nil)
-			aerospaceClient.GetWindowsMock().EXPECT().
-				SetLayoutWithOpts(
-					windows.SetLayoutArgs{
-						Layouts: []string{"floating"},
-					},
-					windows.SetLayoutOpts{
+			aerospaceClient.GetLayoutMock().EXPECT().
+				SetLayout(
+					[]string{"floating"},
+					layout.SetLayoutOpts{
 						WindowID: &windowID2,
 					},
 				).
@@ -694,8 +685,8 @@ func TestMoveCmd(t *testing.T) {
 					Return(nil).
 					Times(0),
 
-				aerospaceClient.GetWindowsMock().EXPECT().
-					SetLayoutWithOpts(gomock.Any(), gomock.Any()).
+				aerospaceClient.GetLayoutMock().EXPECT().
+					SetLayout(gomock.Any(), gomock.Any()).
 					Return(nil).
 					Times(0),
 			)

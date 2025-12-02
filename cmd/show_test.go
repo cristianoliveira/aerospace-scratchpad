@@ -8,6 +8,7 @@ import (
 	"github.com/gkampitakis/go-snaps/snaps"
 	"go.uber.org/mock/gomock"
 
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/layout"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
@@ -174,16 +175,14 @@ func TestShowCmd(t *testing.T) {
 					Return(focusedWindow, nil).
 					Times(1),
 
-				aerospaceClient.GetWindowsMock().EXPECT().
-					SetFocusByWindowID(windows.SetFocusArgs{
-						WindowID: focusedTree.Windows[1].WindowID,
-					}).
+				aerospaceClient.GetFocusMock().EXPECT().
+					SetFocusByWindowID(focusedTree.Windows[1].WindowID).
 					Return(nil).
 					Times(1),
 
 				// DO NOT set the layout to floating
-				aerospaceClient.GetWindowsMock().EXPECT().
-					SetLayoutWithOpts(gomock.Any(), gomock.Any()).
+				aerospaceClient.GetLayoutMock().EXPECT().
+					SetLayout(gomock.Any(), gomock.Any()).
 					Return(nil).
 					Times(0),
 			)
@@ -283,20 +282,16 @@ func TestShowCmd(t *testing.T) {
 				Return(nil).
 				Times(1),
 
-			aerospaceClient.GetWindowsMock().EXPECT().
-				SetFocusByWindowID(windows.SetFocusArgs{
-					WindowID: focusedWindow.WindowID,
-				}).
+			aerospaceClient.GetFocusMock().EXPECT().
+				SetFocusByWindowID(focusedWindow.WindowID).
 				Return(nil).
 				Times(0),
 
 			// When moving to scratchpad, set the layout to floating
-			aerospaceClient.GetWindowsMock().EXPECT().
-				SetLayoutWithOpts(
-					windows.SetLayoutArgs{
-						Layouts: []string{"floating"},
-					},
-					windows.SetLayoutOpts{
+			aerospaceClient.GetLayoutMock().EXPECT().
+				SetLayout(
+					[]string{"floating"},
+					layout.SetLayoutOpts{
 						WindowID: &focusedWindow.WindowID,
 					},
 				).
@@ -394,20 +389,16 @@ func TestShowCmd(t *testing.T) {
 					Return(nil).
 					Times(1),
 
-				aerospaceClient.GetWindowsMock().EXPECT().
-					SetFocusByWindowID(windows.SetFocusArgs{
-						WindowID: tree[0].Windows[1].WindowID,
-					}).
+				aerospaceClient.GetFocusMock().EXPECT().
+					SetFocusByWindowID(tree[0].Windows[1].WindowID).
 					Return(nil).
 					Times(1),
 
 				// When moving to scratchpad, set the layout to floating
-				aerospaceClient.GetWindowsMock().EXPECT().
-					SetLayoutWithOpts(
-						windows.SetLayoutArgs{
-							Layouts: []string{"floating"},
-						},
-						windows.SetLayoutOpts{
+				aerospaceClient.GetLayoutMock().EXPECT().
+					SetLayout(
+						[]string{"floating"},
+						layout.SetLayoutOpts{
 							WindowID: &focusedWindow.WindowID,
 						},
 					).
@@ -514,10 +505,8 @@ func TestShowCmd(t *testing.T) {
 					).
 					Return(nil).
 					Times(1),
-				aerospaceClient.GetWindowsMock().EXPECT().
-					SetFocusByWindowID(windows.SetFocusArgs{
-						WindowID: tree[0].Windows[0].WindowID,
-					}).
+				aerospaceClient.GetFocusMock().EXPECT().
+					SetFocusByWindowID(tree[0].Windows[0].WindowID).
 					Return(nil).
 					Times(1),
 
@@ -533,10 +522,8 @@ func TestShowCmd(t *testing.T) {
 					).
 					Return(nil).
 					Times(1),
-				aerospaceClient.GetWindowsMock().EXPECT().
-					SetFocusByWindowID(windows.SetFocusArgs{
-						WindowID: tree[0].Windows[1].WindowID,
-					}).
+				aerospaceClient.GetFocusMock().EXPECT().
+					SetFocusByWindowID(tree[0].Windows[1].WindowID).
 					Return(nil).
 					Times(1),
 			)
@@ -644,12 +631,10 @@ func TestShowCmd(t *testing.T) {
 						).
 						Return(nil).
 						Times(1),
-					aerospaceClient.GetWindowsMock().EXPECT().
-						SetLayoutWithOpts(
-							windows.SetLayoutArgs{
-								Layouts: []string{"floating"},
-							},
-							windows.SetLayoutOpts{
+					aerospaceClient.GetLayoutMock().EXPECT().
+						SetLayout(
+							[]string{"floating"},
+							layout.SetLayoutOpts{
 								WindowID: &tree[1].Windows[0].WindowID,
 							},
 						).
@@ -668,12 +653,10 @@ func TestShowCmd(t *testing.T) {
 						).
 						Return(nil).
 						Times(1),
-					aerospaceClient.GetWindowsMock().EXPECT().
-						SetLayoutWithOpts(
-							windows.SetLayoutArgs{
-								Layouts: []string{"floating"},
-							},
-							windows.SetLayoutOpts{
+					aerospaceClient.GetLayoutMock().EXPECT().
+						SetLayout(
+							[]string{"floating"},
+							layout.SetLayoutOpts{
 								WindowID: &tree[1].Windows[1].WindowID,
 							},
 						).
@@ -790,17 +773,13 @@ func TestShowCmd(t *testing.T) {
 						Return(nil).
 						Times(1),
 
-					aerospaceClient.GetWindowsMock().EXPECT().
-						SetFocusByWindowID(windows.SetFocusArgs{
-							WindowID: tree[0].Windows[0].WindowID,
-						}).
+					aerospaceClient.GetFocusMock().EXPECT().
+						SetFocusByWindowID(tree[0].Windows[0].WindowID).
 						Return(nil).
 						Times(1),
 
-					aerospaceClient.GetWindowsMock().EXPECT().
-						SetFocusByWindowID(windows.SetFocusArgs{
-							WindowID: tree[1].Windows[0].WindowID,
-						}).
+					aerospaceClient.GetFocusMock().EXPECT().
+						SetFocusByWindowID(tree[1].Windows[0].WindowID).
 						Return(nil).
 						Times(1),
 				)
@@ -914,10 +893,8 @@ func TestShowCmd(t *testing.T) {
 						Return(nil).
 						Times(1),
 
-					aerospaceClient.GetWindowsMock().EXPECT().
-						SetFocusByWindowID(windows.SetFocusArgs{
-							WindowID: tree[1].Windows[0].WindowID,
-						}).
+					aerospaceClient.GetFocusMock().EXPECT().
+						SetFocusByWindowID(tree[1].Windows[0].WindowID).
 						Return(nil).
 						Times(1),
 				)
@@ -1027,10 +1004,8 @@ func TestShowCmd(t *testing.T) {
 						).
 						Return(nil).
 						Times(1),
-					aerospaceClient.GetWindowsMock().EXPECT().
-						SetFocusByWindowID(windows.SetFocusArgs{
-							WindowID: tree[0].Windows[0].WindowID,
-						}).
+					aerospaceClient.GetFocusMock().EXPECT().
+						SetFocusByWindowID(tree[0].Windows[0].WindowID).
 						Return(nil).
 						Times(1),
 				)
@@ -1149,10 +1124,8 @@ func TestShowCmd(t *testing.T) {
 						).
 						Return(nil).
 						Times(1),
-					aerospaceClient.GetWindowsMock().EXPECT().
-						SetFocusByWindowID(windows.SetFocusArgs{
-							WindowID: tree[0].Windows[0].WindowID,
-						}).
+					aerospaceClient.GetFocusMock().EXPECT().
+						SetFocusByWindowID(tree[0].Windows[0].WindowID).
 						Return(nil).
 						Times(1),
 				)

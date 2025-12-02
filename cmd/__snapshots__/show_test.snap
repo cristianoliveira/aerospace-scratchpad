@@ -3,8 +3,8 @@
 []testutils.AeroSpaceTree{
     {
         Windows: {
-            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
-            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+            {WindowID:1234, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
@@ -23,8 +23,8 @@ Error: <pattern> cannot be empty
 []testutils.AeroSpaceTree{
     {
         Windows: {
-            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
-            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+            {WindowID:1234, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 1234,
@@ -43,8 +43,8 @@ Error: no windows matched the pattern 'foo'
 []testutils.AeroSpaceTree{
     {
         Windows: {
-            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
-            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+            {WindowID:1234, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 1234,
@@ -63,8 +63,8 @@ Error
 []testutils.AeroSpaceTree{
     {
         Windows: {
-            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
-            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+            {WindowID:1234, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
@@ -83,15 +83,15 @@ Error
 []testutils.AeroSpaceTree{
     {
         Windows: {
-            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
-            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+            {WindowID:1234, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 0,
     },
     {
         Windows: {
-            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:""},
+            {WindowID:91011, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Terminal", AppBundleID:"", Workspace:""},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws2"},
         FocusedWindowID: 91011,
@@ -110,15 +110,15 @@ Error
 []testutils.AeroSpaceTree{
     {
         Windows: {
-            {WindowID:5678, WindowTitle:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
-            {WindowID:5679, WindowTitle:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:5678, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:5679, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws1"},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 0,
     },
     {
         Windows: {
-            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
+            {WindowID:91011, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws2"},
         FocusedWindowID: 91011,
@@ -144,9 +144,9 @@ Error
     },
     {
         Windows: {
-            {WindowID:5678, WindowTitle:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws2"},
-            {WindowID:5679, WindowTitle:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws2"},
-            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
+            {WindowID:5678, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws2"},
+            {WindowID:5679, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws2"},
+            {WindowID:91011, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws2"},
         FocusedWindowID: 5678,
@@ -166,16 +166,16 @@ Error
 []testutils.AeroSpaceTree{
     {
         Windows: {
-            {WindowID:5678, WindowTitle:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
-            {WindowID:22, WindowTitle:"", AppName:"Browser", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:5678, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:22, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Browser", AppBundleID:"", Workspace:"ws1"},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 0,
     },
     {
         Windows: {
-            {WindowID:5679, WindowTitle:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws2"},
-            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
+            {WindowID:5679, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws2"},
+            {WindowID:91011, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws2"},
         FocusedWindowID: 91011,
@@ -195,16 +195,16 @@ Error
 []testutils.AeroSpaceTree{
     {
         Windows: {
-            {WindowID:5678, WindowTitle:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
-            {WindowID:22, WindowTitle:"", AppName:"Browser", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:5678, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:22, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Browser", AppBundleID:"", Workspace:"ws1"},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 0,
     },
     {
         Windows: {
-            {WindowID:5679, WindowTitle:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws2"},
-            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
+            {WindowID:5679, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws2"},
+            {WindowID:91011, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws2"},
         FocusedWindowID: 5679,
@@ -224,15 +224,15 @@ Error
 []testutils.AeroSpaceTree{
     {
         Windows: {
-            {WindowID:5678, WindowTitle:"Finder - foo and zas", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
-            {WindowID:5679, WindowTitle:"", AppName:"Finder2 - bar and baz", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:5678, WindowTitle:"Finder - foo and zas", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:5679, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder2 - bar and baz", AppBundleID:"", Workspace:"ws1"},
         },
         Workspace:       &workspaces.Workspace{Workspace:".scratchpad"},
         FocusedWindowID: 0,
     },
     {
         Windows: {
-            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
+            {WindowID:91011, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws2"},
         FocusedWindowID: 91011,
@@ -307,16 +307,16 @@ Error
 []testutils.AeroSpaceTree{
     {
         Windows: {
-            {WindowID:5678, WindowTitle:"Finder - foo and zas", AppName:"Finder1", AppBundleID:"com.linux.finder", Workspace:"ws1"},
-            {WindowID:5679, WindowTitle:"Finder2 - foo and baz", AppName:"Finder2", AppBundleID:"com.apple.finder", Workspace:"ws1"},
-            {WindowID:5680, WindowTitle:"Finder2 - bar and baz", AppName:"Finder2", AppBundleID:"com.apple.finder", Workspace:"ws1"},
+            {WindowID:5678, WindowTitle:"Finder - foo and zas", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder1", AppBundleID:"com.linux.finder", Workspace:"ws1"},
+            {WindowID:5679, WindowTitle:"Finder2 - foo and baz", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder2", AppBundleID:"com.apple.finder", Workspace:"ws1"},
+            {WindowID:5680, WindowTitle:"Finder2 - bar and baz", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder2", AppBundleID:"com.apple.finder", Workspace:"ws1"},
         },
         Workspace:       &workspaces.Workspace{Workspace:".scratchpad"},
         FocusedWindowID: 0,
     },
     {
         Windows: {
-            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
+            {WindowID:91011, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws2"},
         FocusedWindowID: 91011,
@@ -335,8 +335,8 @@ Error
 []testutils.AeroSpaceTree{
     {
         Windows: {
-            {WindowID:5678, WindowTitle:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
-            {WindowID:5670, WindowTitle:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:5678, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:5670, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder2", AppBundleID:"", Workspace:"ws1"},
         },
         Workspace:       &workspaces.Workspace{Workspace:".scratchpad"},
         FocusedWindowID: 5670,
@@ -355,15 +355,15 @@ Error: error applying filters to window 'Finder1': unknown filter property: unkn
 []testutils.AeroSpaceTree{
     {
         Windows: {
-            {WindowID:5678, WindowTitle:"Finder - foo and zas", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
-            {WindowID:5679, WindowTitle:"", AppName:"Finder2 - bar and baz", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:5678, WindowTitle:"Finder - foo and zas", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder1", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:5679, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder2 - bar and baz", AppBundleID:"", Workspace:"ws1"},
         },
         Workspace:       &workspaces.Workspace{Workspace:".scratchpad"},
         FocusedWindowID: 0,
     },
     {
         Windows: {
-            {WindowID:91011, WindowTitle:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
+            {WindowID:91011, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Terminal", AppBundleID:"", Workspace:"ws2"},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws2"},
         FocusedWindowID: 91011,

@@ -86,10 +86,8 @@ func TestNextCmd(t *testing.T) {
 				).
 				Return(nil).
 				Times(1),
-			aerospaceClient.GetWindowsMock().EXPECT().
-				SetFocusByWindowID(windows.SetFocusArgs{
-					WindowID: 9999,
-				}). // Focus the moved window
+			aerospaceClient.GetFocusMock().EXPECT().
+				SetFocusByWindowID(9999). // Focus the moved window
 				Return(nil).
 				Times(1),
 		)

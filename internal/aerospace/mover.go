@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/layout"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
@@ -71,15 +72,9 @@ func (a *MoverAeroSpace) MoveWindowToScratchpad(
 	if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
 		err = wrapper.SetLayout(window.WindowID, "floating")
 	} else {
-		windowID := window.WindowID
-		err = a.aerospace.Windows().SetLayoutWithOpts(
-			windows.SetLayoutArgs{
-				Layouts: []string{"floating"},
-			},
-			windows.SetLayoutOpts{
-				WindowID: &windowID,
-			},
-		)
+		err = a.aerospace.Layout().SetLayout([]string{"floating"}, layout.SetLayoutOpts{
+			WindowID: layout.IntPtr(window.WindowID),
+		})
 	}
 	if err != nil {
 		fmt.Fprintf(
@@ -160,9 +155,7 @@ func (a *MoverAeroSpace) MoveWindowToWorkspace(
 		}
 	} else {
 		// Fallback to direct service call
-		if err := a.aerospace.Windows().SetFocusByWindowID(windows.SetFocusArgs{
-			WindowID: window.WindowID,
-		}); err != nil {
+		if err := a.aerospace.Focus().SetFocusByWindowID(window.WindowID); err != nil {
 			return fmt.Errorf(
 				"unable to set focus to window '%+v': %w",
 				window,

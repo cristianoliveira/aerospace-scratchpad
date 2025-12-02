@@ -3,16 +3,16 @@
 []testutils.AeroSpaceTree{
     {
         Windows: {
-            {WindowID:1234, WindowTitle:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
-            {WindowID:5678, WindowTitle:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+            {WindowID:1234, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder", AppBundleID:"", Workspace:""},
         },
         Workspace:       &workspaces.Workspace{Workspace:"ws1"},
         FocusedWindowID: 5678,
     },
     {
         Windows: {
-            {WindowID:9999, WindowTitle:"", AppName:"Scratchpad Window", AppBundleID:"", Workspace:""},
-            {WindowID:8888, WindowTitle:"", AppName:"Another Scratchpad Window", AppBundleID:"", Workspace:""},
+            {WindowID:9999, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Scratchpad Window", AppBundleID:"", Workspace:""},
+            {WindowID:8888, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Another Scratchpad Window", AppBundleID:"", Workspace:""},
         },
         Workspace:       &workspaces.Workspace{Workspace:".scratchpad"},
         FocusedWindowID: 0,

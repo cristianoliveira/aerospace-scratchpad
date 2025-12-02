@@ -81,10 +81,8 @@ func TestSummonCmd(t *testing.T) {
 				Return(nil).
 				Times(1),
 
-			aerospaceClient.GetWindowsMock().EXPECT().
-				SetFocusByWindowID(windows.SetFocusArgs{
-					WindowID: notepadWindow.WindowID,
-				}).
+			aerospaceClient.GetFocusMock().EXPECT().
+				SetFocusByWindowID(notepadWindow.WindowID).
 				Return(nil).
 				Times(1),
 		)
@@ -414,10 +412,8 @@ func TestSummonCmd(t *testing.T) {
 				Return(nil).
 				Times(1),
 
-			aerospaceClient.GetWindowsMock().EXPECT().
-				SetFocusByWindowID(windows.SetFocusArgs{
-					WindowID: notepadWindow.WindowID,
-				}).
+			aerospaceClient.GetFocusMock().EXPECT().
+				SetFocusByWindowID(notepadWindow.WindowID).
 				Return(errors.New("mocked_focus_error")).
 				Times(1),
 		)
@@ -505,10 +501,8 @@ func TestSummonCmd(t *testing.T) {
 				Return(nil).
 				Times(1),
 
-			aerospaceClient.GetWindowsMock().EXPECT().
-				SetFocusByWindowID(windows.SetFocusArgs{
-					WindowID: matchedWindows[0].WindowID,
-				}).
+			aerospaceClient.GetFocusMock().EXPECT().
+				SetFocusByWindowID(matchedWindows[0].WindowID).
 				Return(nil).
 				Times(1),
 
@@ -524,10 +518,8 @@ func TestSummonCmd(t *testing.T) {
 				Return(nil).
 				Times(1),
 
-			aerospaceClient.GetWindowsMock().EXPECT().
-				SetFocusByWindowID(windows.SetFocusArgs{
-					WindowID: matchedWindows[1].WindowID,
-				}).
+			aerospaceClient.GetFocusMock().EXPECT().
+				SetFocusByWindowID(matchedWindows[1].WindowID).
 				Return(nil).
 				Times(1),
 		)
@@ -636,7 +628,7 @@ func TestSummonCmd(t *testing.T) {
 				Return(nil).
 				Times(0), // DO NOT RUN in dry-run mode
 
-			aerospaceClient.GetWindowsMock().EXPECT().
+			aerospaceClient.GetFocusMock().EXPECT().
 				SetFocusByWindowID(gomock.Any()).
 				Return(nil).
 				Times(0), // DO NOT RUN in dry-run mode
