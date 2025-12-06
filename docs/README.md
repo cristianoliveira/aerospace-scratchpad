@@ -176,6 +176,12 @@ Examples:
 
 Fields (in order): `command action window_id app_name workspace target_workspace result message`
 
+#### Scripting tips
+- Filter successes: `aerospace-scratchpad move --output=text | rg 'result=ok'`
+- Collect window IDs: `aerospace-scratchpad show chatgpt --output=json | jq -r 'select(.action==\"focus\") | .window_id'`
+- Pipe to awk: `aerospace-scratchpad next --output=tsv | awk 'NR>1 {print $3}'` # window_id
+- CSV tooling: `aerospace-scratchpad move --output=csv | csvcut -c window_id,app_name` (requires csvkit)
+
 ## Auxiliar Commands for integrations
 
 ### Command: `hook`

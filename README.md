@@ -10,6 +10,7 @@ A I3/Sway like scratchpad extension for [AeroSpace WM](https://github.com/nikita
 - [Demo](#demo)
 - [Basic Usage](#basic-usage)
 - [Advanced Usage](#advanced-usage)
+- [Scriptable Output](#scriptable-output)
 - [Installation](#installation)
 - [How does it work?](#how-does-it-work)
 - [Troubleshooting](#troubleshooting)
@@ -103,6 +104,32 @@ For more details check [Hook commands](docs/hook-integration.md)
 ## Advanced Usage
 
 See more in [documentation](docs/)
+
+### Scriptable Output
+
+All window-manipulation commands (`move`, `show`, `summon`, `next`) can emit machine-friendly output with `--output` like `--output json`
+
+Example of a simple 15 lines queue stack scratchpad
+```bash
+QUEUE=$HOME/.local/state/scratchpad-queue
+touch "$QUEUE" 2>/dev/null || true
+
+COMMAND=$1 #USAGE: example/queue-like-stack.sh <push|pop>
+if [ "$COMMAND" = "push" ]; then
+  aerospace-scratchpad move --output=json \
+    | jq -r 'select(.result=="ok") | .window_id' \
+    >> "$QUEUE"
+  exit 0
+fi
+if [ "$COMMAND" = "pop" ]; then
+  wid=$(head -n1 "$QUEUE")
+  tail -n +2 "$QUEUE" > "$QUEUE.tmp" && mv "$QUEUE.tmp" "$QUEUE"
+  aerospace-scratchpad show ".+" --filter window-id="^${wid}$" --output=json ||
+    echo "Reason: Queue empty"
+fi
+```
+See other [examples](examples/)
+See more options in [documentation](docs/README.md)
 
 ### Dynamic scratchpads mapping
 
