@@ -43,9 +43,9 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 	}
 
 	// Commands
-	rootCmd.AddCommand(enableFilterFlag(MoveCmd(customClient)))
-	rootCmd.AddCommand(enableFilterFlag(ShowCmd(customClient)))
-	rootCmd.AddCommand(enableFilterFlag(SummonCmd(customClient)))
+	rootCmd.AddCommand(enableOutputFlag(enableFilterFlag(MoveCmd(customClient))))
+	rootCmd.AddCommand(enableOutputFlag(enableFilterFlag(ShowCmd(customClient))))
+	rootCmd.AddCommand(enableOutputFlag(enableFilterFlag(SummonCmd(customClient))))
 	rootCmd.AddCommand(NextCmd(customClient))
 	rootCmd.AddCommand(InfoCmd(aerospaceClient))
 	rootCmd.AddCommand(HookCmd(aerospaceClient))
@@ -58,6 +58,13 @@ func enableFilterFlag(command *cobra.Command) *cobra.Command {
 		"filter", "F", []string{},
 		`Filter windows by a specific property (e.g. window-title=^foo).
 Requires a key=value format. Can be used multiple times. `,
+	)
+	return command
+}
+
+func enableOutputFlag(command *cobra.Command) *cobra.Command {
+	command.Flags().StringP(
+		"output", "o", "text", "Output format: text|json|tsv|csv",
 	)
 	return command
 }
@@ -78,4 +85,4 @@ func Execute(
 // and then run scripts/validate-version.sh.
 //
 //nolint:gochecknoglobals // version is overridden via build flags
-var VERSION = "v0.4.0"
+var VERSION = "v0.5.0a"

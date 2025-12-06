@@ -3,7 +3,6 @@ package aerospace
 import (
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/layout"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
@@ -77,15 +76,13 @@ func (a *MoverAeroSpace) MoveWindowToScratchpad(
 		})
 	}
 	if err != nil {
-		fmt.Fprintf(
-			os.Stdout,
-			"Warn: unable to set layout for window '%+v' to floating\n%s",
-			window,
-			err,
+		logger.LogDebug(
+			"MOVER: unable to set layout to floating",
+			"window", window,
+			"error", err,
 		)
 	}
 
-	fmt.Fprintf(os.Stdout, "Window '%+v' hidden to scratchpad\n", window)
 	return nil
 }
 
@@ -135,12 +132,6 @@ func (a *MoverAeroSpace) MoveWindowToWorkspace(
 	}
 
 	if !shouldSetFocus {
-		fmt.Fprintf(
-			os.Stdout,
-			"Window '%+v' is moved to workspace '%s'\n",
-			window,
-			workspace.Workspace,
-		)
 		return nil
 	}
 
@@ -164,11 +155,5 @@ func (a *MoverAeroSpace) MoveWindowToWorkspace(
 		}
 	}
 
-	fmt.Fprintf(
-		os.Stdout,
-		"Window '%+v' is moved to workspace '%s'\n",
-		window,
-		workspace.Workspace,
-	)
 	return nil
 }

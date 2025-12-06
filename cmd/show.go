@@ -4,7 +4,6 @@ Copyright © 2025 Cristian Oliveira license@cristianoliveira.dev
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -12,6 +11,8 @@ import (
 
 	windowsipc "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/cli"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 )
@@ -38,6 +39,19 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			windowNamePattern = strings.TrimSpace(windowNamePattern)
 			if windowNamePattern == "" {
 				stderr.Println("Error: <pattern> cannot be empty")
+				return
+			}
+
+			outputFormat, err := cmd.Flags().GetString("output")
+			if err != nil {
+				logger.LogError("SHOW: unable to get output flag", "error", err)
+				stderr.Println("Error: unable to get output format")
+				return
+			}
+			formatter, err := cli.NewOutputFormatter(os.Stdout, outputFormat)
+			if err != nil {
+				logger.LogError("SHOW: invalid output format", "error", err)
+				stderr.Println("Error: unsupported output format")
 				return
 			}
 
@@ -139,6 +153,18 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					)
 					return
 				}
+
+				if printErr := formatter.Print(cli.OutputEvent{
+					Command:         "show",
+					Action:          "to-workspace",
+					WindowID:        window.WindowID,
+					AppName:         window.AppName,
+					Workspace:       window.Workspace,
+					TargetWorkspace: focusedWorkspace.Workspace,
+					Result:          "ok",
+				}); printErr != nil {
+					logger.LogError("SHOW: unable to write output", "error", printErr)
+				}
 			}
 
 			// NOTE: To avoid the ping pong of windows, so priority is
@@ -160,7 +186,16 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 						"window",
 						window,
 					)
-					fmt.Fprintf(os.Stdout, "Window '%+v' is focused\n", window)
+					if printErr := formatter.Print(cli.OutputEvent{
+						Command:   "show",
+						Action:    "focus",
+						WindowID:  window.WindowID,
+						AppName:   window.AppName,
+						Workspace: window.Workspace,
+						Result:    "ok",
+					}); printErr != nil {
+						logger.LogError("SHOW: unable to write output", "error", printErr)
+					}
 				}
 
 				return
@@ -172,7 +207,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					"window", window,
 					"hasAtLeastOneWindowFocused", hasAtLeastOneWindowFocused,
 				)
-				if hasAtLeastOneWindowFocused {
+				if hasAtLeastOneWindowFocused { //nolint:nestif // conditional flow mirrors show toggle behavior
 					if i == 0 {
 						logger.LogDebug(
 							"SHOW: first window to hide, will focus next tiling window after hiding",
@@ -189,14 +224,40 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 						}
 					}
 
-					if err = mover.MoveWindowToScratchpad(window); err != nil {
+					moveErr := mover.MoveWindowToScratchpad(window)
+					if moveErr != nil {
 						logger.LogDebug(
 							"Error: unable to move window '%+v' to scratchpad\n%s",
 							"window",
 							window,
 							"error",
-							err,
+							moveErr,
 						)
+						if printErr := formatter.Print(cli.OutputEvent{
+							Command:         "show",
+							Action:          "to-scratchpad",
+							WindowID:        window.WindowID,
+							AppName:         window.AppName,
+							Workspace:       window.Workspace,
+							TargetWorkspace: constants.DefaultScratchpadWorkspaceName,
+							Result:          "error",
+							Message:         moveErr.Error(),
+						}); printErr != nil {
+							logger.LogError("SHOW: unable to write output", "error", printErr)
+						}
+						continue
+					}
+
+					if printErr := formatter.Print(cli.OutputEvent{
+						Command:         "show",
+						Action:          "to-scratchpad",
+						WindowID:        window.WindowID,
+						AppName:         window.AppName,
+						Workspace:       window.Workspace,
+						TargetWorkspace: constants.DefaultScratchpadWorkspaceName,
+						Result:          "ok",
+					}); printErr != nil {
+						logger.LogError("SHOW: unable to write output", "error", printErr)
 					}
 					continue
 				}
@@ -210,7 +271,16 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					)
 					return
 				}
-				fmt.Fprintf(os.Stdout, "Window '%+v' is focused\n", window)
+				if printErr := formatter.Print(cli.OutputEvent{
+					Command:   "show",
+					Action:    "focus",
+					WindowID:  window.WindowID,
+					AppName:   window.AppName,
+					Workspace: window.Workspace,
+					Result:    "ok",
+				}); printErr != nil {
+					logger.LogError("SHOW: unable to write output", "error", printErr)
+				}
 			}
 		},
 	}

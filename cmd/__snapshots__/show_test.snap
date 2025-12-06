@@ -53,7 +53,7 @@ Error: no windows matched the pattern 'foo'
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder  | ws1' is focused
+command=show action=focus window_id=5678 app_name=Finder workspace=ws1 target_workspace="" result=ok message=""
 
 Error
 <nil>
@@ -73,7 +73,7 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder  | ws1' hidden to scratchpad
+command=show action=to-scratchpad window_id=5678 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
 
 Error
 <nil>
@@ -100,7 +100,7 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder  | ws1' is moved to workspace 'ws2'
+command=show action=to-workspace window_id=5678 app_name=Finder workspace=ws1 target_workspace=ws2 result=ok message=""
 
 Error
 <nil>
@@ -127,8 +127,8 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder1  | ws1' is moved to workspace 'ws2'
-Window '5679 | Finder2  | ws1' is moved to workspace 'ws2'
+command=show action=to-workspace window_id=5678 app_name=Finder1 workspace=ws1 target_workspace=ws2 result=ok message=""
+command=show action=to-workspace window_id=5679 app_name=Finder2 workspace=ws1 target_workspace=ws2 result=ok message=""
 
 Error
 <nil>
@@ -155,8 +155,8 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder1  | ws2' hidden to scratchpad
-Window '5679 | Finder2  | ws2' hidden to scratchpad
+command=show action=to-scratchpad window_id=5678 app_name=Finder1 workspace=ws2 target_workspace=.scratchpad result=ok message=""
+command=show action=to-scratchpad window_id=5679 app_name=Finder2 workspace=ws2 target_workspace=.scratchpad result=ok message=""
 
 Error
 <nil>
@@ -184,8 +184,8 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder1  | ws1' is moved to workspace 'ws2'
-Window '5679 | Finder2  | ws2' is focused
+command=show action=to-workspace window_id=5678 app_name=Finder1 workspace=ws1 target_workspace=ws2 result=ok message=""
+command=show action=focus window_id=5679 app_name=Finder2 workspace=ws2 target_workspace="" result=ok message=""
 
 Error
 <nil>
@@ -213,8 +213,8 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder1  | ws1' is moved to workspace 'ws2'
-Window '5679 | Finder2  | ws2' is focused
+command=show action=to-workspace window_id=5678 app_name=Finder1 workspace=ws1 target_workspace=ws2 result=ok message=""
+command=show action=focus window_id=5679 app_name=Finder2 workspace=ws2 target_workspace="" result=ok message=""
 
 Error
 <nil>
@@ -241,7 +241,7 @@ Error
 aerospace-scratchpad show Finder --filter window-title=foo
 
 Output
-Window '5678 | Finder1 | Finder - foo and zas | ws1' is moved to workspace 'ws2'
+command=show action=to-workspace window_id=5678 app_name=Finder1 workspace=ws1 target_workspace=ws2 result=ok message=""
 
 Error
 <nil>
@@ -325,7 +325,7 @@ Error
 aerospace-scratchpad show Finder -F window-title=foo -F app-bundle-id=linux
 
 Output
-Window '5678 | Finder1 | Finder - foo and zas | ws1 | com.linux.finder' is moved to workspace 'ws2'
+command=show action=to-workspace window_id=5678 app_name=Finder1 workspace=ws1 target_workspace=ws2 result=ok message=""
 
 Error
 <nil>

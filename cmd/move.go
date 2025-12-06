@@ -13,6 +13,8 @@ import (
 
 	windowsipc "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/cli"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 )
@@ -35,6 +37,20 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.GetDefaultLogger()
 			logger.LogDebug("MOVE: start command", "args", args)
+
+			outputFormat, err := cmd.Flags().GetString("output")
+			if err != nil {
+				logger.LogError("MOVE: unable to get output flag", "error", err)
+				stderr.Println("Error: unable to get output format")
+				return
+			}
+
+			formatter, err := cli.NewOutputFormatter(os.Stdout, outputFormat)
+			if err != nil {
+				logger.LogError("MOVE: invalid output format", "error", err)
+				stderr.Println("Error: unsupported output format")
+				return
+			}
 
 			// Get all-floating flag first to determine behavior
 			allFloatingFlag, err := cmd.Flags().GetBool("all-floating")
@@ -142,7 +158,15 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 
 			// When using --all-floating, skip the focused window check
 			if allFloatingFlag && len(windows) == 0 {
-				fmt.Fprintln(os.Stdout, "No floating windows found")
+				if printErr := formatter.Print(cli.OutputEvent{
+					Command:   "move",
+					Action:    "to-scratchpad",
+					Result:    "none",
+					Message:   "no floating windows found",
+					Workspace: "",
+				}); printErr != nil {
+					logger.LogError("MOVE: unable to write output", "error", printErr)
+				}
 				return
 			}
 
@@ -159,19 +183,24 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 					continue
 				}
 
-				// Move the window to the scratchpad
-				fmt.Fprintf(
-					os.Stdout,
-					"Moving window %+v to scratchpad\n",
-					window,
-				)
-
 				moveErr := mover.MoveWindowToScratchpad(window)
 				if moveErr != nil {
 					if strings.Contains(
 						moveErr.Error(),
 						"already belongs to workspace",
 					) {
+						if printErr := formatter.Print(cli.OutputEvent{
+							Command:         "move",
+							Action:          "to-scratchpad",
+							WindowID:        window.WindowID,
+							AppName:         window.AppName,
+							Workspace:       window.Workspace,
+							TargetWorkspace: constants.DefaultScratchpadWorkspaceName,
+							Result:          "skipped",
+							Message:         "already in scratchpad",
+						}); printErr != nil {
+							logger.LogError("MOVE: unable to write output", "error", printErr)
+						}
 						continue
 					}
 
@@ -183,6 +212,18 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 					stderr.Println("Error: %v", moveErr)
 					// Continue with remaining windows instead of returning
 					continue
+				}
+
+				if printErr := formatter.Print(cli.OutputEvent{
+					Command:         "move",
+					Action:          "to-scratchpad",
+					WindowID:        window.WindowID,
+					AppName:         window.AppName,
+					Workspace:       window.Workspace,
+					TargetWorkspace: constants.DefaultScratchpadWorkspaceName,
+					Result:          "ok",
+				}); printErr != nil {
+					logger.LogError("MOVE: unable to write output", "error", printErr)
 				}
 			}
 		},

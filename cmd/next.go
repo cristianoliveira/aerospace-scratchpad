@@ -4,6 +4,9 @@ Copyright © 2025 Cristian Oliveira license@cristianoliveira.dev
 package cmd
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
 
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
@@ -48,6 +51,13 @@ It does not send the windows back to the scratchpad, but rather focuses the next
 				stderr.Println("Error: %v", moveErr)
 				return
 			}
+
+			fmt.Fprintf(
+				os.Stdout,
+				"Window '%+v' is moved to workspace '%s'\n",
+				window,
+				focusedWorkspace.Workspace,
+			)
 		},
 	}
 

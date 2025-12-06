@@ -33,8 +33,7 @@ Error
 aerospace-scratchpad move 
 
 Output
-Moving window 5678 | Finder  | ws1 to scratchpad
-Window '5678 | Finder  | ws1' hidden to scratchpad
+command=move action=to-scratchpad window_id=5678 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
 
 Error
  <nil>
@@ -64,8 +63,7 @@ Error
 aerospace-scratchpad move Notepad
 
 Output
-Moving window 1234 | Notepad  | ws1 to scratchpad
-Window '1234 | Notepad  | ws1' hidden to scratchpad
+command=move action=to-scratchpad window_id=1234 app_name=Notepad workspace=ws1 target_workspace=.scratchpad result=ok message=""
 
 Error
  <nil>
@@ -106,10 +104,9 @@ aerospace-scratchpad move Notepad --dry-run
 
 Output
 [dry-run] FocusNextTilingWindow()
-Moving window 1234 | Notepad  | ws1 to scratchpad
 [dry-run] MoveWindowToWorkspace(windowID=1234, workspace=.scratchpad)
 [dry-run] SetLayout(windowID=1234, layout=floating)
-Window '1234 | Notepad  | ws1' hidden to scratchpad
+command=move action=to-scratchpad window_id=1234 app_name=Notepad workspace=ws1 target_workspace=.scratchpad result=ok message=""
 
 Error
  <nil>
@@ -129,8 +126,7 @@ Error
 aerospace-scratchpad move 
 
 Output
-Moving window 5678 | Finder  | ws1 to scratchpad
-Window '5678 | Finder  | ws1' hidden to scratchpad
+command=move action=to-scratchpad window_id=5678 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
 
 Error
  <nil>
@@ -151,14 +147,12 @@ aerospace-scratchpad move  --all-matching --dry-run
 
 Output
 [dry-run] FocusNextTilingWindow()
-Moving window 1111 | Finder  | ws1 to scratchpad
 [dry-run] MoveWindowToWorkspace(windowID=1111, workspace=.scratchpad)
 [dry-run] SetLayout(windowID=1111, layout=floating)
-Window '1111 | Finder  | ws1' hidden to scratchpad
-Moving window 5678 | Finder  | ws1 to scratchpad
+command=move action=to-scratchpad window_id=1111 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
 [dry-run] MoveWindowToWorkspace(windowID=5678, workspace=.scratchpad)
 [dry-run] SetLayout(windowID=5678, layout=floating)
-Window '5678 | Finder  | ws1' hidden to scratchpad
+command=move action=to-scratchpad window_id=5678 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
 
 Error
  <nil>
@@ -178,10 +172,8 @@ Error
 aerospace-scratchpad move  --all-matching
 
 Output
-Moving window 1111 | Finder  | ws1 to scratchpad
-Window '1111 | Finder  | ws1' hidden to scratchpad
-Moving window 5678 | Finder  | ws1 to scratchpad
-Window '5678 | Finder  | ws1' hidden to scratchpad
+command=move action=to-scratchpad window_id=1111 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
+command=move action=to-scratchpad window_id=5678 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
 
 Error
  <nil>
@@ -196,10 +188,8 @@ Error
 aerospace-scratchpad move --all-floating
 
 Output
-Moving window 1111 | Terminal  | floating to scratchpad
-Window '1111 | Terminal  | floating' hidden to scratchpad
-Moving window 2222 | Calculator  | floating to scratchpad
-Window '2222 | Calculator  | floating' hidden to scratchpad
+command=move action=to-scratchpad window_id=1111 app_name=Terminal workspace="" target_workspace=.scratchpad result=ok message=""
+command=move action=to-scratchpad window_id=2222 app_name=Calculator workspace="" target_workspace=.scratchpad result=ok message=""
 
 Error
 nil
@@ -213,7 +203,7 @@ nil
 aerospace-scratchpad move --all-floating
 
 Output
-No floating windows found
+command=move action=to-scratchpad window_id=0 app_name="" workspace="" target_workspace="" result=none message="no floating windows found"
 
 Error
 nil
@@ -227,10 +217,9 @@ aerospace-scratchpad move --all-floating --dry-run
 
 Output
 [dry-run] FocusNextTilingWindow()
-Moving window 1111 | Terminal  | floating to scratchpad
 [dry-run] MoveWindowToWorkspace(windowID=1111, workspace=.scratchpad)
 [dry-run] SetLayout(windowID=1111, layout=floating)
-Window '1111 | Terminal  | floating' hidden to scratchpad
+command=move action=to-scratchpad window_id=1111 app_name=Terminal workspace="" target_workspace=.scratchpad result=ok message=""
 
 Error
 nil
@@ -250,10 +239,8 @@ nil
 aerospace-scratchpad move  --all-matching
 
 Output
-Moving window 1111 | Finder  | ws1 to scratchpad
-Window '1111 | Finder  | ws1' hidden to scratchpad
-Moving window 5678 | Finder  | ws1 to scratchpad
-Window '5678 | Finder  | ws1' hidden to scratchpad
+command=move action=to-scratchpad window_id=1111 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
+command=move action=to-scratchpad window_id=5678 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
 
 Error
  <nil>
@@ -274,14 +261,12 @@ aerospace-scratchpad move  --all-matching --dry-run
 
 Output
 [dry-run] FocusNextTilingWindow()
-Moving window 1111 | Finder  | ws1 to scratchpad
 [dry-run] MoveWindowToWorkspace(windowID=1111, workspace=.scratchpad)
 [dry-run] SetLayout(windowID=1111, layout=floating)
-Window '1111 | Finder  | ws1' hidden to scratchpad
-Moving window 5678 | Finder  | ws1 to scratchpad
+command=move action=to-scratchpad window_id=1111 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
 [dry-run] MoveWindowToWorkspace(windowID=5678, workspace=.scratchpad)
 [dry-run] SetLayout(windowID=5678, layout=floating)
-Window '5678 | Finder  | ws1' hidden to scratchpad
+command=move action=to-scratchpad window_id=5678 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
 
 Error
  <nil>

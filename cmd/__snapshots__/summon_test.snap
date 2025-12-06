@@ -13,7 +13,7 @@
 aerospace-scratchpad summon Notepad
 
 Output
-Window '1234 | Notepad  | ws1' is moved to workspace 'ws1'
+command=summon action=to-workspace window_id=1234 app_name=Notepad workspace=ws1 target_workspace=ws1 result=ok message=""
 
 Error
  <nil>
@@ -104,8 +104,8 @@ Error
 aerospace-scratchpad summon .*(Notepad|TextEdit).*
 
 Output
-Window '1234 | Notepad  | ws1' is moved to workspace 'ws1'
-Window '5678 | TextEdit  | ws1' is moved to workspace 'ws1'
+command=summon action=to-workspace window_id=1234 app_name=Notepad workspace=ws1 target_workspace=ws1 result=ok message=""
+command=summon action=to-workspace window_id=5678 app_name=TextEdit workspace=ws1 target_workspace=ws1 result=ok message=""
 
 Error
  <nil>
@@ -145,7 +145,7 @@ aerospace-scratchpad summon Notepad --dry-run
 Output
 [dry-run] MoveWindowToWorkspace(windowID=1234, workspace=ws1)
 [dry-run] SetFocusByWindowID(1234)
-Window '1234 | Notepad  | ws1' is moved to workspace 'ws1'
+command=summon action=to-workspace window_id=1234 app_name=Notepad workspace=ws1 target_workspace=ws1 result=ok message=""
 
 Error
  <nil>

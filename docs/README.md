@@ -157,6 +157,24 @@ aerospace-scratchpad --dry-run show <pattern>
 
 It will print the actions that would be taken, but will not execute them.
 
+### Output format `--output|-o`
+
+_min version: 0.5.0_
+
+Available on commands that emit structured results (`move`, `show`, `summon`). Choose between:
+- `text` (default): single-line key=value pairs (quote-aware)
+- `json`: one JSON object per line
+- `tsv`: tab-separated with header
+- `csv`: comma-separated with header
+
+Examples:
+- Text (default): `aerospace-scratchpad move --all-matching | rg 'result=ok'`
+- JSON: `aerospace-scratchpad move --output=json | jq -r 'select(.result==\"ok\") | .window_id'`
+- TSV: `aerospace-scratchpad move --output=tsv | awk 'NR>1 {print $3}'`  # 3rd column is window_id
+- CSV: `aerospace-scratchpad show foo --output=csv | csvcut -c window_id`  # requires csvkit
+
+Fields (in order): `command action window_id app_name workspace target_workspace result message`
+
 ## Auxiliar Commands for integrations
 
 ### Command: `hook`

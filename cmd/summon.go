@@ -4,6 +4,7 @@ Copyright © 2025 Cristian Oliveira license@cristianoliveira.dev
 package cmd
 
 import (
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -16,7 +17,7 @@ import (
 
 // SummonCmd represents the summon command.
 //
-//nolint:funlen
+//nolint:funlen,gocognit,nestif // command wiring and validation keep this function long/branchy
 func SummonCmd(
 	aerospaceClient *aerospace.AeroSpaceClient,
 ) *cobra.Command {
@@ -37,6 +38,19 @@ If no pattern is provided, it summons the first window in the scratchpad.
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.GetDefaultLogger()
 			windowNamePattern := strings.TrimSpace(args[0])
+
+			outputFormat, err := cmd.Flags().GetString("output")
+			if err != nil {
+				logger.LogError("SUMMON: unable to get output flag", "error", err)
+				stderr.Println("Error: unable to get output format")
+				return
+			}
+			formatter, err := cli.NewOutputFormatter(os.Stdout, outputFormat)
+			if err != nil {
+				logger.LogError("SUMMON: invalid output format", "error", err)
+				stderr.Println("Error: unsupported output format")
+				return
+			}
 
 			focusedWorkspace, err := aerospaceClient.GetFocusedWorkspace()
 			if err != nil {
@@ -116,6 +130,18 @@ If no pattern is provided, it summons the first window in the scratchpad.
 							return
 						}
 
+						if printErr := formatter.Print(cli.OutputEvent{
+							Command:         "summon",
+							Action:          "to-workspace",
+							WindowID:        window.WindowID,
+							AppName:         window.AppName,
+							Workspace:       window.Workspace,
+							TargetWorkspace: focusedWorkspace.Workspace,
+							Result:          "skipped",
+							Message:         "already in target workspace",
+						}); printErr != nil {
+							logger.LogError("SUMMON: unable to write output", "error", printErr)
+						}
 						continue
 					}
 
@@ -130,6 +156,18 @@ If no pattern is provided, it summons the first window in the scratchpad.
 					)
 					stderr.Println("Error: %v", moveErr)
 					return
+				}
+
+				if printErr := formatter.Print(cli.OutputEvent{
+					Command:         "summon",
+					Action:          "to-workspace",
+					WindowID:        window.WindowID,
+					AppName:         window.AppName,
+					Workspace:       window.Workspace,
+					TargetWorkspace: focusedWorkspace.Workspace,
+					Result:          "ok",
+				}); printErr != nil {
+					logger.LogError("SUMMON: unable to write output", "error", printErr)
 				}
 			}
 		},
