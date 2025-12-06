@@ -25,6 +25,11 @@ To move all windows that match the focused window's app name to the scratchpad, 
 aerospace-scratchpad move --all 
 ```
 
+To move all floating windows (scratchpad windows) to the scratchpad without requiring a pattern, you can use:
+```bash
+aerospace-scratchpad move --all-floating 
+```
+
 See also [flags](#flags).
 
 ## Command: `show`
@@ -74,6 +79,21 @@ aerospace-scratchpad next
 ```
 
 ## Options flag
+
+### All Floating `--all-floating`
+
+_min version: 0.5.0_
+
+Move all floating windows (scratchpad windows) to the scratchpad workspace without requiring a pattern. This is useful when you want to hide all scratchpad windows at once.
+
+```bash
+aerospace-scratchpad move --all-floating
+```
+
+This command will:
+- Find all windows with `WindowLayout == "floating"`
+- Move each floating window to the `.scratchpad` workspace
+- Ensure they remain floating
 
 ### Filter `--filter|-F <property>=<regex>` 
 

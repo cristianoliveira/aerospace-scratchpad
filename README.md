@@ -47,6 +47,16 @@ aerospace-scratchpad show <pattern>
 
 To find the correct `pattern` run `aerospace list-windows --all --json | grep app-name`
 
+Move a window to the scratchpad:
+```text
+aerospace-scratchpad move <pattern>
+```
+
+Move all floating windows (scratchpad windows) to the scratchpad:
+```text
+aerospace-scratchpad move --all-floating
+```
+
 ### Config Usage
 
 ```toml
@@ -63,6 +73,9 @@ exec-and-forget aerospace-scratchpad summon Finder || \
 
 # Bring windows one by one to current workspace
 ctrl-minus = "exec-and-forget aerospace-scratchpad next"
+
+# Hide all scratchpad windows at once
+cmd-shift-h = "exec-and-forget aerospace-scratchpad move --all-floating"
 
 # A terminal scratchpad a la Guake
 ctrl-cmd-t = """

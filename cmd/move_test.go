@@ -640,6 +640,148 @@ func TestMoveCmd(t *testing.T) {
 		},
 	)
 
+	t.Run("moves all floating windows when --all-floating is used", func(t *testing.T) {
+		command := "move"
+		args := []string{command, "--all-floating"}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		floatingWindow1 := windows.Window{
+			AppName:      "Terminal",
+			WindowID:     1111,
+			WindowLayout: "floating",
+		}
+		floatingWindow2 := windows.Window{
+			AppName:      "Calculator",
+			WindowID:     2222,
+			WindowLayout: "floating",
+		}
+		tilingWindow := windows.Window{
+			AppName:      "Notepad",
+			WindowID:     1234,
+			WindowLayout: "tiling",
+		}
+
+		allWindows := []windows.Window{
+			floatingWindow1,
+			floatingWindow2,
+			tilingWindow,
+		}
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		// allow FocusNextTilingWindow to run without mocking Connection details
+		gomock.InOrder(
+			aerospaceClient.GetWindowsMock().EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1),
+
+			// FocusNextTilingWindow calls - may try dfs-next first, then dfs-prev if that fails
+			aerospaceClient.GetFocusMock().EXPECT().
+				SetFocusByDFS("dfs-next", gomock.Any()).
+				Return(nil).
+				AnyTimes(),
+
+			// Move first floating window
+			aerospaceClient.GetWorkspacesMock().EXPECT().
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: constants.DefaultScratchpadWorkspaceName,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &floatingWindow1.WindowID,
+					},
+				).
+				Return(nil).
+				Times(1),
+
+			aerospaceClient.GetLayoutMock().EXPECT().
+				SetLayout(
+					[]string{"floating"},
+					layout.SetLayoutOpts{
+						WindowID: &floatingWindow1.WindowID,
+					},
+				).
+				Return(nil).
+				Times(1),
+
+			// Move second floating window
+			aerospaceClient.GetWorkspacesMock().EXPECT().
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: constants.DefaultScratchpadWorkspaceName,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &floatingWindow2.WindowID,
+					},
+				).
+				Return(nil).
+				Times(1),
+
+			aerospaceClient.GetLayoutMock().EXPECT().
+				SetLayout(
+					[]string{"floating"},
+					layout.SetLayoutOpts{
+						WindowID: &floatingWindow2.WindowID,
+					},
+				).
+				Return(nil).
+				Times(1),
+		)
+
+		wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
+		_ = wrappedClient
+		cmd := cmd.RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
+		snaps.MatchSnapshot(t, allWindows, cmdAsString, "Output", out, "Error", err)
+	})
+
+	t.Run("handles no floating windows gracefully with --all-floating", func(t *testing.T) {
+		command := "move"
+		args := []string{command, "--all-floating"}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		allWindows := []windows.Window{
+			{
+				AppName:      "Notepad",
+				WindowID:     1234,
+				WindowLayout: "tiling",
+			},
+			{
+				AppName:      "Finder",
+				WindowID:     5678,
+				WindowLayout: "tiling",
+			},
+		}
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		gomock.InOrder(
+			aerospaceClient.GetWindowsMock().EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1),
+		)
+
+		wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
+		_ = wrappedClient
+		cmd := cmd.RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
+		snaps.MatchSnapshot(t, allWindows, cmdAsString, "Output", out, "Error", err)
+	})
+
 	t.Run(
 		"[dry-run] moves all windows with the same app name as the focused window when --all is used",
 		func(t *testing.T) {
@@ -714,4 +856,39 @@ func TestMoveCmd(t *testing.T) {
 			)
 		},
 	)
+
+	t.Run("[dry-run] moves all floating windows when --all-floating is used", func(t *testing.T) {
+		command := "move"
+		args := []string{command, "--all-floating", "--dry-run"}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		floatingWindow := windows.Window{
+			AppName:      "Terminal",
+			WindowID:     1111,
+			WindowLayout: "floating",
+		}
+
+		allWindows := []windows.Window{floatingWindow}
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		gomock.InOrder(
+			aerospaceClient.GetWindowsMock().EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1),
+		)
+
+		wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
+		_ = wrappedClient
+		cmd := cmd.RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ") + "\n"
+		snaps.MatchSnapshot(t, allWindows, cmdAsString, "Output", out, "Error", err)
+	})
 }

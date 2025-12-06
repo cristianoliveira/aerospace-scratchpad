@@ -36,6 +36,9 @@ type Querier interface {
 		windowNamePattern string,
 		filterFlags []string,
 	) ([]windows.Window, error)
+
+	// GetAllFloatingWindows returns all floating windows
+	GetAllFloatingWindows() ([]windows.Window, error)
 }
 
 type QueryMaker struct {
@@ -193,6 +196,30 @@ func (a *QueryMaker) GetFilteredWindows(
 	}
 
 	return filteredWindows, nil
+}
+
+func (a *QueryMaker) GetAllFloatingWindows() ([]windows.Window, error) {
+	logger := logger.GetDefaultLogger()
+
+	allWindows, err := a.cli.Windows().GetAllWindows()
+	if err != nil {
+		logger.LogError("FILTER: unable to get all windows", "error", err)
+		return nil, fmt.Errorf("unable to get windows: %w", err)
+	}
+
+	var floatingWindows []windows.Window
+	for _, window := range allWindows {
+		if window.WindowLayout == "floating" {
+			floatingWindows = append(floatingWindows, window)
+		}
+	}
+
+	logger.LogDebug(
+		"FILTER: found floating windows",
+		"count", len(floatingWindows),
+	)
+
+	return floatingWindows, nil
 }
 
 // parseFilters parses filter flags and returns a slice of Filter structs.

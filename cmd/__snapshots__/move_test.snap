@@ -186,3 +186,52 @@ Window '5678 | Finder ' hidden to scratchpad
 Error
  <nil>
 ---
+
+[TestMoveCmd/moves_all_floating_windows_when_--all-floating_is_used - 1]
+[]windows.Window{
+    {WindowID:1111, WindowTitle:"", WindowLayout:"floating", WindowParentContainerLayout:"", AppName:"Terminal", AppBundleID:"", Workspace:""},
+    {WindowID:2222, WindowTitle:"", WindowLayout:"floating", WindowParentContainerLayout:"", AppName:"Calculator", AppBundleID:"", Workspace:""},
+    {WindowID:1234, WindowTitle:"", WindowLayout:"tiling", WindowParentContainerLayout:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+}
+aerospace-scratchpad move --all-floating
+
+Output
+Moving window 1111 | Terminal  | floating to scratchpad
+Window '1111 | Terminal  | floating' hidden to scratchpad
+Moving window 2222 | Calculator  | floating to scratchpad
+Window '2222 | Calculator  | floating' hidden to scratchpad
+
+Error
+nil
+---
+
+[TestMoveCmd/handles_no_floating_windows_gracefully_with_--all-floating - 1]
+[]windows.Window{
+    {WindowID:1234, WindowTitle:"", WindowLayout:"tiling", WindowParentContainerLayout:"", AppName:"Notepad", AppBundleID:"", Workspace:""},
+    {WindowID:5678, WindowTitle:"", WindowLayout:"tiling", WindowParentContainerLayout:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+}
+aerospace-scratchpad move --all-floating
+
+Output
+No floating windows found
+
+Error
+nil
+---
+
+[TestMoveCmd/[dry-run]_moves_all_floating_windows_when_--all-floating_is_used - 1]
+[]windows.Window{
+    {WindowID:1111, WindowTitle:"", WindowLayout:"floating", WindowParentContainerLayout:"", AppName:"Terminal", AppBundleID:"", Workspace:""},
+}
+aerospace-scratchpad move --all-floating --dry-run
+
+Output
+[dry-run] FocusNextTilingWindow()
+Moving window 1111 | Terminal  | floating to scratchpad
+[dry-run] MoveWindowToWorkspace(windowID=1111, workspace=.scratchpad)
+[dry-run] SetLayout(windowID=1111, layout=floating)
+Window '1111 | Terminal  | floating' hidden to scratchpad
+
+Error
+nil
+---

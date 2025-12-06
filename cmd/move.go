@@ -4,12 +4,14 @@ Copyright © 2025 Cristian Oliveira license@cristianoliveira.dev
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
 
+	windowsipc "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
@@ -28,43 +30,37 @@ This command moves a window to the scratchpad using a regex to match the app nam
 If no pattern is provided, it moves the currently focused window.
 
 To move all windows that match the focused window's app name to the scratchpad, use the --all flag.
+To move all floating windows (scratchpad windows) to the scratchpad, use the --all-floating flag.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.GetDefaultLogger()
 			logger.LogDebug("MOVE: start command", "args", args)
-			var windowNamePattern string
-			if len(args) == 0 {
-				windowNamePattern = ""
-			} else {
-				windowNamePattern = strings.TrimSpace(args[0])
+
+			// Get all-floating flag first to determine behavior
+			allFloatingFlag, err := cmd.Flags().GetBool("all-floating")
+			if err != nil {
+				logger.LogError(
+					"MOVE: unable to get all-floating flag",
+					"error",
+					err,
+				)
+				stderr.Println("Error: unable to get all-floating flag")
+				return
 			}
 
+			var windowNamePattern string
 			focusedWindowID := -1
-			if windowNamePattern == "" {
-				focusedWindow, err := aerospaceClient.GetFocusedWindow()
-				logger.LogDebug(
-					"MOVE: retrieving focused window",
-					"focusedWindow", focusedWindow,
-					"error", err,
+
+			// Skip pattern logic when --all-floating is used
+			if !allFloatingFlag {
+				windowNamePattern, focusedWindowID, err = getWindowPattern(
+					args,
+					aerospaceClient,
+					logger,
 				)
 				if err != nil {
-					stderr.Println(
-						"Error: unable to get focused window: %v",
-						err,
-					)
 					return
 				}
-				if focusedWindow == nil {
-					stderr.Println("Error: no focused window found")
-					return
-				}
-				focusedWindowID = focusedWindow.WindowID
-				windowNamePattern = fmt.Sprintf("^%s$", focusedWindow.AppName)
-				logger.LogDebug(
-					"MOVE: using focused window app name as pattern",
-					"windowNamePattern", windowNamePattern,
-					"focusedWindowId", focusedWindowID,
-				)
 			}
 
 			// Parse filter flags (matches show command behavior)
@@ -95,19 +91,35 @@ To move all windows that match the focused window's app name to the scratchpad, 
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
 			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 
-			windows, err := querier.GetFilteredWindows(
-				windowNamePattern,
-				filterFlags,
-			)
-			if err != nil {
-				logger.LogError(
-					"MOVE: error retrieving filtered windows",
-					"error", err,
-					"pattern", windowNamePattern,
-					"filterFlags", filterFlags,
+			var windows []windowsipc.Window
+			if allFloatingFlag {
+				// Get all floating windows when --all-floating is set
+				logger.LogDebug("MOVE: using --all-floating flag, getting all floating windows")
+				windows, err = querier.GetAllFloatingWindows()
+				if err != nil {
+					logger.LogError(
+						"MOVE: error retrieving floating windows",
+						"error", err,
+					)
+					stderr.Println("Error: %v", err)
+					return
+				}
+			} else {
+				// Normal pattern-based filtering
+				windows, err = querier.GetFilteredWindows(
+					windowNamePattern,
+					filterFlags,
 				)
-				stderr.Println("Error: %v", err)
-				return
+				if err != nil {
+					logger.LogError(
+						"MOVE: error retrieving filtered windows",
+						"error", err,
+						"pattern", windowNamePattern,
+						"filterFlags", filterFlags,
+					)
+					stderr.Println("Error: %v", err)
+					return
+				}
 			}
 
 			logger.LogDebug(
@@ -128,9 +140,17 @@ To move all windows that match the focused window's app name to the scratchpad, 
 				)
 			}
 
+			// When using --all-floating, skip the focused window check
+			if allFloatingFlag && len(windows) == 0 {
+				fmt.Fprintln(os.Stdout, "No floating windows found")
+				return
+			}
+
 			for _, window := range windows {
-				// Skip non-focused windows unless the --all flag is provided
-				if focusedWindowID != -1 && window.WindowID != focusedWindowID && !allFlag {
+				// Skip non-focused windows unless the --all or --all-floating flag is provided
+				if !allFloatingFlag && focusedWindowID != -1 &&
+					window.WindowID != focusedWindowID &&
+					!allFlag {
 					logger.LogDebug(
 						"MOVE: skipping window, not focused and --all flag not provided",
 						"window", window,
@@ -155,8 +175,14 @@ To move all windows that match the focused window's app name to the scratchpad, 
 						continue
 					}
 
+					logger.LogError(
+						"MOVE: error moving window to scratchpad",
+						"window", window,
+						"error", moveErr,
+					)
 					stderr.Println("Error: %v", moveErr)
-					return
+					// Continue with remaining windows instead of returning
+					continue
 				}
 			}
 		},
@@ -166,5 +192,55 @@ To move all windows that match the focused window's app name to the scratchpad, 
 	command.Flags().
 		BoolP("all", "a", false, "Move all windows that match the focused window's app name to the scratchpad")
 
+	// Add the all-floating flag
+	command.Flags().
+		Bool("all-floating", false, "Move all floating windows (scratchpad windows) to the scratchpad")
+
 	return command
+}
+
+// getWindowPattern determines the window pattern and focused window ID from args.
+// Returns pattern, focusedWindowID, and error.
+func getWindowPattern(
+	args []string,
+	aerospaceClient *aerospace.AeroSpaceClient,
+	log logger.Logger,
+) (string, int, error) {
+	var windowNamePattern string
+	focusedWindowID := -1
+
+	if len(args) == 0 {
+		windowNamePattern = ""
+	} else {
+		windowNamePattern = strings.TrimSpace(args[0])
+	}
+
+	if windowNamePattern == "" {
+		focusedWindow, err := aerospaceClient.GetFocusedWindow()
+		log.LogDebug(
+			"MOVE: retrieving focused window",
+			"focusedWindow", focusedWindow,
+			"error", err,
+		)
+		if err != nil {
+			stderr.Println(
+				"Error: unable to get focused window: %v",
+				err,
+			)
+			return "", -1, err
+		}
+		if focusedWindow == nil {
+			stderr.Println("Error: no focused window found")
+			return "", -1, errors.New("no focused window found")
+		}
+		focusedWindowID = focusedWindow.WindowID
+		windowNamePattern = fmt.Sprintf("^%s$", focusedWindow.AppName)
+		log.LogDebug(
+			"MOVE: using focused window app name as pattern",
+			"windowNamePattern", windowNamePattern,
+			"focusedWindowId", focusedWindowID,
+		)
+	}
+
+	return windowNamePattern, focusedWindowID, nil
 }
