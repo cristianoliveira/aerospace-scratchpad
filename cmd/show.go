@@ -85,23 +85,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			var windowsInFocusedWorkspace []windowsipc.Window
 			var hasAtLeastOneWindowFocused bool
 			for _, window := range windows {
-				var isWindowInFocusedWorkspace bool
-				if window.Workspace == "" {
-					isWindowInFocusedWorkspace, err = querier.IsWindowInWorkspace(
-						window.WindowID,
-						focusedWorkspace.Workspace,
-					)
-					if err != nil {
-						stderr.Printf(
-							"Error: unable to check if window '%+v' is in workspace '%s'\n",
-							window,
-							focusedWorkspace.Workspace,
-						)
-						return
-					}
-				} else {
-					isWindowInFocusedWorkspace = window.Workspace == focusedWorkspace.Workspace
-				}
+				isWindowInFocusedWorkspace := window.Workspace == focusedWorkspace.Workspace
 				if isWindowInFocusedWorkspace {
 					windowsInFocusedWorkspace = append(
 						windowsInFocusedWorkspace,

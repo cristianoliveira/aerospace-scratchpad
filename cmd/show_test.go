@@ -166,11 +166,6 @@ func TestShowCmd(t *testing.T) {
 
 			gomock.InOrder(
 				aerospaceClient.GetWindowsMock().EXPECT().
-					GetAllWindowsByWorkspace(focusedTree.Workspace.Workspace).
-					Return(focusedTree.Windows, nil).
-					Times(1),
-
-				aerospaceClient.GetWindowsMock().EXPECT().
 					GetFocusedWindow().
 					Return(focusedWindow, nil).
 					Times(1),
@@ -258,11 +253,6 @@ func TestShowCmd(t *testing.T) {
 			Times(1)
 
 		gomock.InOrder(
-			aerospaceClient.GetWindowsMock().EXPECT().
-				GetAllWindowsByWorkspace("ws1").
-				Return(focusedTree.Windows, nil).
-				Times(1),
-
 			aerospaceClient.GetWindowsMock().EXPECT().
 				GetFocusedWindow().
 				Return(focusedWindow, nil).
@@ -372,11 +362,6 @@ func TestShowCmd(t *testing.T) {
 				Times(1)
 
 			gomock.InOrder(
-				aerospaceClient.GetWindowsMock().EXPECT().
-					GetAllWindowsByWorkspace(focusedTree.Workspace.Workspace).
-					Return(focusedTree.Windows, nil).
-					Times(1),
-
 				aerospaceClient.GetWorkspacesMock().EXPECT().
 					MoveWindowToWorkspaceWithOpts(
 						workspaces.MoveWindowToWorkspaceArgs{

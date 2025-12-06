@@ -13,7 +13,7 @@
 aerospace-scratchpad summon Notepad
 
 Output
-Window '1234 | Notepad ' is moved to workspace 'ws1'
+Window '1234 | Notepad  | ws1' is moved to workspace 'ws1'
 
 Error
  <nil>
@@ -75,7 +75,7 @@ aerospace-scratchpad summon Notepad
 Output
 
 Error
- Error: unable to move window '1234 | Notepad ' to workspace 'ws1': mocked_move_error
+ Error: unable to move window '1234 | Notepad  | ws1' to workspace 'ws1': mocked_move_error
 
 ---
 
@@ -85,7 +85,7 @@ aerospace-scratchpad summon Notepad
 Output
 
 Error
- Error: unable to set focus to window '1234 | Notepad ': mocked_focus_error
+ Error: unable to set focus to window '1234 | Notepad  | ws1': mocked_focus_error
 
 ---
 
@@ -104,8 +104,8 @@ Error
 aerospace-scratchpad summon .*(Notepad|TextEdit).*
 
 Output
-Window '1234 | Notepad ' is moved to workspace 'ws1'
-Window '5678 | TextEdit ' is moved to workspace 'ws1'
+Window '1234 | Notepad  | ws1' is moved to workspace 'ws1'
+Window '5678 | TextEdit  | ws1' is moved to workspace 'ws1'
 
 Error
  <nil>
@@ -145,7 +145,7 @@ aerospace-scratchpad summon Notepad --dry-run
 Output
 [dry-run] MoveWindowToWorkspace(windowID=1234, workspace=ws1)
 [dry-run] SetFocusByWindowID(1234)
-Window '1234 | Notepad ' is moved to workspace 'ws1'
+Window '1234 | Notepad  | ws1' is moved to workspace 'ws1'
 
 Error
  <nil>

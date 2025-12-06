@@ -53,7 +53,7 @@ Error: no windows matched the pattern 'foo'
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder ' is focused
+Window '5678 | Finder  | ws1' is focused
 
 Error
 <nil>
@@ -73,7 +73,7 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder ' hidden to scratchpad
+Window '5678 | Finder  | ws1' hidden to scratchpad
 
 Error
 <nil>
@@ -100,7 +100,7 @@ Error
 aerospace-scratchpad show Finder
 
 Output
-Window '5678 | Finder ' is moved to workspace 'ws2'
+Window '5678 | Finder  | ws1' is moved to workspace 'ws2'
 
 Error
 <nil>

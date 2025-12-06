@@ -17,7 +17,13 @@ type AeroSpaceTree struct {
 func ExtractAllWindows(tree []AeroSpaceTree) []windows.Window {
 	var allWindows []windows.Window
 	for _, t := range tree {
-		allWindows = append(allWindows, t.Windows...)
+		for _, window := range t.Windows {
+			// Newer AeroSpace versions always provide the workspace; older tests may omit it
+			if window.Workspace == "" && t.Workspace != nil {
+				window.Workspace = t.Workspace.Workspace
+			}
+			allWindows = append(allWindows, window)
+		}
 	}
 	return allWindows
 }
