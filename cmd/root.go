@@ -43,14 +43,33 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 	}
 
 	// Commands
-	rootCmd.AddCommand(enableOutputFlag(enableFilterFlag(MoveCmd(customClient))))
-	rootCmd.AddCommand(enableOutputFlag(enableFilterFlag(ShowCmd(customClient))))
-	rootCmd.AddCommand(enableOutputFlag(enableFilterFlag(SummonCmd(customClient))))
+	rootCmd.AddCommand(compose([]flagsFn{
+		enableOutputFlag,
+		enableFilterFlag,
+	}, MoveCmd(customClient)))
+	rootCmd.AddCommand(compose([]flagsFn{
+		enableOutputFlag,
+		enableFilterFlag,
+	}, ShowCmd(customClient)))
+	rootCmd.AddCommand(compose([]flagsFn{
+		enableOutputFlag,
+		enableFilterFlag,
+	}, SummonCmd(customClient)))
 	rootCmd.AddCommand(NextCmd(customClient))
 	rootCmd.AddCommand(InfoCmd(aerospaceClient))
 	rootCmd.AddCommand(HookCmd(aerospaceClient))
 
 	return rootCmd
+}
+
+type flagsFn func(*cobra.Command) *cobra.Command
+
+// Receive flags and attach them to the command.
+func compose(flagsFn []flagsFn, commands *cobra.Command) *cobra.Command {
+	for _, fn := range flagsFn {
+		commands = fn(commands)
+	}
+	return commands
 }
 
 func enableFilterFlag(command *cobra.Command) *cobra.Command {
