@@ -22,7 +22,7 @@ aerospace-scratchpad move --help
 
 To move all windows that match the focused window's app name to the scratchpad, you can use:
 ```bash
-aerospace-scratchpad move --all 
+aerospace-scratchpad move --all-matching 
 ```
 
 To move all floating windows (scratchpad windows) to the scratchpad without requiring a pattern, you can use:
@@ -30,7 +30,36 @@ To move all floating windows (scratchpad windows) to the scratchpad without requ
 aerospace-scratchpad move --all-floating 
 ```
 
-See also [flags](#flags).
+#### Option flags
+
+##### All Matching `--all` (deprecated use `--all-matching`)
+
+The `move` flag `--all` has been renamed to `--all-matching`. Update any configs, scripts, or keybindings that used `--all` to use `--all-matching` instead.
+
+##### All Matching `--all-matching`
+
+Move every window whose app name matches the focused window (or provided pattern) to the scratchpad in one command.
+
+```bash
+aerospace-scratchpad move --all-matching
+```
+
+### All Floating `--all-floating`
+
+_min version: 0.5.0_
+
+Move all floating windows (scratchpad windows) to the scratchpad workspace without requiring a pattern. This is useful when you want to hide all scratchpad windows at once.
+
+```bash
+aerospace-scratchpad move --all-floating
+```
+
+This command will:
+- Find all windows with `WindowLayout == "floating"`
+- Move each floating window to the `.scratchpad` workspace
+- Ensure they remain floating
+
+See more [flags](#flags).
 
 ## Command: `show`
 
@@ -79,21 +108,6 @@ aerospace-scratchpad next
 ```
 
 ## Options flag
-
-### All Floating `--all-floating`
-
-_min version: 0.5.0_
-
-Move all floating windows (scratchpad windows) to the scratchpad workspace without requiring a pattern. This is useful when you want to hide all scratchpad windows at once.
-
-```bash
-aerospace-scratchpad move --all-floating
-```
-
-This command will:
-- Find all windows with `WindowLayout == "floating"`
-- Move each floating window to the `.scratchpad` workspace
-- Ensure they remain floating
 
 ### Filter `--filter|-F <property>=<regex>` 
 

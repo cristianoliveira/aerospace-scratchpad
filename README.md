@@ -17,8 +17,8 @@ A I3/Sway like scratchpad extension for [AeroSpace WM](https://github.com/nikita
 
 ## AeroSpace Compatibility
 
- - AeroSpace v0.20.0 use v0.4.x or higher
- - AeroSpace v0.19.0 use v0.3.x or lower
+ - AeroSpace v0.20.x use v0.4.x or higher
+ - AeroSpace v0.19.x use v0.3.x or lower
 
 **Beta**: I use it daily, I'll try my best but there might be breaking changes till the 1.0.0 release. 
 Please report any issues or ideas in the [issues](https://github.com/cristianoliveira/aerospace-scratchpad/issues) section.
@@ -104,7 +104,7 @@ For more details check [Hook commands](docs/hook-integration.md)
 
 See more in [documentation](docs/)
 
-### Dinamic scratchpads mapping
+### Dynamic scratchpads mapping
 
 By pairing with [aerospace-marks](https://github.com/cristianoliveira/aerospace-marks) you 
 can turn any window into a scratchpad window and bind a toggle key on the fly!
@@ -131,7 +131,7 @@ exec-and-forget aerospace-scratchpad show \
 
 ## Installation
 
-**Min AeroSpace version**: 0.15.x
+**Min AeroSpace version**: 0.20.x
 
 ### Using Homebrew
 

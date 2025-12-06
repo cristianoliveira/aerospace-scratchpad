@@ -536,10 +536,10 @@ func TestMoveCmd(t *testing.T) {
 	})
 
 	t.Run(
-		"moves all windows with the same app name as the focused window when --all is used",
+		"moves all windows with the same app name as the focused window when --all-matching is used",
 		func(t *testing.T) {
 			command := "move"
-			args := []string{command, "", "--all"}
+			args := []string{command, "", "--all-matching"}
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
@@ -783,10 +783,10 @@ func TestMoveCmd(t *testing.T) {
 	})
 
 	t.Run(
-		"[dry-run] moves all windows with the same app name as the focused window when --all is used",
+		"[dry-run] moves all windows with the same app name as the focused window when --all-matching is used",
 		func(t *testing.T) {
 			command := "move"
-			args := []string{command, "", "--all", "--dry-run"}
+			args := []string{command, "", "--all-matching", "--dry-run"}
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()

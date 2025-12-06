@@ -136,7 +136,7 @@ Error
  <nil>
 ---
 
-[TestMoveCmd/[dry-run]_moves_all_windows_with_the_same_app_name_as_the_focused_window_when_--all_is_used - 1]
+[TestMoveCmd/[dry-run]_moves_all_windows_with_the_same_app_name_as_the_focused_window_when_--all-matching_is_used - 1]
 []testutils.AeroSpaceTree{
     {
         Windows: {
@@ -147,7 +147,7 @@ Error
         FocusedWindowID: 5678,
     },
 }
-aerospace-scratchpad move  --all --dry-run
+aerospace-scratchpad move  --all-matching --dry-run
 
 Output
 [dry-run] FocusNextTilingWindow()
@@ -164,7 +164,7 @@ Error
  <nil>
 ---
 
-[TestMoveCmd/moves_all_windows_with_the_same_app_name_as_the_focused_window_when_--all_is_used - 1]
+[TestMoveCmd/moves_all_windows_with_the_same_app_name_as_the_focused_window_when_--all-matching_is_used - 1]
 []testutils.AeroSpaceTree{
     {
         Windows: {
@@ -175,7 +175,7 @@ Error
         FocusedWindowID: 5678,
     },
 }
-aerospace-scratchpad move  --all
+aerospace-scratchpad move  --all-matching
 
 Output
 Moving window 1111 | Finder  to scratchpad
@@ -234,4 +234,55 @@ Window '1111 | Terminal  | floating' hidden to scratchpad
 
 Error
 nil
+---
+
+[TestMoveCmd/moves_all_windows_with_the_same_app_name_as_the_focused_window_when_--all-matching_is_used - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1111, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+        },
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
+        FocusedWindowID: 5678,
+    },
+}
+aerospace-scratchpad move  --all-matching
+
+Output
+Moving window 1111 | Finder  to scratchpad
+Window '1111 | Finder ' hidden to scratchpad
+Moving window 5678 | Finder  to scratchpad
+Window '5678 | Finder ' hidden to scratchpad
+
+Error
+ <nil>
+---
+
+[TestMoveCmd/[dry-run]_moves_all_windows_with_the_same_app_name_as_the_focused_window_when_--all-matching_is_used - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1111, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+            {WindowID:5678, WindowTitle:"", WindowLayout:"", WindowParentContainerLayout:"", AppName:"Finder", AppBundleID:"", Workspace:""},
+        },
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
+        FocusedWindowID: 5678,
+    },
+}
+aerospace-scratchpad move  --all-matching --dry-run
+
+Output
+[dry-run] FocusNextTilingWindow()
+Moving window 1111 | Finder  to scratchpad
+[dry-run] MoveWindowToWorkspace(windowID=1111, workspace=.scratchpad)
+[dry-run] SetLayout(windowID=1111, layout=floating)
+Window '1111 | Finder ' hidden to scratchpad
+Moving window 5678 | Finder  to scratchpad
+[dry-run] MoveWindowToWorkspace(windowID=5678, workspace=.scratchpad)
+[dry-run] SetLayout(windowID=5678, layout=floating)
+Window '5678 | Finder ' hidden to scratchpad
+
+Error
+ <nil>
 ---

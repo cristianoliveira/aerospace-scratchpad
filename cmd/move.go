@@ -29,7 +29,7 @@ func MoveCmd(aerospaceClient *aerospace.AeroSpaceClient) *cobra.Command {
 This command moves a window to the scratchpad using a regex to match the app name.
 If no pattern is provided, it moves the currently focused window.
 
-To move all windows that match the focused window's app name to the scratchpad, use the --all flag.
+To move all windows that match the focused window's app name to the scratchpad, use the --all-matching flag.
 To move all floating windows (scratchpad windows) to the scratchpad, use the --all-floating flag.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -75,15 +75,15 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 				return
 			}
 
-			// Get all flag
-			allFlag, err := cmd.Flags().GetBool("all")
+			// Get all-matching flag
+			allMatchingFlag, err := cmd.Flags().GetBool("all-matching")
 			if err != nil {
 				logger.LogError(
-					"MOVE: unable to get all flag",
+					"MOVE: unable to get all-matching flag",
 					"error",
 					err,
 				)
-				stderr.Println("Error: unable to get all flag")
+				stderr.Println("Error: unable to get all-matching flag")
 				return
 			}
 
@@ -147,12 +147,12 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 			}
 
 			for _, window := range windows {
-				// Skip non-focused windows unless the --all or --all-floating flag is provided
+				// Skip non-focused windows unless the --all-matching or --all-floating flag is provided
 				if !allFloatingFlag && focusedWindowID != -1 &&
 					window.WindowID != focusedWindowID &&
-					!allFlag {
+					!allMatchingFlag {
 					logger.LogDebug(
-						"MOVE: skipping window, not focused and --all flag not provided",
+						"MOVE: skipping window, not focused and --all-matching flag not provided",
 						"window", window,
 						"focusedWindowId", focusedWindowID,
 					)
@@ -188,9 +188,9 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 		},
 	}
 
-	// Add the all flag
+	// Add the all-matching flag
 	command.Flags().
-		BoolP("all", "a", false, "Move all windows that match the focused window's app name to the scratchpad")
+		Bool("all-matching", false, "Move all windows that match the focused window's app name to the scratchpad")
 
 	// Add the all-floating flag
 	command.Flags().
