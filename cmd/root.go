@@ -55,7 +55,7 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 		enableOutputFlag,
 		enableFilterFlag,
 	}, SummonCmd(customClient)))
-	rootCmd.AddCommand(NextCmd(customClient))
+	rootCmd.AddCommand(enableOutputFlag(NextCmd(customClient)))
 	rootCmd.AddCommand(InfoCmd(aerospaceClient))
 	rootCmd.AddCommand(HookCmd(aerospaceClient))
 

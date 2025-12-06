@@ -4,12 +4,12 @@ Copyright © 2025 Cristian Oliveira license@cristianoliveira.dev
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/cli"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 )
 
@@ -24,6 +24,17 @@ This command cycles through the scratchpad windows, displaying them in the curre
 It does not send the windows back to the scratchpad, but rather focuses the next available scratchpad window.
 		`,
 		Run: func(cmd *cobra.Command, args []string) {
+			outputFormat, err := cmd.Flags().GetString("output")
+			if err != nil {
+				stderr.Println("Error: unable to get output format")
+				return
+			}
+			formatter, err := cli.NewOutputFormatter(os.Stdout, outputFormat)
+			if err != nil {
+				stderr.Println("Error: unsupported output format")
+				return
+			}
+
 			focusedWorkspace, err := aerospaceClient.GetFocusedWorkspace()
 			if err != nil {
 				stderr.Println(
@@ -52,12 +63,17 @@ It does not send the windows back to the scratchpad, but rather focuses the next
 				return
 			}
 
-			fmt.Fprintf(
-				os.Stdout,
-				"Window '%+v' is moved to workspace '%s'\n",
-				window,
-				focusedWorkspace.Workspace,
-			)
+			if printErr := formatter.Print(cli.OutputEvent{
+				Command:         "next",
+				Action:          "to-workspace",
+				WindowID:        window.WindowID,
+				AppName:         window.AppName,
+				Workspace:       window.Workspace,
+				TargetWorkspace: focusedWorkspace.Workspace,
+				Result:          "ok",
+			}); printErr != nil {
+				stderr.Println("Error: %v", printErr)
+			}
 		},
 	}
 

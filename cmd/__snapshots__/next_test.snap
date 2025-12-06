@@ -21,7 +21,7 @@
 aerospace-scratchpad next
 
 Output
-Window '9999 | Scratchpad Window ' is moved to workspace 'ws1'
+command=next action=to-workspace window_id=9999 app_name="Scratchpad Window" workspace="" target_workspace=ws1 result=ok message=""
 
 Error
 <nil>

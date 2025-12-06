@@ -161,7 +161,7 @@ It will print the actions that would be taken, but will not execute them.
 
 _min version: 0.5.0_
 
-Available on commands that emit structured results (`move`, `show`, `summon`). Choose between:
+Available on commands that emit structured results (`move`, `show`, `summon`, `next`). Choose between:
 - `text` (default): single-line key=value pairs (quote-aware)
 - `json`: one JSON object per line
 - `tsv`: tab-separated with header
@@ -172,6 +172,7 @@ Examples:
 - JSON: `aerospace-scratchpad move --output=json | jq -r 'select(.result==\"ok\") | .window_id'`
 - TSV: `aerospace-scratchpad move --output=tsv | awk 'NR>1 {print $3}'`  # 3rd column is window_id
 - CSV: `aerospace-scratchpad show foo --output=csv | csvcut -c window_id`  # requires csvkit
+- Next: `aerospace-scratchpad next --output=json | jq -r '.target_workspace'`
 
 Fields (in order): `command action window_id app_name workspace target_workspace result message`
 
