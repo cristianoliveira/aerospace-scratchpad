@@ -107,6 +107,34 @@ This command will summon the next window from the scratchpad workspace until the
 aerospace-scratchpad next
 ```
 
+## Command: `list` / `ls`
+
+_Min version: 0.5.0_
+
+List all scratchpad windows. A scratchpad window is defined as:
+- A window in the `.scratchpad` workspace, OR
+- A floating window (WindowLayout == "floating")
+
+The output is scriptable and supports multiple formats (text, json, tsv, csv).
+
+### USAGE
+
+```bash
+# List all scratchpad windows (text format)
+aerospace-scratchpad list
+
+# Using the alias
+aerospace-scratchpad ls
+
+# List in JSON format for scripting
+aerospace-scratchpad list --output json
+
+# List with filters
+aerospace-scratchpad list --filter app-name=^Terminal
+```
+
+See more [flags](#flags).
+
 ## Options flag
 
 ### Filter `--filter|-F <property>=<regex>` 

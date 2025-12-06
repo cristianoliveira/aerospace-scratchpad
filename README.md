@@ -108,7 +108,12 @@ See more in [documentation](docs/)
 
 ### Scriptable Output
 
-All window-manipulation commands (`move`, `show`, `summon`, `next`) can emit machine-friendly output with `--output` like `--output json`
+All window-manipulation commands (`move`, `show`, `summon`, `next`, `list`) can emit machine-friendly output with `--output` like `--output json`
+
+List scratchpad windows:
+```text
+aerospace-scratchpad list --output json
+```
 
 Example of a simple 15 lines queue stack scratchpad
 ```bash

@@ -39,6 +39,12 @@ type Querier interface {
 
 	// GetAllFloatingWindows returns all floating windows
 	GetAllFloatingWindows() ([]windows.Window, error)
+
+	// GetScratchpadWindows returns all scratchpad windows
+	// A scratchpad window is defined as:
+	// - A window in the .scratchpad workspace, OR
+	// - A floating window (WindowLayout == "floating")
+	GetScratchpadWindows() ([]windows.Window, error)
 }
 
 type QueryMaker struct {
@@ -143,7 +149,7 @@ func (a *QueryMaker) GetFilteredWindows(
 	}
 	logger.LogDebug("FILTER: compiled window pattern", "pattern", appPattern)
 
-	filters, err := parseFilters(filterFlags)
+	filters, err := ParseFilters(filterFlags)
 	if err != nil {
 		logger.LogError("FILTER: unable to parse filters", "error", err)
 		return nil, err
@@ -162,7 +168,7 @@ func (a *QueryMaker) GetFilteredWindows(
 		}
 
 		// Apply filters
-		filtered, applyErr := applyFilters(window, filters)
+		filtered, applyErr := ApplyFilters(window, filters)
 		if applyErr != nil {
 			return nil, fmt.Errorf(
 				"error applying filters to window '%s': %w",
@@ -222,8 +228,63 @@ func (a *QueryMaker) GetAllFloatingWindows() ([]windows.Window, error) {
 	return floatingWindows, nil
 }
 
-// parseFilters parses filter flags and returns a slice of Filter structs.
-func parseFilters(filterFlags []string) ([]Filter, error) {
+func (a *QueryMaker) GetScratchpadWindows() ([]windows.Window, error) {
+	logger := logger.GetDefaultLogger()
+
+	allWindows, err := a.cli.Windows().GetAllWindows()
+	if err != nil {
+		logger.LogError("FILTER: unable to get all windows", "error", err)
+		return nil, fmt.Errorf("unable to get windows: %w", err)
+	}
+
+	// Get windows from scratchpad workspace
+	scratchpadWorkspaceWindows, err := a.cli.Windows().GetAllWindowsByWorkspace(
+		constants.DefaultScratchpadWorkspaceName,
+	)
+	if err != nil {
+		logger.LogError(
+			"FILTER: unable to get windows from scratchpad workspace",
+			"error", err,
+		)
+		// Don't fail if workspace doesn't exist, just continue
+		scratchpadWorkspaceWindows = []windows.Window{}
+	}
+
+	// Create a map to track window IDs and avoid duplicates
+	scratchpadWindowMap := make(map[int]windows.Window)
+
+	// Add windows from scratchpad workspace
+	for _, window := range scratchpadWorkspaceWindows {
+		scratchpadWindowMap[window.WindowID] = window
+	}
+
+	// Add floating windows
+	for _, window := range allWindows {
+		if window.WindowLayout == "floating" {
+			// Only add if not already in map (avoid duplicates)
+			if _, exists := scratchpadWindowMap[window.WindowID]; !exists {
+				scratchpadWindowMap[window.WindowID] = window
+			}
+		}
+	}
+
+	// Convert map to slice
+	scratchpadWindows := make([]windows.Window, 0, len(scratchpadWindowMap))
+	for _, window := range scratchpadWindowMap {
+		scratchpadWindows = append(scratchpadWindows, window)
+	}
+
+	logger.LogDebug(
+		"FILTER: found scratchpad windows",
+		"count", len(scratchpadWindows),
+	)
+
+	return scratchpadWindows, nil
+}
+
+// ParseFilters parses filter flags and returns a slice of Filter structs.
+// This is exported so it can be reused by other packages.
+func ParseFilters(filterFlags []string) ([]Filter, error) {
 	var filters []Filter
 
 	for _, filterFlag := range filterFlags {
@@ -263,8 +324,9 @@ func parseFilters(filterFlags []string) ([]Filter, error) {
 	return filters, nil
 }
 
-// applyFilters applies all filters to a window and returns true if all filters pass.
-func applyFilters(window windows.Window, filters []Filter) (bool, error) {
+// ApplyFilters applies all filters to a window and returns true if all filters pass.
+// This is exported so it can be reused by other packages.
+func ApplyFilters(window windows.Window, filters []Filter) (bool, error) {
 	logger := logger.GetDefaultLogger()
 
 	for _, filter := range filters {
@@ -280,6 +342,10 @@ func applyFilters(window windows.Window, filters []Filter) (bool, error) {
 			value = window.AppBundleID
 		case "window-id":
 			value = strconv.Itoa(window.WindowID)
+		case "workspace":
+			value = window.Workspace
+		case "window-layout":
+			value = window.WindowLayout
 		default:
 			return false, fmt.Errorf(
 				"unknown filter property: %s",

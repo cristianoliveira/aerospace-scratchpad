@@ -13,10 +13,14 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
-//nolint:gocognit // Integration-style test aggregates several window scenarios for readability
-func TestAeroSpaceQuerier(t *testing.T) {
+//nolint:gochecknoinits // init function is used to set up logger for all tests in this package
+func init() {
 	// Silence logger for tests
 	logger.SetDefaultLogger(&logger.EmptyLogger{})
+}
+
+//nolint:gocyclo,gocognit // Test function aggregates multiple test scenarios for readability
+func TestAeroSpaceQuerier(t *testing.T) {
 	t.Run("IsWindowInWorkspace true", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -156,6 +160,104 @@ func TestAeroSpaceQuerier(t *testing.T) {
 			}
 		},
 	)
+
+	t.Run("GetScratchpadWindows returns windows from scratchpad workspace", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		allWindows := []windows.Window{
+			{WindowID: 1, WindowLayout: "tiling", Workspace: "ws1"},
+			{WindowID: 2, WindowLayout: "tiling", Workspace: "ws1"},
+		}
+		scratchpadWindows := []windows.Window{
+			{WindowID: 3, WindowLayout: "floating", Workspace: ".scratchpad"},
+		}
+
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		gomock.InOrder(
+			mockClient.GetWindowsMock().EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1),
+			mockClient.GetWindowsMock().EXPECT().
+				GetAllWindowsByWorkspace(".scratchpad").
+				Return(scratchpadWindows, nil).
+				Times(1),
+		)
+
+		q := aerospace.NewAerospaceQuerier(mockClient)
+		wins, err := q.GetScratchpadWindows()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(wins) != 1 || wins[0].WindowID != 3 {
+			t.Fatalf("expected 1 scratchpad window with ID 3, got %d windows", len(wins))
+		}
+	})
+
+	t.Run("GetScratchpadWindows returns floating windows", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		allWindows := []windows.Window{
+			{WindowID: 1, WindowLayout: "tiling", Workspace: "ws1"},
+			{WindowID: 2, WindowLayout: "floating", Workspace: "ws1"},
+		}
+
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		gomock.InOrder(
+			mockClient.GetWindowsMock().EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1),
+			mockClient.GetWindowsMock().EXPECT().
+				GetAllWindowsByWorkspace(".scratchpad").
+				Return([]windows.Window{}, nil).
+				Times(1),
+		)
+
+		q := aerospace.NewAerospaceQuerier(mockClient)
+		wins, err := q.GetScratchpadWindows()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(wins) != 1 || wins[0].WindowID != 2 {
+			t.Fatalf("expected 1 floating window with ID 2, got %d windows", len(wins))
+		}
+	})
+
+	t.Run("GetScratchpadWindows avoids duplicates", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		allWindows := []windows.Window{
+			{WindowID: 1, WindowLayout: "floating", Workspace: ".scratchpad"},
+		}
+		scratchpadWindows := []windows.Window{
+			{WindowID: 1, WindowLayout: "floating", Workspace: ".scratchpad"},
+		}
+
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		gomock.InOrder(
+			mockClient.GetWindowsMock().EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1),
+			mockClient.GetWindowsMock().EXPECT().
+				GetAllWindowsByWorkspace(".scratchpad").
+				Return(scratchpadWindows, nil).
+				Times(1),
+		)
+
+		q := aerospace.NewAerospaceQuerier(mockClient)
+		wins, err := q.GetScratchpadWindows()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(wins) != 1 {
+			t.Fatalf("expected 1 window (no duplicates), got %d windows", len(wins))
+		}
+	})
 
 	t.Run(
 		"GetFilteredWindows returns two matches with pattern only",

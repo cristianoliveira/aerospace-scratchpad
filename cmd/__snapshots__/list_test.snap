@@ -1,0 +1,126 @@
+
+[TestListCmd/lists_scratchpad_windows_from_workspace - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1234, WindowTitle:"", WindowLayout:"tiling", WindowParentContainerLayout:"", AppName:"Notepad", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:5678, WindowTitle:"", WindowLayout:"tiling", WindowParentContainerLayout:"", AppName:"Finder", AppBundleID:"", Workspace:"ws1"},
+        },
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
+        FocusedWindowID: 5678,
+    },
+    {
+        Windows: {
+            {WindowID:9999, WindowTitle:"", WindowLayout:"floating", WindowParentContainerLayout:"", AppName:"Scratchpad Window", AppBundleID:"", Workspace:".scratchpad"},
+            {WindowID:8888, WindowTitle:"", WindowLayout:"floating", WindowParentContainerLayout:"", AppName:"Another Scratchpad Window", AppBundleID:"", Workspace:".scratchpad"},
+        },
+        Workspace:       &workspaces.Workspace{Workspace:".scratchpad"},
+        FocusedWindowID: 0,
+    },
+}
+aerospace-scratchpad list
+
+Output
+command=list action=list window_id=9999 app_name="Scratchpad Window" workspace=.scratchpad target_workspace="" result=ok message=""
+command=list action=list window_id=8888 app_name="Another Scratchpad Window" workspace=.scratchpad target_workspace="" result=ok message=""
+
+Error
+<nil>
+---
+
+[TestListCmd/lists_floating_windows_as_scratchpad_windows - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:1111, WindowTitle:"", WindowLayout:"floating", WindowParentContainerLayout:"", AppName:"Floating Window", AppBundleID:"", Workspace:"ws1"},
+            {WindowID:2222, WindowTitle:"", WindowLayout:"tiling", WindowParentContainerLayout:"", AppName:"Tiling Window", AppBundleID:"", Workspace:"ws1"},
+        },
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
+        FocusedWindowID: 2222,
+    },
+}
+aerospace-scratchpad list
+
+Output
+command=list action=list window_id=1111 app_name="Floating Window" workspace=ws1 target_workspace="" result=ok message=""
+
+Error
+<nil>
+---
+
+[TestListCmd/lists_scratchpad_windows_with_filters - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:9999, WindowTitle:"", WindowLayout:"floating", WindowParentContainerLayout:"", AppName:"Scratchpad Window", AppBundleID:"", Workspace:".scratchpad"},
+            {WindowID:8888, WindowTitle:"", WindowLayout:"floating", WindowParentContainerLayout:"", AppName:"Another Window", AppBundleID:"", Workspace:".scratchpad"},
+        },
+        Workspace:       &workspaces.Workspace{Workspace:".scratchpad"},
+        FocusedWindowID: 0,
+    },
+}
+aerospace-scratchpad list --filter app-name=^Scratchpad
+
+Output
+command=list action=list window_id=9999 app_name="Scratchpad Window" workspace=.scratchpad target_workspace="" result=ok message=""
+
+Error
+<nil>
+---
+
+[TestListCmd/lists_scratchpad_windows_in_json_format - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:9999, WindowTitle:"", WindowLayout:"floating", WindowParentContainerLayout:"", AppName:"Scratchpad Window", AppBundleID:"", Workspace:".scratchpad"},
+        },
+        Workspace:       &workspaces.Workspace{Workspace:".scratchpad"},
+        FocusedWindowID: 0,
+    },
+}
+aerospace-scratchpad list --output json
+
+Output
+{"command":"list","action":"list","window_id":9999,"app_name":"Scratchpad Window","workspace":".scratchpad","target_workspace":"","result":"ok","message":""}
+
+Error
+<nil>
+---
+
+[TestListCmd/returns_empty_result_when_no_scratchpad_windows - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:2222, WindowTitle:"", WindowLayout:"tiling", WindowParentContainerLayout:"", AppName:"Tiling Window", AppBundleID:"", Workspace:"ws1"},
+        },
+        Workspace:       &workspaces.Workspace{Workspace:"ws1"},
+        FocusedWindowID: 2222,
+    },
+}
+aerospace-scratchpad list
+
+Output
+command=list action=list window_id=0 app_name="" workspace="" target_workspace="" result=none message="no scratchpad windows found"
+
+Error
+<nil>
+---
+
+[TestListCmd/works_with_ls_alias - 1]
+[]testutils.AeroSpaceTree{
+    {
+        Windows: {
+            {WindowID:9999, WindowTitle:"", WindowLayout:"floating", WindowParentContainerLayout:"", AppName:"Scratchpad Window", AppBundleID:"", Workspace:".scratchpad"},
+        },
+        Workspace:       &workspaces.Workspace{Workspace:".scratchpad"},
+        FocusedWindowID: 0,
+    },
+}
+aerospace-scratchpad ls
+
+Output
+command=list action=list window_id=9999 app_name="Scratchpad Window" workspace=.scratchpad target_workspace="" result=ok message=""
+
+Error
+<nil>
+---
