@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -11,10 +12,15 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
 func TestNextCmd(t *testing.T) {
+	logger.SetDefaultLogger(&logger.EmptyLogger{})
+	stderr.SetBehavior(false)
+
 	t.Run("summon next window from scratchpad", func(t *testing.T) {
 		command := "next"
 		args := []string{command}
@@ -105,4 +111,134 @@ func TestNextCmd(t *testing.T) {
 		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
 		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
 	})
+
+	t.Run(
+		"fails when getting focused workspace returns an error",
+		func(t *testing.T) {
+			command := "next"
+			args := []string{command}
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+			gomock.InOrder(
+				aerospaceClient.GetWorkspacesMock().EXPECT().
+					GetFocusedWorkspace().
+					Return(nil, errors.New("mocked_error")).
+					Times(1),
+			)
+
+			wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
+			_ = wrappedClient
+			cmd := cmd.RootCmd(aerospaceClient)
+			out, err := testutils.CmdExecute(cmd, args...)
+			if err == nil {
+				t.Errorf("Expected error, got nil")
+			}
+
+			if out != "" {
+				t.Errorf("Expected empty output, got %s", out)
+			}
+
+			cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
+			testutils.MatchSnapshot(t, nil, cmdAsString, out, err)
+		},
+	)
+
+	t.Run(
+		"fails when no scratchpad windows available",
+		func(t *testing.T) {
+			command := "next"
+			args := []string{command}
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			focusedWorkspace := &workspaces.Workspace{Workspace: "ws1"}
+			aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+			gomock.InOrder(
+				aerospaceClient.GetWorkspacesMock().EXPECT().
+					GetFocusedWorkspace().
+					Return(focusedWorkspace, nil).
+					Times(1),
+				aerospaceClient.GetWindowsMock().EXPECT().
+					GetAllWindowsByWorkspace(constants.DefaultScratchpadWorkspaceName).
+					Return([]windows.Window{}, nil).
+					Times(1),
+			)
+
+			wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
+			_ = wrappedClient
+			cmd := cmd.RootCmd(aerospaceClient)
+			out, err := testutils.CmdExecute(cmd, args...)
+			if err == nil {
+				t.Errorf("Expected error, got nil")
+			}
+
+			if out != "" {
+				t.Errorf("Expected empty output, got %s", out)
+			}
+
+			cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
+			testutils.MatchSnapshot(t, nil, cmdAsString, out, err)
+		},
+	)
+
+	t.Run(
+		"fails when moving window to workspace returns an error",
+		func(t *testing.T) {
+			command := "next"
+			args := []string{command}
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			focusedWorkspace := &workspaces.Workspace{Workspace: "ws1"}
+			scratchpadWindows := []windows.Window{
+				{
+					AppName:  "Scratchpad Window",
+					WindowID: 9999,
+				},
+			}
+			windowID := 9999
+			aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+			gomock.InOrder(
+				aerospaceClient.GetWorkspacesMock().EXPECT().
+					GetFocusedWorkspace().
+					Return(focusedWorkspace, nil).
+					Times(1),
+				aerospaceClient.GetWindowsMock().EXPECT().
+					GetAllWindowsByWorkspace(constants.DefaultScratchpadWorkspaceName).
+					Return(scratchpadWindows, nil).
+					Times(1),
+				aerospaceClient.GetWorkspacesMock().EXPECT().
+					MoveWindowToWorkspaceWithOpts(
+						workspaces.MoveWindowToWorkspaceArgs{
+							WorkspaceName: focusedWorkspace.Workspace,
+						},
+						workspaces.MoveWindowToWorkspaceOpts{
+							WindowID: &windowID,
+						},
+					).
+					Return(errors.New("mocked_move_error")).
+					Times(1),
+			)
+
+			wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
+			_ = wrappedClient
+			cmd := cmd.RootCmd(aerospaceClient)
+			out, err := testutils.CmdExecute(cmd, args...)
+			if err == nil {
+				t.Errorf("Expected error, got nil")
+			}
+
+			if out != "" {
+				t.Errorf("Expected empty output, got %s", out)
+			}
+
+			cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
+			testutils.MatchSnapshot(t, nil, cmdAsString, out, err)
+		},
+	)
 }

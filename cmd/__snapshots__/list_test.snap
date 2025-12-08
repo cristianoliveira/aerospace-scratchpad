@@ -137,3 +137,42 @@ Output:
   error: ""
 
 ---
+
+[TestListCmd/fails_when_getting_all_windows_returns_an_error - 1]
+Context:
+  {}
+Command: |
+  $ aerospace-scratchpad list
+Output:
+  status: error
+  stdout: ""
+  error: |
+    Error: unable to get windows: mocked_error
+
+---
+
+[TestListCmd/fails_when_unknown_output_format_specified - 1]
+Context:
+  {}
+Command: |
+  $ aerospace-scratchpad list --output invalid-format
+Output:
+  status: error
+  stdout: ""
+  error: |
+    Error: unsupported output format
+
+---
+
+[TestListCmd/fails_when_invalid_filter_syntax_used - 1]
+Context:
+  {}
+Command: |
+  $ aerospace-scratchpad list --filter invalid=*[regex
+Output:
+  status: error
+  stdout: ""
+  error: |
+    Error: invalid regex pattern '*[regex': error parsing regexp: missing argument to repetition operator: `*`
+
+---

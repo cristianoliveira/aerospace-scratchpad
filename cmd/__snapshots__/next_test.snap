@@ -23,3 +23,43 @@ Output:
   error: ""
 
 ---
+
+[TestNextCmd/fails_when_getting_focused_workspace_returns_an_error - 1]
+Context:
+  {}
+Command: |
+  $ aerospace-scratchpad next
+Output:
+  status: error
+  stdout: ""
+  error: |
+    Error: unable to get focused workspace
+    mocked_error
+
+---
+
+[TestNextCmd/fails_when_no_scratchpad_windows_available - 1]
+Context:
+  {}
+Command: |
+  $ aerospace-scratchpad next
+Output:
+  status: error
+  stdout: ""
+  error: |
+    Error: no scratchpad windows found
+
+---
+
+[TestNextCmd/fails_when_moving_window_to_workspace_returns_an_error - 1]
+Context:
+  {}
+Command: |
+  $ aerospace-scratchpad next
+Output:
+  status: error
+  stdout: ""
+  error: |
+    Error: unable to move window '9999 | Scratchpad Window ' to workspace 'ws1': mocked_move_error
+
+---

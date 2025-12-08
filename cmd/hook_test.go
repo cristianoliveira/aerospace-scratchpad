@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"errors"
 	"os"
 	"testing"
 
@@ -135,4 +136,86 @@ func TestHookPullWindow(t *testing.T) {
 			t.Fatalf("expected success, got error %v", execErr)
 		}
 	})
+
+	t.Run(
+		"fails when getting focused window returns an error",
+		func(t *testing.T) {
+			cleanupMarkerFile(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+			mockClient.GetWindowsMock().EXPECT().
+				GetFocusedWindow().
+				Return(nil, errors.New("mocked_error")).
+				Times(1)
+
+			wrappedClient := aerospace.NewAeroSpaceClient(mockClient)
+			_ = wrappedClient
+			rootCmd := cmd.RootCmd(mockClient)
+			_, err := testutils.CmdExecute(
+				rootCmd,
+				"hook",
+				"pull-window",
+				"prev-ws",
+				constants.DefaultScratchpadWorkspaceName,
+			)
+
+			if err == nil {
+				t.Fatalf("expected error, got nil")
+			}
+		},
+	)
+
+	t.Run(
+		"fails when moving window returns an error",
+		func(t *testing.T) {
+			cleanupMarkerFile(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+
+			focusedWindow := &windows.Window{
+				WindowID:  99,
+				Workspace: constants.DefaultScratchpadWorkspaceName,
+			}
+
+			gomock.InOrder(
+				mockClient.GetWindowsMock().
+					EXPECT().
+					GetFocusedWindow().
+					Return(focusedWindow, nil).
+					Times(1),
+				mockClient.GetWorkspacesMock().EXPECT().
+					MoveWindowToWorkspaceWithOpts(
+						workspaces.MoveWindowToWorkspaceArgs{
+							WorkspaceName: "prev-ws",
+						},
+						workspaces.MoveWindowToWorkspaceOpts{
+							WindowID: &focusedWindow.WindowID,
+						},
+					).
+					Return(errors.New("mocked_move_error")).
+					Times(1),
+			)
+
+			wrappedClient := aerospace.NewAeroSpaceClient(mockClient)
+			_ = wrappedClient
+			rootCmd := cmd.RootCmd(mockClient)
+			_, err := testutils.CmdExecute(
+				rootCmd,
+				"hook",
+				"pull-window",
+				"prev-ws",
+				constants.DefaultScratchpadWorkspaceName,
+			)
+
+			if err == nil {
+				t.Fatalf("expected error, got nil")
+			}
+		},
+	)
 }

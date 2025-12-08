@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -16,7 +17,7 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
-func TestListCmd(t *testing.T) {
+func TestListCmd(t *testing.T) { //nolint:gocognit
 	logger.SetDefaultLogger(&logger.EmptyLogger{})
 	stderr.SetBehavior(false)
 
@@ -361,4 +362,105 @@ func TestListCmd(t *testing.T) {
 		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
 		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
 	})
+
+	t.Run(
+		"fails when getting all windows returns an error",
+		func(t *testing.T) {
+			command := "list"
+			args := []string{command}
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+			gomock.InOrder(
+				aerospaceClient.GetWindowsMock().EXPECT().
+					GetAllWindows().
+					Return(nil, errors.New("mocked_error")).
+					Times(1),
+			)
+
+			wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
+			_ = wrappedClient
+			cmd := cmd.RootCmd(aerospaceClient)
+			out, err := testutils.CmdExecute(cmd, args...)
+			if err == nil {
+				t.Errorf("Expected error, got nil")
+			}
+
+			if out != "" {
+				t.Errorf("Expected empty output, got %s", out)
+			}
+
+			cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
+			testutils.MatchSnapshot(t, nil, cmdAsString, out, err)
+		},
+	)
+
+	t.Run(
+		"fails when invalid filter syntax used",
+		func(t *testing.T) {
+			command := "list"
+			args := []string{command, "--filter", "invalid=*[regex"}
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+			gomock.InOrder(
+				aerospaceClient.GetWindowsMock().EXPECT().
+					GetAllWindows().
+					Return([]windows.Window{}, nil).
+					Times(1),
+				aerospaceClient.GetWindowsMock().EXPECT().
+					GetAllWindowsByWorkspace(constants.DefaultScratchpadWorkspaceName).
+					Return([]windows.Window{}, nil).
+					Times(1),
+			)
+
+			wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
+			_ = wrappedClient
+			cmd := cmd.RootCmd(aerospaceClient)
+			out, err := testutils.CmdExecute(cmd, args...)
+			if err == nil {
+				t.Errorf("Expected error, got nil")
+			}
+
+			if out != "" {
+				t.Errorf("Expected empty output, got %s", out)
+			}
+
+			cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
+			testutils.MatchSnapshot(t, nil, cmdAsString, out, err)
+		},
+	)
+
+	t.Run(
+		"fails when unknown output format specified",
+		func(t *testing.T) {
+			command := "list"
+			args := []string{command, "--output", "invalid-format"}
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			// No mock expectations needed as output format validation fails before API calls
+			aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+
+			wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
+			_ = wrappedClient
+			cmd := cmd.RootCmd(aerospaceClient)
+			out, err := testutils.CmdExecute(cmd, args...)
+			if err == nil {
+				t.Errorf("Expected error, got nil")
+			}
+
+			if out != "" {
+				t.Errorf("Expected empty output, got %s", out)
+			}
+
+			cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
+			testutils.MatchSnapshot(t, nil, cmdAsString, out, err)
+		},
+	)
 }
