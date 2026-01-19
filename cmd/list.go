@@ -25,7 +25,7 @@ func ListCmd(aerospaceClient *aerospace.AeroSpaceClient) *cobra.Command {
 		Long: `List all scratchpad windows.
 
 A scratchpad window is defined as:
-- A window in the .scratchpad workspace, OR
+- A window in a scratchpad workspace (.scratchpad or .scratchpad.<monitor-id>), OR
 - A floating window (WindowLayout == "floating")
 
 The output is scriptable and supports multiple formats (text, json, tsv, csv).

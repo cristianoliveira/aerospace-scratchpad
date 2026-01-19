@@ -46,7 +46,7 @@ type Querier interface {
 
 	// GetScratchpadWindows returns all scratchpad windows
 	// A scratchpad window is defined as:
-	// - A window in the .scratchpad workspace, OR
+	// - A window in a scratchpad workspace (.scratchpad or .scratchpad.<monitor-id>), OR
 	// - A floating window (WindowLayout == "floating")
 	GetScratchpadWindows() ([]windows.Window, error)
 }

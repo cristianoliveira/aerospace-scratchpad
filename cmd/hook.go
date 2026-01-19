@@ -31,7 +31,7 @@ func HookCmd(
 		Use:   "hook",
 		Short: "Hook commands to react to specific actions outside AeroSpace WM",
 		Long: `Hook commands to react to actions that aren't handled by AeroSpace WM.
-Example of such action is when a window in the scratchpad workspace is focused, which happens when clicking in a notification or
+Example of such action is when a window in a scratchpad workspace is focused, which happens when clicking in a notification or
 when a program is focused by the launcher (alfred, raycast, etc).
 `,
 	}

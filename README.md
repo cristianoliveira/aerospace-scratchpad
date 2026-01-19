@@ -90,7 +90,7 @@ exec-and-forget aerospace-scratchpad show alacritty -F window-title='terminal-sc
 
 _Minimum version: 0.3.0_
 
-The scratchpad windows lives on a dedicated workspace (default: `.scratchpad`). In order to avoid that workspace taking focus add this to your config:
+The scratchpad windows live on dedicated workspaces (default: `.scratchpad`, or `.scratchpad.<monitor-id>` for multi-monitor setups). In order to avoid those workspaces taking focus add this to your config:
 
 ```toml
 # ~/.config/aerospace/config.toml
