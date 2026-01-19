@@ -624,4 +624,84 @@ func TestSummonCmd(t *testing.T) {
 		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
 		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
 	})
+
+	t.Run("summons window from monitor-specific scratchpad", func(t *testing.T) {
+		command := "summon"
+		args := []string{command, "Finder"}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows: []windows.Window{
+					{AppName: "Finder", WindowID: 5678, Workspace: ".scratchpad.1"},
+				},
+				Workspace:       &workspaces.Workspace{Workspace: ".scratchpad.1"},
+				FocusedWindowID: 0,
+			},
+			{
+				Windows: []windows.Window{
+					{AppName: "Terminal", WindowID: 91011},
+				},
+				Workspace:       &workspaces.Workspace{Workspace: "ws2"},
+				FocusedWindowID: 91011,
+			},
+		}
+		allWindows := testutils.ExtractAllWindows(tree)
+		focusedTree := testutils.ExtractFocusedTree(tree)
+		matchedWindows := testutils.ExtractWindowsByName(tree, "Finder")
+		if len(matchedWindows) != 1 {
+			t.Fatalf("Expected 1 Finder window, got %d", len(matchedWindows))
+		}
+		finderWindow := matchedWindows[0]
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 2, MonitorName: "HDMI"})
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: ".scratchpad.1", MonitorID: 1},
+			{Workspace: "ws2", MonitorID: 2},
+			{Workspace: "1", MonitorID: 1},
+		})
+
+		gomock.InOrder(
+			aerospaceClient.GetWorkspacesMock().EXPECT().
+				GetFocusedWorkspace().
+				Return(focusedTree.Workspace, nil).
+				Times(1),
+
+			aerospaceClient.GetWindowsMock().EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1),
+
+			aerospaceClient.GetWorkspacesMock().EXPECT().
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: focusedTree.Workspace.Workspace,
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &finderWindow.WindowID,
+					},
+				).
+				Return(nil).
+				Times(1),
+
+			aerospaceClient.GetFocusMock().EXPECT().
+				SetFocusByWindowID(finderWindow.WindowID).
+				Return(nil).
+				Times(1),
+		)
+
+		wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
+		_ = wrappedClient
+		cmd := cmd.RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
+		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
+	})
 }
