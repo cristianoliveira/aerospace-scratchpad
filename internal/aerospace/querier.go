@@ -1,9 +1,11 @@
 package aerospace
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -49,6 +51,168 @@ type Querier interface {
 
 type QueryMaker struct {
 	cli AeroSpaceWMClient
+}
+
+// WorkspaceMonitor describes a workspace and its monitor attachment.
+type WorkspaceMonitor struct {
+	Workspace string `json:"workspace"`
+	MonitorID int    `json:"monitor-id"`
+}
+
+// MonitorInfo captures monitor identifiers returned by AeroSpace.
+type MonitorInfo struct {
+	MonitorID   int    `json:"monitor-id"`
+	MonitorName string `json:"monitor-name"`
+}
+
+const (
+	listWorkspacesMonitorFormat = "%{workspace} %{monitor-id}"
+	focusedMonitorFormat        = "%{monitor-id} %{monitor-name}"
+)
+
+var scratchpadWorkspacePattern = regexp.MustCompile(
+	fmt.Sprintf(`^\Q%s\E(?:\.\d+)?$`, constants.DefaultScratchpadWorkspaceName),
+)
+
+// IsScratchpadWorkspace reports whether the given workspace name matches the
+// scratchpad naming convention (default name or per-monitor variant).
+func IsScratchpadWorkspace(workspace string) bool {
+	return scratchpadWorkspacePattern.MatchString(workspace)
+}
+
+// ScratchpadWorkspaceNameForMonitor builds the scratchpad workspace name for a
+// given monitor. For single-monitor setups it returns the default name to keep
+// backward compatibility.
+func ScratchpadWorkspaceNameForMonitor(monitorID int, monitorCount int) string {
+	if monitorCount <= 1 || monitorID <= 0 {
+		return constants.DefaultScratchpadWorkspaceName
+	}
+
+	return fmt.Sprintf("%s.%d", constants.DefaultScratchpadWorkspaceName, monitorID)
+}
+
+// ResolveScratchpadWorkspaceNameForMonitor returns the scratchpad workspace
+// name for the provided monitor. If an existing scratchpad workspace is already
+// attached to the monitor, it is returned; otherwise the name is derived from
+// the monitor ID.
+func ResolveScratchpadWorkspaceNameForMonitor(
+	cli AeroSpaceWMClient,
+	monitorID int,
+) (string, error) {
+	workspaces, err := ListWorkspacesWithMonitors(cli)
+	if err != nil {
+		return "", err
+	}
+
+	monitorCount := countUniqueMonitors(workspaces)
+
+	for _, workspaceMonitor := range workspaces {
+		if workspaceMonitor.MonitorID == monitorID &&
+			IsScratchpadWorkspace(workspaceMonitor.Workspace) {
+			return workspaceMonitor.Workspace, nil
+		}
+	}
+
+	return ScratchpadWorkspaceNameForMonitor(monitorID, monitorCount), nil
+}
+
+// ListScratchpadWorkspaceNames returns the unique scratchpad workspace names
+// currently present. If none are found, it falls back to the default scratchpad
+// name for backward compatibility.
+func ListScratchpadWorkspaceNames(cli AeroSpaceWMClient) ([]string, error) {
+	workspaces, err := ListWorkspacesWithMonitors(cli)
+	if err != nil {
+		return nil, err
+	}
+
+	scratchpadNames := make(map[string]struct{})
+	for _, workspaceMonitor := range workspaces {
+		if IsScratchpadWorkspace(workspaceMonitor.Workspace) {
+			scratchpadNames[workspaceMonitor.Workspace] = struct{}{}
+		}
+	}
+
+	if len(scratchpadNames) == 0 {
+		scratchpadNames[constants.DefaultScratchpadWorkspaceName] = struct{}{}
+	}
+
+	names := make([]string, 0, len(scratchpadNames))
+	for name := range scratchpadNames {
+		names = append(names, name)
+	}
+	// Keep deterministic order for consumers and tests.
+	sort.Strings(names)
+
+	return names, nil
+}
+
+// ListWorkspacesWithMonitors returns all workspaces and their monitor IDs.
+func ListWorkspacesWithMonitors(cli AeroSpaceWMClient) ([]WorkspaceMonitor, error) {
+	response, err := cli.Connection().SendCommand(
+		"list-workspaces",
+		[]string{
+			"--all",
+			"--json",
+			"--format",
+			listWorkspacesMonitorFormat,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to list workspaces with monitors: %w", err)
+	}
+
+	if response.ExitCode != 0 {
+		return nil, fmt.Errorf(
+			"unable to list workspaces with monitors: %s",
+			response.StdErr,
+		)
+	}
+
+	var workspaces []WorkspaceMonitor
+	if err = json.Unmarshal([]byte(response.StdOut), &workspaces); err != nil {
+		return nil, fmt.Errorf("unable to parse workspaces with monitors: %w", err)
+	}
+
+	return workspaces, nil
+}
+
+// GetFocusedMonitor returns the currently focused monitor metadata.
+func GetFocusedMonitor(cli AeroSpaceWMClient) (*MonitorInfo, error) {
+	response, err := cli.Connection().SendCommand(
+		"list-monitors",
+		[]string{
+			"--focused",
+			"--json",
+			"--format",
+			focusedMonitorFormat,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to list monitors: %w", err)
+	}
+
+	if response.ExitCode != 0 {
+		return nil, fmt.Errorf("unable to list monitors: %s", response.StdErr)
+	}
+
+	var monitors []MonitorInfo
+	if err = json.Unmarshal([]byte(response.StdOut), &monitors); err != nil {
+		return nil, fmt.Errorf("unable to parse monitors: %w", err)
+	}
+	if len(monitors) == 0 {
+		return nil, errors.New("no focused monitor found")
+	}
+
+	return &monitors[0], nil
+}
+
+func countUniqueMonitors(workspaces []WorkspaceMonitor) int {
+	seen := make(map[int]struct{})
+	for _, workspace := range workspaces {
+		seen[workspace.MonitorID] = struct{}{}
+	}
+
+	return len(seen)
 }
 
 func (a *QueryMaker) IsWindowInWorkspace(
@@ -103,19 +267,16 @@ func (a *QueryMaker) IsWindowFocused(windowID int) (bool, error) {
 }
 
 func (a *QueryMaker) GetNextScratchpadWindow() (*windows.Window, error) {
-	// Get all windows from the workspace
-	wsWindows, err := a.cli.Windows().GetAllWindowsByWorkspace(
-		constants.DefaultScratchpadWorkspaceName,
-	)
+	scratchpadWindows, err := a.GetScratchpadWindows()
 	if err != nil {
 		return nil, err
 	}
 
-	if len(wsWindows) == 0 {
+	if len(scratchpadWindows) == 0 {
 		return nil, errors.New("no scratchpad windows found")
 	}
 
-	return &wsWindows[0], nil
+	return &scratchpadWindows[0], nil
 }
 
 // Filter represents a filter with property and regex pattern.
@@ -237,25 +398,37 @@ func (a *QueryMaker) GetScratchpadWindows() ([]windows.Window, error) {
 		return nil, fmt.Errorf("unable to get windows: %w", err)
 	}
 
-	// Get windows from scratchpad workspace
-	scratchpadWorkspaceWindows, err := a.cli.Windows().GetAllWindowsByWorkspace(
-		constants.DefaultScratchpadWorkspaceName,
-	)
+	scratchpadWorkspaces, err := ListScratchpadWorkspaceNames(a.cli)
 	if err != nil {
 		logger.LogError(
-			"FILTER: unable to get windows from scratchpad workspace",
+			"FILTER: unable to list scratchpad workspaces",
 			"error", err,
 		)
-		// Don't fail if workspace doesn't exist, just continue
-		scratchpadWorkspaceWindows = []windows.Window{}
+		scratchpadWorkspaces = []string{constants.DefaultScratchpadWorkspaceName}
 	}
 
 	// Create a map to track window IDs and avoid duplicates
 	scratchpadWindowMap := make(map[int]windows.Window)
 
-	// Add windows from scratchpad workspace
-	for _, window := range scratchpadWorkspaceWindows {
-		scratchpadWindowMap[window.WindowID] = window
+	for _, workspace := range scratchpadWorkspaces {
+		// Get windows from scratchpad workspace
+		scratchpadWorkspaceWindows, workspaceErr := a.cli.Windows().GetAllWindowsByWorkspace(
+			workspace,
+		)
+		if workspaceErr != nil {
+			logger.LogError(
+				"FILTER: unable to get windows from scratchpad workspace",
+				"workspace", workspace,
+				"error", workspaceErr,
+			)
+			// Don't fail if workspace doesn't exist, just continue
+			continue
+		}
+
+		// Add windows from scratchpad workspace
+		for _, window := range scratchpadWorkspaceWindows {
+			scratchpadWindowMap[window.WindowID] = window
+		}
 	}
 
 	// Add floating windows

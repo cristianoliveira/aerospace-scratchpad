@@ -76,6 +76,10 @@ func TestNextCmd(t *testing.T) {
 				Return(focusedTree.Workspace, nil).
 				Times(1),
 			aerospaceClient.GetWindowsMock().EXPECT().
+				GetAllWindows().
+				Return(testutils.ExtractAllWindows(tree), nil).
+				Times(1),
+			aerospaceClient.GetWindowsMock().EXPECT().
 				GetAllWindowsByWorkspace(constants.DefaultScratchpadWorkspaceName).
 				Return(scratchpadWindows.Windows, nil).
 				Times(1),
@@ -163,6 +167,10 @@ func TestNextCmd(t *testing.T) {
 					Return(focusedWorkspace, nil).
 					Times(1),
 				aerospaceClient.GetWindowsMock().EXPECT().
+					GetAllWindows().
+					Return([]windows.Window{}, nil).
+					Times(1),
+				aerospaceClient.GetWindowsMock().EXPECT().
 					GetAllWindowsByWorkspace(constants.DefaultScratchpadWorkspaceName).
 					Return([]windows.Window{}, nil).
 					Times(1),
@@ -207,6 +215,10 @@ func TestNextCmd(t *testing.T) {
 				aerospaceClient.GetWorkspacesMock().EXPECT().
 					GetFocusedWorkspace().
 					Return(focusedWorkspace, nil).
+					Times(1),
+				aerospaceClient.GetWindowsMock().EXPECT().
+					GetAllWindows().
+					Return([]windows.Window{}, nil).
 					Times(1),
 				aerospaceClient.GetWindowsMock().EXPECT().
 					GetAllWindowsByWorkspace(constants.DefaultScratchpadWorkspaceName).

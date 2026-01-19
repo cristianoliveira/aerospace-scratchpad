@@ -15,6 +15,7 @@ import (
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/client"
+	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 )
 
 // MockAeroSpaceWM wraps the aerospace-ipc MockClient to make it compatible with *AeroSpaceWM
@@ -42,11 +43,12 @@ func NewMockAeroSpaceWM(ctrl *gomock.Controller) *MockAeroSpaceWM {
 
 	// Create routing connection that delegates to service mocks
 	routingConn := &routingConnection{
-		windowsMock:    windowsMock,
-		workspacesMock: workspacesMock,
-		focusMock:      focusMock,
-		layoutMock:     layoutMock,
-		ctrl:           ctrl,
+		windowsMock:       windowsMock,
+		workspacesMock:    workspacesMock,
+		focusMock:         focusMock,
+		layoutMock:        layoutMock,
+		workspaceMonitors: []aerospace.WorkspaceMonitor{},
+		ctrl:              ctrl,
 	}
 
 	// Create real Service instances with the routing connection
@@ -119,6 +121,12 @@ func (m *MockAeroSpaceWM) GetLayoutMock() *layout_mock.MockLayoutService {
 	return m.layoutService
 }
 
+// SetWorkspaceMonitors configures the workspace-monitor mapping returned by
+// list-workspaces calls.
+func (m *MockAeroSpaceWM) SetWorkspaceMonitors(monitors []aerospace.WorkspaceMonitor) {
+	m.routingConn.workspaceMonitors = monitors
+}
+
 const (
 	minArgsForMoveCommand = 3
 	windowIDFlag          = "--window-id"
@@ -127,11 +135,12 @@ const (
 // routingConnection is a connection that routes Service method calls to the appropriate mocks
 // It intercepts SendCommand calls and routes them to the service mocks.
 type routingConnection struct {
-	windowsMock    *windows_mock.MockWindowsService
-	workspacesMock *workspaces_mock.MockWorkspacesService
-	focusMock      *focus_mock.MockFocusService
-	layoutMock     *layout_mock.MockLayoutService
-	ctrl           *gomock.Controller
+	windowsMock       *windows_mock.MockWindowsService
+	workspacesMock    *workspaces_mock.MockWorkspacesService
+	focusMock         *focus_mock.MockFocusService
+	layoutMock        *layout_mock.MockLayoutService
+	workspaceMonitors []aerospace.WorkspaceMonitor
+	ctrl              *gomock.Controller
 }
 
 func (r *routingConnection) SendCommand(command string, args []string) (*client.Response, error) {
@@ -231,7 +240,7 @@ func (r *routingConnection) handleLayout(args []string) (*client.Response, error
 }
 
 func (r *routingConnection) handleListWorkspaces(args []string) (*client.Response, error) {
-	// Check for --focused flag
+	// Check for --focused or --all flags
 	for _, arg := range args {
 		if arg == "--focused" {
 			// GetFocusedWorkspace
@@ -240,6 +249,11 @@ func (r *routingConnection) handleListWorkspaces(args []string) (*client.Respons
 				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, err
 			}
 			jsonData, _ := json.Marshal([]workspaces.Workspace{*ws})
+			return &client.Response{ExitCode: 0, StdOut: string(jsonData), StdErr: ""}, nil
+		}
+
+		if arg == "--all" {
+			jsonData, _ := json.Marshal(r.workspaceMonitors)
 			return &client.Response{ExitCode: 0, StdOut: string(jsonData), StdErr: ""}, nil
 		}
 	}
