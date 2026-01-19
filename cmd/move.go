@@ -14,7 +14,6 @@ import (
 	windowsipc "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/cli"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 )
@@ -183,7 +182,7 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 					continue
 				}
 
-				moveErr := mover.MoveWindowToScratchpad(window)
+				targetWorkspace, moveErr := mover.MoveWindowToScratchpad(window)
 				if moveErr != nil {
 					if strings.Contains(
 						moveErr.Error(),
@@ -195,7 +194,7 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 							WindowID:        window.WindowID,
 							AppName:         window.AppName,
 							Workspace:       window.Workspace,
-							TargetWorkspace: constants.DefaultScratchpadWorkspaceName,
+							TargetWorkspace: targetWorkspace,
 							Result:          "skipped",
 							Message:         "already in scratchpad",
 						}); printErr != nil {
@@ -220,7 +219,7 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 					WindowID:        window.WindowID,
 					AppName:         window.AppName,
 					Workspace:       window.Workspace,
-					TargetWorkspace: constants.DefaultScratchpadWorkspaceName,
+					TargetWorkspace: targetWorkspace,
 					Result:          "ok",
 				}); printErr != nil {
 					logger.LogError("MOVE: unable to write output", "error", printErr)

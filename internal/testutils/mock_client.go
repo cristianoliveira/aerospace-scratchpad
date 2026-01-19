@@ -127,6 +127,11 @@ func (m *MockAeroSpaceWM) SetWorkspaceMonitors(monitors []aerospace.WorkspaceMon
 	m.routingConn.workspaceMonitors = monitors
 }
 
+// SetFocusedMonitor configures the focused monitor returned by list-monitors.
+func (m *MockAeroSpaceWM) SetFocusedMonitor(monitor aerospace.MonitorInfo) {
+	m.routingConn.focusedMonitor = &monitor
+}
+
 const (
 	minArgsForMoveCommand = 3
 	windowIDFlag          = "--window-id"
@@ -140,6 +145,7 @@ type routingConnection struct {
 	focusMock         *focus_mock.MockFocusService
 	layoutMock        *layout_mock.MockLayoutService
 	workspaceMonitors []aerospace.WorkspaceMonitor
+	focusedMonitor    *aerospace.MonitorInfo
 	ctrl              *gomock.Controller
 }
 
@@ -154,6 +160,8 @@ func (r *routingConnection) SendCommand(command string, args []string) (*client.
 		return r.handleLayout(args)
 	case "list-workspaces":
 		return r.handleListWorkspaces(args)
+	case "list-monitors":
+		return r.handleListMonitors(args)
 	case "move-node-to-workspace":
 		return r.handleMoveNodeToWorkspace(args)
 	default:
@@ -258,6 +266,16 @@ func (r *routingConnection) handleListWorkspaces(args []string) (*client.Respons
 		}
 	}
 	return &client.Response{ExitCode: 0, StdOut: "[]", StdErr: ""}, nil
+}
+
+func (r *routingConnection) handleListMonitors(_ []string) (*client.Response, error) {
+	monitors := []aerospace.MonitorInfo{}
+	if r.focusedMonitor != nil {
+		monitors = append(monitors, *r.focusedMonitor)
+	}
+
+	jsonData, _ := json.Marshal(monitors)
+	return &client.Response{ExitCode: 0, StdOut: string(jsonData), StdErr: ""}, nil
 }
 
 func (r *routingConnection) handleMoveNodeToWorkspace(args []string) (*client.Response, error) {

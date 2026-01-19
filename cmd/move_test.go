@@ -160,6 +160,76 @@ func TestMoveCmd(t *testing.T) {
 		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
 	})
 
+	t.Run("moves focused window to monitor-specific scratchpad", func(t *testing.T) {
+		command := "move"
+		args := []string{command, ""}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows: []windows.Window{
+					{AppName: "Finder", WindowID: 5678},
+				},
+				Workspace:       &workspaces.Workspace{Workspace: "ws1"},
+				FocusedWindowID: 5678,
+			},
+		}
+		allWindows := testutils.ExtractAllWindows(tree)
+		focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 2, MonitorName: "HDMI"})
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 2},
+			{Workspace: "1", MonitorID: 1},
+		})
+
+		gomock.InOrder(
+			aerospaceClient.GetWindowsMock().EXPECT().
+				GetFocusedWindow().
+				Return(focusedWindow, nil).
+				Times(1),
+
+			aerospaceClient.GetWindowsMock().EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1),
+
+			aerospaceClient.GetWorkspacesMock().EXPECT().
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: ".scratchpad.2",
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &focusedWindow.WindowID,
+					},
+				).
+				Return(nil).
+				Times(1),
+
+			aerospaceClient.GetLayoutMock().EXPECT().
+				SetLayout(
+					[]string{"floating"},
+					layout.SetLayoutOpts{
+						WindowID: &focusedWindow.WindowID,
+					},
+				).
+				Return(nil).
+				Times(1),
+		)
+
+		cmd := cmd.RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err != nil {
+			t.Errorf("Expected error, got nil")
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
+		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
+	})
+
 	t.Run("moves only the focused window when multiple matches exist", func(t *testing.T) {
 		command := "move"
 		args := []string{command, ""}

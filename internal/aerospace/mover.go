@@ -13,12 +13,12 @@ import (
 
 type Mover interface {
 	// MoveWindowToScratchpad sends a window to a workspace
-	MoveWindowToScratchpad(window windows.Window) error
+	MoveWindowToScratchpad(window windows.Window) (string, error)
 
 	// MoveWindowToWorkspace sends a window to a workspace and set focus
 	MoveWindowToWorkspace(
-		window windows.Window,
-		workspace workspaces.Workspace,
+		window *windows.Window,
+		workspace *workspaces.Workspace,
 		shouldSetFocus bool,
 	) error
 }
@@ -35,22 +35,24 @@ func NewAeroSpaceMover(aerospace AeroSpaceWMClient) MoverAeroSpace {
 
 func (a *MoverAeroSpace) MoveWindowToScratchpad(
 	window windows.Window,
-) error {
+) (string, error) {
 	logger := logger.GetDefaultLogger()
 	logger.LogDebug("MOVING: MoveWindowToScratchpad", "window", window)
+
+	targetWorkspace := a.resolveScratchpadWorkspace()
 
 	// Use wrapper's MoveWindowToWorkspace if available (for dry-run support)
 	var err error
 	if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
 		err = wrapper.MoveWindowToWorkspace(
 			window.WindowID,
-			constants.DefaultScratchpadWorkspaceName,
+			targetWorkspace,
 		)
 	} else {
 		windowID := window.WindowID
 		err = a.aerospace.Workspaces().MoveWindowToWorkspaceWithOpts(
 			workspaces.MoveWindowToWorkspaceArgs{
-				WorkspaceName: constants.DefaultScratchpadWorkspaceName,
+				WorkspaceName: targetWorkspace,
 			},
 			workspaces.MoveWindowToWorkspaceOpts{
 				WindowID: &windowID,
@@ -60,11 +62,11 @@ func (a *MoverAeroSpace) MoveWindowToScratchpad(
 	logger.LogDebug(
 		"MOVING: after MoveWindowToWorkspace",
 		"window", window,
-		"to-workspace", constants.DefaultScratchpadWorkspaceName,
+		"to-workspace", targetWorkspace,
 		"error", err,
 	)
 	if err != nil {
-		return err
+		return targetWorkspace, err
 	}
 
 	// Use wrapper's SetLayout if available (for dry-run support)
@@ -83,7 +85,7 @@ func (a *MoverAeroSpace) MoveWindowToScratchpad(
 		)
 	}
 
-	return nil
+	return targetWorkspace, nil
 }
 
 func (a *MoverAeroSpace) MoveWindowToWorkspace(
@@ -156,4 +158,39 @@ func (a *MoverAeroSpace) MoveWindowToWorkspace(
 	}
 
 	return nil
+}
+
+func (a *MoverAeroSpace) resolveScratchpadWorkspace() string {
+	logger := logger.GetDefaultLogger()
+	targetWorkspace := constants.DefaultScratchpadWorkspaceName
+
+	monitor, err := GetFocusedMonitor(a.aerospace)
+	if err != nil {
+		logger.LogError(
+			"MOVER: unable to get focused monitor, defaulting to base scratchpad",
+			"error", err,
+		)
+		return targetWorkspace
+	}
+
+	workspaceName, resolveErr := ResolveScratchpadWorkspaceNameForMonitor(
+		a.aerospace,
+		monitor.MonitorID,
+	)
+	if resolveErr != nil {
+		logger.LogError(
+			"MOVER: unable to resolve scratchpad workspace for monitor, defaulting to base scratchpad",
+			"monitorId",
+			monitor.MonitorID,
+			"error",
+			resolveErr,
+		)
+		return targetWorkspace
+	}
+
+	if workspaceName == "" {
+		return targetWorkspace
+	}
+
+	return workspaceName
 }

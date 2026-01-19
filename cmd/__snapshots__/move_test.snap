@@ -39,6 +39,24 @@ Output:
 
 ---
 
+[TestMoveCmd/moves_focused_window_to_monitor-specific_scratchpad - 1]
+Context:
+  workspaces:
+  - workspace: ws1
+    focused-window-id: 5678
+  windows:
+  - window-id: 5678
+    app-name: Finder
+Command: |
+  $ aerospace-scratchpad move
+Output:
+  status: success
+  stdout: |
+    command=move action=to-scratchpad window_id=5678 app_name=Finder workspace=ws1 target_workspace=.scratchpad.2 result=ok message=""
+  error: ""
+
+---
+
 [TestMoveCmd/fails_when_getting_all_windows_return_an_erro - 1]
 Context:
   {}

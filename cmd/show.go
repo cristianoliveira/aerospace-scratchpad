@@ -12,7 +12,6 @@ import (
 	windowsipc "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/cli"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 )
@@ -224,7 +223,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 						}
 					}
 
-					moveErr := mover.MoveWindowToScratchpad(window)
+					targetWorkspace, moveErr := mover.MoveWindowToScratchpad(window)
 					if moveErr != nil {
 						logger.LogDebug(
 							"Error: unable to move window '%+v' to scratchpad\n%s",
@@ -239,7 +238,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 							WindowID:        window.WindowID,
 							AppName:         window.AppName,
 							Workspace:       window.Workspace,
-							TargetWorkspace: constants.DefaultScratchpadWorkspaceName,
+							TargetWorkspace: targetWorkspace,
 							Result:          "error",
 							Message:         moveErr.Error(),
 						}); printErr != nil {
@@ -254,7 +253,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 						WindowID:        window.WindowID,
 						AppName:         window.AppName,
 						Workspace:       window.Workspace,
-						TargetWorkspace: constants.DefaultScratchpadWorkspaceName,
+						TargetWorkspace: targetWorkspace,
 						Result:          "ok",
 					}); printErr != nil {
 						logger.LogError("SHOW: unable to write output", "error", printErr)
