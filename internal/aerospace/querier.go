@@ -265,6 +265,12 @@ func GetFocusedMonitor(cli AeroSpaceWMClient) (*MonitorInfo, error) {
 		return nil, errors.New("no focused monitor found")
 	}
 
+	logger.GetDefaultLogger().LogDebug(
+		"focused monitor retrieved",
+		"monitorID", monitors[0].MonitorID,
+		"monitorName", monitors[0].MonitorName,
+	)
+
 	return &monitors[0], nil
 }
 

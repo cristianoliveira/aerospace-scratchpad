@@ -170,8 +170,18 @@ func (a *MoverAeroSpace) resolveScratchpadWorkspace() string {
 			"MOVER: unable to get focused monitor, defaulting to base scratchpad",
 			"error", err,
 		)
+		logger.LogDebug(
+			"MOVER: returning default scratchpad workspace due to monitor detection error",
+			"targetWorkspace", targetWorkspace,
+		)
 		return targetWorkspace
 	}
+
+	logger.LogDebug(
+		"MOVER: focused monitor retrieved",
+		"monitorID", monitor.MonitorID,
+		"monitorName", monitor.MonitorName,
+	)
 
 	workspaceName, resolveErr := ResolveScratchpadWorkspaceNameForMonitor(
 		a.aerospace,
@@ -185,12 +195,29 @@ func (a *MoverAeroSpace) resolveScratchpadWorkspace() string {
 			"error",
 			resolveErr,
 		)
+		logger.LogDebug(
+			"MOVER: returning default scratchpad workspace due to resolution error",
+			"targetWorkspace", targetWorkspace,
+		)
 		return targetWorkspace
 	}
+
+	logger.LogDebug(
+		"MOVER: resolved scratchpad workspace name",
+		"workspaceName", workspaceName,
+	)
 
 	if workspaceName == "" {
+		logger.LogDebug(
+			"MOVER: resolved workspace name is empty, returning default",
+			"targetWorkspace", targetWorkspace,
+		)
 		return targetWorkspace
 	}
 
+	logger.LogDebug(
+		"MOVER: returning resolved scratchpad workspace",
+		"targetWorkspace", workspaceName,
+	)
 	return workspaceName
 }
