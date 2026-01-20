@@ -739,6 +739,37 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		}
 	})
 
+	t.Run(
+		"ResolveScratchpadWorkspaceNameForMonitor skips mismatched workspace name",
+		func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+			socket.EXPECT().
+				SendCommand(
+					"list-workspaces",
+					[]string{"--all", "--json", "--format", "%{workspace} %{monitor-id}"},
+				).
+				Return(&client.Response{
+					ExitCode: 0,
+					StdOut:   `[{"workspace":".scratchpad.1","monitor-id":2},{"workspace":"1","monitor-id":1}]`,
+				}, nil).
+				Times(1)
+
+			name, err := aerospace.ResolveScratchpadWorkspaceNameForMonitor(
+				&mockConnectionAeroSpaceClient{conn: socket},
+				2,
+			)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if name != ".scratchpad.2" {
+				t.Fatalf("expected generated scratchpad name, got %s", name)
+			}
+		},
+	)
+
 	t.Run("ListScratchpadWorkspaceNames returns detected scratchpads", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()

@@ -114,15 +114,27 @@ func ResolveScratchpadWorkspaceNameForMonitor(
 	}
 
 	monitorCount := countUniqueMonitors(workspaces)
+	expectedName := ScratchpadWorkspaceNameForMonitor(monitorID, monitorCount)
 
 	for _, workspaceMonitor := range workspaces {
 		if workspaceMonitor.MonitorID == monitorID &&
 			IsScratchpadWorkspace(workspaceMonitor.Workspace) {
-			return workspaceMonitor.Workspace, nil
+			if workspaceMonitor.Workspace == expectedName {
+				return workspaceMonitor.Workspace, nil
+			}
+			// Scratchpad workspace attached to monitor but name doesn't match expected pattern.
+			// Log warning and skip it (treat as if no scratchpad workspace exists).
+			logger.GetDefaultLogger().LogError(
+				"scratchpad workspace name mismatch",
+				"monitorID", monitorID,
+				"expectedName", expectedName,
+				"actualName", workspaceMonitor.Workspace,
+			)
+			continue
 		}
 	}
 
-	return ScratchpadWorkspaceNameForMonitor(monitorID, monitorCount), nil
+	return expectedName, nil
 }
 
 // ListScratchpadWorkspaceNames returns the unique scratchpad workspace names
