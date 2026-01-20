@@ -25,6 +25,7 @@ go.work.sum
 .env
 result
 aerospace-scratchpad
+scratchpad
 _tmp/
 .cache/
 .gocache

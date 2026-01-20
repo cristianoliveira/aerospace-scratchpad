@@ -4,8 +4,11 @@ Copyright © 2025 Cristian Oliveira license@cristianoliveira.dev
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"sort"
+	"strconv"
 
 	"github.com/spf13/cobra"
 
@@ -15,6 +18,38 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 )
+
+// parseMonitorFlag parses the --monitor flag and returns a monitor ID.
+// Returns:
+//
+//	-1 for "all"
+//	-2 for "current"
+//	>=0 for specific monitor ID
+func parseMonitorFlag(cmd *cobra.Command) (int, error) {
+	monitorFlag, err := cmd.Flags().GetString("monitor")
+	if err != nil {
+		return -1, err
+	}
+	switch monitorFlag {
+	case "all":
+		return -1, nil
+	case "current":
+		return -2, nil
+	default:
+		// Try to parse as integer
+		id, parseErr := strconv.Atoi(monitorFlag)
+		if parseErr != nil {
+			return -1, fmt.Errorf(
+				"invalid monitor value: %s, expected 'current', 'all', or a monitor ID",
+				monitorFlag,
+			)
+		}
+		if id < 0 {
+			return -1, errors.New("monitor ID cannot be negative")
+		}
+		return id, nil
+	}
+}
 
 // ListCmd represents the list command.
 func ListCmd(aerospaceClient *aerospace.AeroSpaceClient) *cobra.Command {
@@ -54,8 +89,15 @@ func runListCommand(cmd *cobra.Command, args []string, aerospaceClient *aerospac
 		return
 	}
 
+	monitorID, err := parseMonitorFlag(cmd)
+	if err != nil {
+		logger.LogError("LIST: invalid monitor flag", "error", err)
+		stderr.Printf("Error: %v\n", err)
+		return
+	}
+
 	querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
-	scratchpadWindows, err := querier.GetScratchpadWindows()
+	scratchpadWindows, err := querier.GetScratchpadWindowsForMonitor(monitorID)
 	if err != nil {
 		logger.LogError("LIST: unable to get scratchpad windows", "error", err)
 		stderr.Printf("Error: %v\n", err)

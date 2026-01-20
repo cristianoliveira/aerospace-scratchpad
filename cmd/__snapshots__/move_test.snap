@@ -125,7 +125,6 @@ Command: |
 Output:
   status: success
   stdout: |
-    [dry-run] FocusNextTilingWindow()
     [dry-run] MoveWindowToWorkspace(windowID=1234, workspace=.scratchpad)
     [dry-run] SetLayout(windowID=1234, layout=floating)
     command=move action=to-scratchpad window_id=1234 app_name=Notepad workspace=ws1 target_workspace=.scratchpad result=ok message=""
@@ -168,7 +167,6 @@ Command: |
 Output:
   status: success
   stdout: |
-    [dry-run] FocusNextTilingWindow()
     [dry-run] MoveWindowToWorkspace(windowID=1111, workspace=.scratchpad)
     [dry-run] SetLayout(windowID=1111, layout=floating)
     command=move action=to-scratchpad window_id=1111 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
@@ -253,7 +251,6 @@ Command: |
 Output:
   status: success
   stdout: |
-    [dry-run] FocusNextTilingWindow()
     [dry-run] MoveWindowToWorkspace(windowID=1111, workspace=.scratchpad)
     [dry-run] SetLayout(windowID=1111, layout=floating)
     command=move action=to-scratchpad window_id=1111 app_name=Terminal workspace="" target_workspace=.scratchpad result=ok message=""
@@ -297,7 +294,6 @@ Command: |
 Output:
   status: success
   stdout: |
-    [dry-run] FocusNextTilingWindow()
     [dry-run] MoveWindowToWorkspace(windowID=1111, workspace=.scratchpad)
     [dry-run] SetLayout(windowID=1111, layout=floating)
     command=move action=to-scratchpad window_id=1111 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
