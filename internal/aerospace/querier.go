@@ -235,6 +235,17 @@ func ListWorkspacesWithMonitors(cli AeroSpaceWMClient) ([]WorkspaceMonitor, erro
 		return nil, fmt.Errorf("unable to parse workspaces with monitors: %w", err)
 	}
 
+	// Debug logging
+	var sample []string
+	for i := 0; i < len(workspaces) && i < 5; i++ {
+		sample = append(sample, workspaces[i].Workspace)
+	}
+	logger.GetDefaultLogger().LogDebug(
+		"workspaces with monitors listed",
+		"count", len(workspaces),
+		"sample", sample,
+	)
+
 	return workspaces, nil
 }
 
@@ -296,6 +307,17 @@ func ListMonitors(cli AeroSpaceWMClient) ([]MonitorInfo, error) {
 	if err = json.Unmarshal([]byte(response.StdOut), &monitors); err != nil {
 		return nil, fmt.Errorf("unable to parse monitors: %w", err)
 	}
+
+	// Debug logging
+	var monitorIDs []int
+	for _, m := range monitors {
+		monitorIDs = append(monitorIDs, m.MonitorID)
+	}
+	logger.GetDefaultLogger().LogDebug(
+		"monitors listed",
+		"count", len(monitors),
+		"monitorIDs", monitorIDs,
+	)
 
 	return monitors, nil
 }
