@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -47,10 +49,43 @@ type Querier interface {
 	// - A window in the .scratchpad workspace, OR
 	// - A floating window (WindowLayout == "floating")
 	GetScratchpadWindows() ([]windows.Window, error)
+
+	// GetScratchpadWindowsForMonitor returns scratchpad windows filtered by monitor.
+	// monitorID can be:
+	//   -1 for all monitors (same as GetScratchpadWindows)
+	//   -2 for current monitor
+	//   >=0 for specific monitor ID
+	GetScratchpadWindowsForMonitor(monitorID int) ([]windows.Window, error)
+
+	// GetNextScratchpadWindowForMonitor returns the next scratchpad window filtered by monitor.
+	// monitorID can be:
+	//   -1 for all monitors (same as GetNextScratchpadWindow)
+	//   -2 for current monitor
+	//   >=0 for specific monitor ID
+	GetNextScratchpadWindowForMonitor(monitorID int) (*windows.Window, error)
 }
 
 type QueryMaker struct {
 	cli AeroSpaceWMClient
+}
+
+// resolveMonitorID resolves the monitor ID for filtering.
+// Returns target monitor ID or error.
+func (a *QueryMaker) resolveMonitorID(monitorID int) (int, error) {
+	logger := logger.GetDefaultLogger()
+	if monitorID != -2 {
+		return monitorID, nil
+	}
+	focusedMonitor, err := GetFocusedMonitor(a.cli)
+	if err != nil {
+		if strings.Contains(err.Error(), "no focused monitor found") {
+			logger.LogDebug("no focused monitor found, defaulting to all monitors")
+			return -1, nil
+		}
+		logger.LogError("unable to get focused monitor", "error", err)
+		return 0, fmt.Errorf("unable to get focused monitor: %w", err)
+	}
+	return focusedMonitor.MonitorID, nil
 }
 
 // WorkspaceMonitor describes a workspace and its monitor attachment.
@@ -68,11 +103,57 @@ type MonitorInfo struct {
 const (
 	listWorkspacesMonitorFormat = "%{workspace} %{monitor-id}"
 	focusedMonitorFormat        = "%{monitor-id} %{monitor-name}"
+	nextStateFileName           = "next-state.json"
+	filterLogPrefix             = "FILTER: "
+	floatingLayout              = "floating"
 )
 
 var scratchpadWorkspacePattern = regexp.MustCompile(
 	fmt.Sprintf(`^\Q%s\E(?:\.\d+)?$`, constants.DefaultScratchpadWorkspaceName),
 )
+
+type nextState struct {
+	LastWindowID int `json:"lastWindowId"`
+}
+
+func readState() (*nextState, error) {
+	path, err := stateFilePath()
+	if err != nil {
+		return nil, err
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return &nextState{LastWindowID: 0}, nil
+		}
+		return nil, err
+	}
+	var state nextState
+	if err := json.Unmarshal(data, &state); err != nil {
+		return nil, err
+	}
+	return &state, nil
+}
+
+func writeState(state *nextState) error {
+	path, err := stateFilePath()
+	if err != nil {
+		return err
+	}
+	data, err := json.Marshal(state)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
+}
+
+func stateFilePath() (string, error) {
+	dir, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, nextStateFileName), nil
+}
 
 // IsScratchpadWorkspace reports whether the given workspace name matches the
 // scratchpad naming convention (default name or per-monitor variant).
@@ -453,6 +534,115 @@ func (a *QueryMaker) GetScratchpadWindows() ([]windows.Window, error) {
 	)
 
 	return scratchpadWindows, nil
+}
+
+// GetScratchpadWindowsForMonitor returns scratchpad windows filtered by monitor.
+// monitorID can be:
+//
+//	-1 for all monitors (same as GetScratchpadWindows)
+//	-2 for current monitor
+//	>=0 for specific monitor ID
+func (a *QueryMaker) GetScratchpadWindowsForMonitor(monitorID int) ([]windows.Window, error) {
+	logger := logger.GetDefaultLogger()
+
+	// Resolve monitor ID if needed
+	targetMonitorID, err := a.resolveMonitorID(monitorID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all scratchpad windows
+	allWindows, err := a.GetScratchpadWindows()
+	if err != nil {
+		return nil, err
+	}
+
+	// If targetMonitorID == -1, return all windows (no filtering)
+	if targetMonitorID == -1 {
+		return allWindows, nil
+	}
+
+	// Get workspace-to-monitor mapping
+	workspaces, err := ListWorkspacesWithMonitors(a.cli)
+	if err != nil {
+		logger.LogDebug(
+			"unable to list workspaces with monitors, skipping monitor filtering",
+			"error",
+			err,
+		)
+		// If we can't get mapping, return all windows (conservative)
+		return allWindows, nil
+	}
+	workspaceMonitor := make(map[string]int)
+	for _, wm := range workspaces {
+		workspaceMonitor[wm.Workspace] = wm.MonitorID
+	}
+
+	// Filter windows based on monitor ID
+	var filtered []windows.Window
+	for _, window := range allWindows {
+		// Determine monitor ID for this window's workspace
+		mon, ok := workspaceMonitor[window.Workspace]
+		if !ok {
+			// Workspace not found (should not happen). Skip? Include conservatively.
+			logger.LogDebug("workspace not found in mapping", "workspace", window.Workspace)
+			// Include window to avoid false negatives
+			filtered = append(filtered, window)
+			continue
+		}
+		if mon == targetMonitorID {
+			filtered = append(filtered, window)
+		}
+	}
+
+	logger.LogDebug(
+		"FILTER: monitor filtered windows",
+		"targetMonitorID",
+		targetMonitorID,
+		"count",
+		len(filtered),
+	)
+	return filtered, nil
+}
+
+// GetNextScratchpadWindowForMonitor returns the next scratchpad window filtered by monitor.
+// monitorID can be:
+//
+//	-1 for all monitors (same as GetNextScratchpadWindow)
+//	-2 for current monitor
+//	>=0 for specific monitor ID
+func (a *QueryMaker) GetNextScratchpadWindowForMonitor(monitorID int) (*windows.Window, error) {
+	scratchpadWindows, err := a.GetScratchpadWindowsForMonitor(monitorID)
+	if err != nil {
+		return nil, err
+	}
+	if len(scratchpadWindows) == 0 {
+		return nil, errors.New("no scratchpad windows found")
+	}
+	// Read state
+	state, err := readState()
+	if err != nil {
+		// If we can't read state, fallback to first window
+		//nolint:nilerr // fallback to first window on state read error
+		return &scratchpadWindows[0], nil
+	}
+	// Find index of last used window ID
+	lastIndex := -1
+	for i, w := range scratchpadWindows {
+		if w.WindowID == state.LastWindowID {
+			lastIndex = i
+			break
+		}
+	}
+	nextIndex := 0
+	if lastIndex >= 0 {
+		nextIndex = (lastIndex + 1) % len(scratchpadWindows)
+	}
+	nextWindow := scratchpadWindows[nextIndex]
+	// Update state with new window ID (ignore write errors)
+	state.LastWindowID = nextWindow.WindowID
+	_ = writeState(state)
+	return &nextWindow, nil
 }
 
 // ParseFilters parses filter flags and returns a slice of Filter structs.
