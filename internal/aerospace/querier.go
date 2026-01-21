@@ -154,20 +154,6 @@ func parseScratchpadMonitorID(workspace string) (int, bool) {
 	return id, true
 }
 
-// monitorExists checks if a monitor with the given ID exists.
-func monitorExists(cli AeroSpaceWMClient, monitorID int) (bool, error) {
-	monitors, err := ListMonitors(cli)
-	if err != nil {
-		return false, err
-	}
-	for _, m := range monitors {
-		if m.MonitorID == monitorID {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
 // renameWorkspace renames a workspace from oldName to newName.
 func renameWorkspace(cli AeroSpaceWMClient, oldName, newName string) error {
 	response, err := cli.Connection().SendCommand(
@@ -188,35 +174,10 @@ func renameWorkspace(cli AeroSpaceWMClient, oldName, newName string) error {
 	return nil
 }
 
-// moveWorkspaceToMonitor moves a workspace to a specific monitor.
-func moveWorkspaceToMonitor(cli AeroSpaceWMClient, workspaceName string, monitorID int) error {
-	response, err := cli.Connection().SendCommand(
-		"move-workspace-to-monitor",
-		[]string{workspaceName, strconv.Itoa(monitorID)},
-	)
-	if err != nil {
-		return fmt.Errorf(
-			"unable to move workspace %q to monitor %d: %w",
-			workspaceName,
-			monitorID,
-			err,
-		)
-	}
-	if response.ExitCode != 0 {
-		return fmt.Errorf(
-			"unable to move workspace %q to monitor %d: %s",
-			workspaceName,
-			monitorID,
-			response.StdErr,
-		)
-	}
-	return nil
-}
-
 // repairMismatchedScratchpadWorkspace attempts to repair a scratchpad workspace
 // attached to the wrong monitor (detected by name mismatch).
-// It either moves the workspace to its correct monitor (if that monitor exists)
-// or renames it to match the current monitor.
+// It renames the workspace to match the monitor it's actually attached to,
+// respecting AeroSpace WM's workspace-to-monitor assignment configuration.
 func repairMismatchedScratchpadWorkspace(
 	cli AeroSpaceWMClient,
 	workspaceName string,
@@ -238,48 +199,35 @@ func repairMismatchedScratchpadWorkspace(
 		)
 		return nil
 	}
-	// Determine if the expected monitor exists
-	expectedMonitorExists, err := monitorExists(cli, expectedMonitorID)
-	if err != nil {
-		return fmt.Errorf("unable to check if monitor %d exists: %w", expectedMonitorID, err)
-	}
-	if expectedMonitorExists && expectedMonitorID != currentMonitorID {
-		// Move workspace to its correct monitor
-		logger.LogDebug("moving scratchpad workspace to its correct monitor",
-			"workspace", workspaceName,
-			"currentMonitor", currentMonitorID,
-			"targetMonitor", expectedMonitorID,
-		)
-		if err = moveWorkspaceToMonitor(cli, workspaceName, expectedMonitorID); err != nil {
-			return fmt.Errorf("failed to move workspace: %w", err)
+	// If the workspace name indicates a different monitor, rename it to match current monitor
+	if expectedMonitorID != currentMonitorID {
+		// Calculate the correct name for the current monitor
+		workspaces, err := ListWorkspacesWithMonitors(cli)
+		if err != nil {
+			return fmt.Errorf("unable to list workspaces: %w", err)
 		}
-		// After moving, workspace is attached to expectedMonitorID, not currentMonitorID.
-		// No rename needed.
+		monitorCount := countUniqueMonitors(workspaces)
+		newName := ScratchpadWorkspaceNameForMonitor(currentMonitorID, monitorCount)
+
+		if newName == workspaceName {
+			logger.LogDebug(
+				"scratchpad workspace already has correct name",
+				"workspace",
+				workspaceName,
+			)
+			return nil
+		}
+
+		logger.LogDebug("renaming scratchpad workspace to match current monitor",
+			"oldName", workspaceName,
+			"newName", newName,
+			"monitorID", currentMonitorID,
+		)
+
+		if err = renameWorkspace(cli, workspaceName, newName); err != nil {
+			return fmt.Errorf("failed to rename workspace: %w", err)
+		}
 		return nil
-	}
-	// Otherwise, rename workspace to match current monitor
-	// Get monitor count to decide naming
-	workspaces, err := ListWorkspacesWithMonitors(cli)
-	if err != nil {
-		return fmt.Errorf("unable to list workspaces: %w", err)
-	}
-	monitorCount := countUniqueMonitors(workspaces)
-	newName := ScratchpadWorkspaceNameForMonitor(currentMonitorID, monitorCount)
-	// Ensure newName is different from current name (should be, unless already correct)
-	if newName == workspaceName {
-		logger.LogDebug("scratchpad workspace already has correct name", "workspace", workspaceName)
-		return nil
-	}
-	// Check if target workspace already exists (should be rare)
-	// We could move windows from old to new? For simplicity, we just rename.
-	// If target workspace exists, rename will fail; we can try moving windows? Not now.
-	logger.LogDebug("renaming scratchpad workspace to match current monitor",
-		"oldName", workspaceName,
-		"newName", newName,
-		"monitorID", currentMonitorID,
-	)
-	if err = renameWorkspace(cli, workspaceName, newName); err != nil {
-		return fmt.Errorf("failed to rename workspace: %w", err)
 	}
 	return nil
 }
@@ -300,20 +248,24 @@ func ResolveScratchpadWorkspaceNameForMonitor(
 	monitorCount := countUniqueMonitors(workspaces)
 	expectedName := ScratchpadWorkspaceNameForMonitor(monitorID, monitorCount)
 
+	// Check ALL scratchpad workspaces on this monitor
 	for _, workspaceMonitor := range workspaces {
 		if workspaceMonitor.MonitorID == monitorID &&
 			IsScratchpadWorkspace(workspaceMonitor.Workspace) {
 			if workspaceMonitor.Workspace == expectedName {
-				return workspaceMonitor.Workspace, nil
+				// Found a correctly named workspace, nothing to repair
+				continue
 			}
-			// Scratchpad workspace attached to monitor but name doesn't match expected pattern.
-			// Attempt automatic repair.
+
+			// This workspace has wrong monitor ID in name but is on this monitor
+			// Attempt automatic repair
 			logger.GetDefaultLogger().LogError(
-				"scratchpad workspace name mismatch, attempting repair",
+				"found mismatched scratchpad workspace on monitor, attempting repair",
+				"workspace", workspaceMonitor.Workspace,
 				"monitorID", monitorID,
 				"expectedName", expectedName,
-				"actualName", workspaceMonitor.Workspace,
 			)
+
 			if err = repairMismatchedScratchpadWorkspace(cli, workspaceMonitor.Workspace, monitorID); err != nil {
 				logger.GetDefaultLogger().LogError(
 					"failed to repair mismatched scratchpad workspace",
@@ -321,14 +273,8 @@ func ResolveScratchpadWorkspaceNameForMonitor(
 					"monitorID", monitorID,
 					"error", err,
 				)
-				// Continue as before (skip this workspace)
-				continue
+				// Continue checking other workspaces even if repair fails
 			}
-			// Repair succeeded; workspace may have been renamed or moved.
-			// If renamed, its new name is expectedName (or .scratchpad.<monitorID>).
-			// If moved, it's no longer attached to this monitor.
-			// In either case, we can return expectedName for this monitor.
-			return expectedName, nil
 		}
 	}
 
