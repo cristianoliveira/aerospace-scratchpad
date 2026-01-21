@@ -94,7 +94,7 @@ func (h *hookHandler) handlePullWindow(
 		"focused-workspace", focusedWorkspace,
 	)
 
-	if aerospace.IsScratchpadWorkspace(prevWorkspace) {
+	if prevWorkspace == constants.DefaultScratchpadWorkspaceName {
 		h.logger.LogDebug(
 			"HOOK: previous workspace is scratchpad, nothing to do",
 			"workspace", prevWorkspace,
@@ -102,7 +102,7 @@ func (h *hookHandler) handlePullWindow(
 		return nil
 	}
 
-	if !aerospace.IsScratchpadWorkspace(focusedWorkspace) {
+	if focusedWorkspace != constants.DefaultScratchpadWorkspaceName {
 		h.logger.LogDebug(
 			"HOOK: focused workspace is not scratchpad",
 			"workspace", focusedWorkspace,
@@ -123,7 +123,7 @@ func (h *hookHandler) handlePullWindow(
 
 	h.logger.LogInfo("HOOK: focused window", "window", focusedWindow)
 
-	if !aerospace.IsScratchpadWorkspace(focusedWindow.Workspace) {
+	if focusedWindow.Workspace != constants.DefaultScratchpadWorkspaceName {
 		h.logger.LogDebug(
 			"HOOK: focused window is no longer in scratchpad, skipping move",
 			"workspace", focusedWindow.Workspace,

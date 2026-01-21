@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -35,13 +33,6 @@ type Querier interface {
 	// GetNextScratchpadWindow returns the next scratchpad window in the workspace
 	GetNextScratchpadWindow() (*windows.Window, error)
 
-	// GetNextScratchpadWindowForMonitor returns the next scratchpad window filtered by monitor.
-	// monitorID can be:
-	//   -1 for all monitors (same as GetNextScratchpadWindow)
-	//   -2 for current monitor
-	//   >=0 for specific monitor ID
-	GetNextScratchpadWindowForMonitor(monitorID int) (*windows.Window, error)
-
 	// GetFilteredWindows returns all windows that match the given filters
 	GetFilteredWindows(
 		windowNamePattern string,
@@ -53,39 +44,13 @@ type Querier interface {
 
 	// GetScratchpadWindows returns all scratchpad windows
 	// A scratchpad window is defined as:
-	// - A window in a scratchpad workspace (.scratchpad or .scratchpad.<monitor-id>), OR
+	// - A window in the .scratchpad workspace, OR
 	// - A floating window (WindowLayout == "floating")
 	GetScratchpadWindows() ([]windows.Window, error)
-
-	// GetScratchpadWindowsForMonitor returns scratchpad windows filtered by monitor.
-	// monitorID can be:
-	//   -1 for all monitors (same as GetScratchpadWindows)
-	//   -2 for current monitor
-	//   >=0 for specific monitor ID
-	GetScratchpadWindowsForMonitor(monitorID int) ([]windows.Window, error)
 }
 
 type QueryMaker struct {
 	cli AeroSpaceWMClient
-}
-
-// resolveMonitorID resolves the monitor ID for filtering.
-// Returns target monitor ID or error.
-func (a *QueryMaker) resolveMonitorID(monitorID int) (int, error) {
-	logger := logger.GetDefaultLogger()
-	if monitorID != -2 {
-		return monitorID, nil
-	}
-	focusedMonitor, err := GetFocusedMonitor(a.cli)
-	if err != nil {
-		if strings.Contains(err.Error(), "no focused monitor found") {
-			logger.LogDebug("no focused monitor found, defaulting to all monitors")
-			return -1, nil
-		}
-		logger.LogError("unable to get focused monitor", "error", err)
-		return 0, fmt.Errorf("unable to get focused monitor: %w", err)
-	}
-	return focusedMonitor.MonitorID, nil
 }
 
 // WorkspaceMonitor describes a workspace and its monitor attachment.
@@ -103,18 +68,11 @@ type MonitorInfo struct {
 const (
 	listWorkspacesMonitorFormat = "%{workspace} %{monitor-id}"
 	focusedMonitorFormat        = "%{monitor-id} %{monitor-name}"
-	nextStateFileName           = "next-state.json"
-	filterLogPrefix             = "FILTER: "
-	floatingLayout              = "floating"
 )
 
 var scratchpadWorkspacePattern = regexp.MustCompile(
 	fmt.Sprintf(`^\Q%s\E(?:\.\d+)?$`, constants.DefaultScratchpadWorkspaceName),
 )
-
-type nextState struct {
-	LastWindowID int `json:"lastWindowId"`
-}
 
 // IsScratchpadWorkspace reports whether the given workspace name matches the
 // scratchpad naming convention (default name or per-monitor variant).
@@ -147,27 +105,15 @@ func ResolveScratchpadWorkspaceNameForMonitor(
 	}
 
 	monitorCount := countUniqueMonitors(workspaces)
-	expectedName := ScratchpadWorkspaceNameForMonitor(monitorID, monitorCount)
 
 	for _, workspaceMonitor := range workspaces {
 		if workspaceMonitor.MonitorID == monitorID &&
 			IsScratchpadWorkspace(workspaceMonitor.Workspace) {
-			if workspaceMonitor.Workspace == expectedName {
-				return workspaceMonitor.Workspace, nil
-			}
-			// Scratchpad workspace attached to monitor but name doesn't match expected pattern.
-			// Log warning and skip it (treat as if no scratchpad workspace exists).
-			logger.GetDefaultLogger().LogError(
-				"scratchpad workspace name mismatch",
-				"monitorID", monitorID,
-				"expectedName", expectedName,
-				"actualName", workspaceMonitor.Workspace,
-			)
-			continue
+			return workspaceMonitor.Workspace, nil
 		}
 	}
 
-	return expectedName, nil
+	return ScratchpadWorkspaceNameForMonitor(monitorID, monitorCount), nil
 }
 
 // ListScratchpadWorkspaceNames returns the unique scratchpad workspace names
@@ -183,47 +129,6 @@ func ListScratchpadWorkspaceNames(cli AeroSpaceWMClient) ([]string, error) {
 	for _, workspaceMonitor := range workspaces {
 		if IsScratchpadWorkspace(workspaceMonitor.Workspace) {
 			scratchpadNames[workspaceMonitor.Workspace] = struct{}{}
-		}
-	}
-
-	if len(scratchpadNames) == 0 {
-		scratchpadNames[constants.DefaultScratchpadWorkspaceName] = struct{}{}
-	}
-
-	names := make([]string, 0, len(scratchpadNames))
-	for name := range scratchpadNames {
-		names = append(names, name)
-	}
-	// Keep deterministic order for consumers and tests.
-	sort.Strings(names)
-
-	return names, nil
-}
-
-// GetValidScratchpadWorkspaceNames returns scratchpad workspace names that are attached to existing monitors.
-// Orphaned scratchpad workspaces (where monitor ID no longer exists) are filtered out.
-func GetValidScratchpadWorkspaceNames(cli AeroSpaceWMClient) ([]string, error) {
-	workspaces, err := ListWorkspacesWithMonitors(cli)
-	if err != nil {
-		return nil, err
-	}
-	monitors, err := ListMonitors(cli)
-	if err != nil {
-		return nil, err
-	}
-	// Build set of existing monitor IDs
-	existingMonitorIDs := make(map[int]struct{})
-	for _, monitor := range monitors {
-		existingMonitorIDs[monitor.MonitorID] = struct{}{}
-	}
-
-	scratchpadNames := make(map[string]struct{})
-	for _, workspaceMonitor := range workspaces {
-		if IsScratchpadWorkspace(workspaceMonitor.Workspace) {
-			// Check if monitor ID exists
-			if _, exists := existingMonitorIDs[workspaceMonitor.MonitorID]; exists {
-				scratchpadNames[workspaceMonitor.Workspace] = struct{}{}
-			}
 		}
 	}
 
@@ -268,17 +173,6 @@ func ListWorkspacesWithMonitors(cli AeroSpaceWMClient) ([]WorkspaceMonitor, erro
 		return nil, fmt.Errorf("unable to parse workspaces with monitors: %w", err)
 	}
 
-	// Debug logging
-	var sample []string
-	for i := 0; i < len(workspaces) && i < 5; i++ {
-		sample = append(sample, workspaces[i].Workspace)
-	}
-	logger.GetDefaultLogger().LogDebug(
-		"workspaces with monitors listed",
-		"count", len(workspaces),
-		"sample", sample,
-	)
-
 	return workspaces, nil
 }
 
@@ -309,50 +203,7 @@ func GetFocusedMonitor(cli AeroSpaceWMClient) (*MonitorInfo, error) {
 		return nil, errors.New("no focused monitor found")
 	}
 
-	logger.GetDefaultLogger().LogDebug(
-		"focused monitor retrieved",
-		"monitorID", monitors[0].MonitorID,
-		"monitorName", monitors[0].MonitorName,
-	)
-
 	return &monitors[0], nil
-}
-
-// ListMonitors returns all monitors.
-func ListMonitors(cli AeroSpaceWMClient) ([]MonitorInfo, error) {
-	response, err := cli.Connection().SendCommand(
-		"list-monitors",
-		[]string{
-			"--json",
-			"--format",
-			focusedMonitorFormat,
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to list monitors: %w", err)
-	}
-
-	if response.ExitCode != 0 {
-		return nil, fmt.Errorf("unable to list monitors: %s", response.StdErr)
-	}
-
-	var monitors []MonitorInfo
-	if err = json.Unmarshal([]byte(response.StdOut), &monitors); err != nil {
-		return nil, fmt.Errorf("unable to parse monitors: %w", err)
-	}
-
-	// Debug logging
-	var monitorIDs []int
-	for _, m := range monitors {
-		monitorIDs = append(monitorIDs, m.MonitorID)
-	}
-	logger.GetDefaultLogger().LogDebug(
-		"monitors listed",
-		"count", len(monitors),
-		"monitorIDs", monitorIDs,
-	)
-
-	return monitors, nil
 }
 
 func countUniqueMonitors(workspaces []WorkspaceMonitor) int {
@@ -420,72 +271,12 @@ func (a *QueryMaker) GetNextScratchpadWindow() (*windows.Window, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Filter out windows from orphaned workspaces
-	validWindows, err := a.filterOutOrphanedWindows(scratchpadWindows)
-	if err != nil {
-		return nil, err
-	}
-	if len(validWindows) == 0 {
-		return nil, errors.New("no scratchpad windows found")
-	}
-	// Read state
-	state, err := readState()
-	if err != nil {
-		// If we can't read state, fallback to first window
-		//nolint:nilerr // fallback to first window on state read error
-		return &validWindows[0], nil
-	}
-	// Find index of last used window ID
-	lastIndex := -1
-	for i, w := range validWindows {
-		if w.WindowID == state.LastWindowID {
-			lastIndex = i
-			break
-		}
-	}
-	nextIndex := 0
-	if lastIndex >= 0 {
-		nextIndex = (lastIndex + 1) % len(validWindows)
-	}
-	nextWindow := validWindows[nextIndex]
-	// Update state with new window ID (ignore write errors)
-	state.LastWindowID = nextWindow.WindowID
-	_ = writeState(state)
-	return &nextWindow, nil
-}
 
-func (a *QueryMaker) GetNextScratchpadWindowForMonitor(monitorID int) (*windows.Window, error) {
-	scratchpadWindows, err := a.GetScratchpadWindowsForMonitor(monitorID)
-	if err != nil {
-		return nil, err
-	}
 	if len(scratchpadWindows) == 0 {
 		return nil, errors.New("no scratchpad windows found")
 	}
-	// Read state
-	state, err := readState()
-	if err != nil {
-		// If we can't read state, fallback to first window
-		//nolint:nilerr // fallback to first window on state read error
-		return &scratchpadWindows[0], nil
-	}
-	// Find index of last used window ID
-	lastIndex := -1
-	for i, w := range scratchpadWindows {
-		if w.WindowID == state.LastWindowID {
-			lastIndex = i
-			break
-		}
-	}
-	nextIndex := 0
-	if lastIndex >= 0 {
-		nextIndex = (lastIndex + 1) % len(scratchpadWindows)
-	}
-	nextWindow := scratchpadWindows[nextIndex]
-	// Update state with new window ID (ignore write errors)
-	state.LastWindowID = nextWindow.WindowID
-	_ = writeState(state)
-	return &nextWindow, nil
+
+	return &scratchpadWindows[0], nil
 }
 
 // Filter represents a filter with property and regex pattern.
@@ -506,7 +297,7 @@ func (a *QueryMaker) GetFilteredWindows(
 	appPattern, err := regexp.Compile(appNamePattern)
 	if err != nil {
 		logger.LogError(
-			filterLogPrefix+"unable to compile window pattern",
+			"FILTER: unable to compile window pattern",
 			"pattern",
 			appNamePattern,
 			"error",
@@ -517,11 +308,11 @@ func (a *QueryMaker) GetFilteredWindows(
 			err,
 		)
 	}
-	logger.LogDebug(filterLogPrefix+"compiled window pattern", "pattern", appPattern)
+	logger.LogDebug("FILTER: compiled window pattern", "pattern", appPattern)
 
 	filters, err := ParseFilters(filterFlags)
 	if err != nil {
-		logger.LogError(filterLogPrefix+"unable to parse filters", "error", err)
+		logger.LogError("FILTER: unable to parse filters", "error", err)
 		return nil, err
 	}
 
@@ -554,7 +345,7 @@ func (a *QueryMaker) GetFilteredWindows(
 
 	if len(filteredWindows) == 0 {
 		logger.LogDebug(
-			filterLogPrefix+"no windows matched the pattern",
+			"FILTER: no windows matched the pattern",
 			"pattern", appNamePattern,
 		)
 
@@ -579,19 +370,19 @@ func (a *QueryMaker) GetAllFloatingWindows() ([]windows.Window, error) {
 
 	allWindows, err := a.cli.Windows().GetAllWindows()
 	if err != nil {
-		logger.LogError(filterLogPrefix+"unable to get all windows", "error", err)
+		logger.LogError("FILTER: unable to get all windows", "error", err)
 		return nil, fmt.Errorf("unable to get windows: %w", err)
 	}
 
 	var floatingWindows []windows.Window
 	for _, window := range allWindows {
-		if window.WindowLayout == floatingLayout {
+		if window.WindowLayout == "floating" {
 			floatingWindows = append(floatingWindows, window)
 		}
 	}
 
 	logger.LogDebug(
-		filterLogPrefix+"found floating windows",
+		"FILTER: found floating windows",
 		"count", len(floatingWindows),
 	)
 
@@ -603,14 +394,14 @@ func (a *QueryMaker) GetScratchpadWindows() ([]windows.Window, error) {
 
 	allWindows, err := a.cli.Windows().GetAllWindows()
 	if err != nil {
-		logger.LogError(filterLogPrefix+"unable to get all windows", "error", err)
+		logger.LogError("FILTER: unable to get all windows", "error", err)
 		return nil, fmt.Errorf("unable to get windows: %w", err)
 	}
 
 	scratchpadWorkspaces, err := ListScratchpadWorkspaceNames(a.cli)
 	if err != nil {
 		logger.LogError(
-			filterLogPrefix+"unable to list scratchpad workspaces",
+			"FILTER: unable to list scratchpad workspaces",
 			"error", err,
 		)
 		scratchpadWorkspaces = []string{constants.DefaultScratchpadWorkspaceName}
@@ -642,7 +433,7 @@ func (a *QueryMaker) GetScratchpadWindows() ([]windows.Window, error) {
 
 	// Add floating windows
 	for _, window := range allWindows {
-		if window.WindowLayout == floatingLayout {
+		if window.WindowLayout == "floating" {
 			// Only add if not already in map (avoid duplicates)
 			if _, exists := scratchpadWindowMap[window.WindowID]; !exists {
 				scratchpadWindowMap[window.WindowID] = window
@@ -661,153 +452,7 @@ func (a *QueryMaker) GetScratchpadWindows() ([]windows.Window, error) {
 		"count", len(scratchpadWindows),
 	)
 
-	// Filter out windows from orphaned scratchpad workspaces
-	filteredWindows, err := a.filterOutOrphanedWindows(scratchpadWindows)
-	if err != nil {
-		logger.LogDebug(
-			"FILTER: unable to filter orphaned windows",
-			"error", err,
-		)
-		// Return original windows if filtering fails
-		return scratchpadWindows, nil
-	}
-
-	logger.LogDebug(
-		"FILTER: after orphaned filtering",
-		"count", len(filteredWindows),
-	)
-
-	return filteredWindows, nil
-}
-
-// GetScratchpadWindowsForMonitor returns scratchpad windows filtered by monitor.
-// monitorID can be:
-//
-//	-1 for all monitors (same as GetScratchpadWindows)
-//	-2 for current monitor
-//	>=0 for specific monitor ID
-func (a *QueryMaker) GetScratchpadWindowsForMonitor(monitorID int) ([]windows.Window, error) {
-	logger := logger.GetDefaultLogger()
-
-	// Resolve monitor ID if needed
-	targetMonitorID, err := a.resolveMonitorID(monitorID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get all scratchpad windows
-	allWindows, err := a.GetScratchpadWindows()
-	if err != nil {
-		return nil, err
-	}
-
-	// If targetMonitorID == -1, return all windows (no filtering)
-	if targetMonitorID == -1 {
-		return allWindows, nil
-	}
-
-	// Get workspace-to-monitor mapping
-	workspaces, err := ListWorkspacesWithMonitors(a.cli)
-	if err != nil {
-		logger.LogDebug(
-			"unable to list workspaces with monitors, skipping monitor filtering",
-			"error",
-			err,
-		)
-		// If we can't get mapping, return all windows (conservative)
-		return allWindows, nil
-	}
-	workspaceMonitor := make(map[string]int)
-	for _, wm := range workspaces {
-		workspaceMonitor[wm.Workspace] = wm.MonitorID
-	}
-
-	// Filter windows based on monitor ID
-	var filtered []windows.Window
-	for _, window := range allWindows {
-		// Determine monitor ID for this window's workspace
-		mon, ok := workspaceMonitor[window.Workspace]
-		if !ok {
-			// Workspace not found (should not happen). Skip? Include conservatively.
-			logger.LogDebug("workspace not found in mapping", "workspace", window.Workspace)
-			// Include window to avoid false negatives
-			filtered = append(filtered, window)
-			continue
-		}
-		if mon == targetMonitorID {
-			filtered = append(filtered, window)
-		}
-	}
-
-	logger.LogDebug(
-		"FILTER: monitor filtered windows",
-		"targetMonitorID",
-		targetMonitorID,
-		"count",
-		len(filtered),
-	)
-	return filtered, nil
-}
-
-// filterOutOrphanedWindows filters out windows that belong to orphaned scratchpad workspaces
-// (workspaces whose monitor no longer exists). Floating windows are always included.
-func (a *QueryMaker) filterOutOrphanedWindows(
-	ws []windows.Window,
-) ([]windows.Window, error) { //nolint:unparam // error always nil for future compatibility
-	logger := logger.GetDefaultLogger()
-	workspaces, err := ListWorkspacesWithMonitors(a.cli)
-	if err != nil {
-		logger.LogDebug(
-			filterLogPrefix+"unable to list workspaces with monitors, skipping orphaned filtering",
-			"error", err,
-		)
-		return ws, nil
-	}
-	monitors, err := ListMonitors(a.cli)
-	if err != nil {
-		logger.LogDebug(
-			filterLogPrefix+"unable to list monitors, skipping orphaned filtering",
-			"error", err,
-		)
-		return ws, nil
-	}
-	if len(monitors) == 0 {
-		// No monitors listed; assume all monitor IDs exist (e.g., mock environment)
-		logger.LogDebug(filterLogPrefix + "monitor list empty, skipping orphaned filtering")
-		return ws, nil
-	}
-	// Build set of existing monitor IDs
-	existingMonitorIDs := make(map[int]struct{})
-	for _, monitor := range monitors {
-		existingMonitorIDs[monitor.MonitorID] = struct{}{}
-	}
-	// Build map from workspace name to monitor ID
-	workspaceMonitor := make(map[string]int)
-	for _, wm := range workspaces {
-		workspaceMonitor[wm.Workspace] = wm.MonitorID
-	}
-
-	var filtered []windows.Window
-	for _, window := range ws {
-		// Floating windows are always included
-		if window.WindowLayout == floatingLayout {
-			filtered = append(filtered, window)
-			continue
-		}
-		// Determine monitor ID for window's workspace
-		monitorID, exists := workspaceMonitor[window.Workspace]
-		if !exists {
-			// Workspace not in mapping (e.g., unattached workspace).
-			// Assume monitor exists (conservative) to avoid breaking existing tests.
-			filtered = append(filtered, window)
-			continue
-		}
-		if _, ok := existingMonitorIDs[monitorID]; ok {
-			filtered = append(filtered, window)
-		}
-		// else: monitor ID does not exist, skip (orphaned workspace)
-	}
-	return filtered, nil
+	return scratchpadWindows, nil
 }
 
 // ParseFilters parses filter flags and returns a slice of Filter structs.
@@ -897,49 +542,6 @@ func ApplyFilters(window windows.Window, filters []Filter) (bool, error) {
 	}
 
 	return true, nil
-}
-
-func getStateFilePath() (string, error) {
-	cacheDir, err := os.UserCacheDir()
-	if err != nil {
-		return "", err
-	}
-	dir := filepath.Join(cacheDir, "aerospace-scratchpad")
-	if err = os.MkdirAll(dir, 0750); err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, nextStateFileName), nil
-}
-
-func readState() (*nextState, error) {
-	path, err := getStateFilePath()
-	if err != nil {
-		return nil, err
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return &nextState{LastWindowID: 0}, nil
-		}
-		return nil, err
-	}
-	var state nextState
-	if err = json.Unmarshal(data, &state); err != nil {
-		return nil, err
-	}
-	return &state, nil
-}
-
-func writeState(state *nextState) error {
-	path, err := getStateFilePath()
-	if err != nil {
-		return err
-	}
-	data, err := json.Marshal(state)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, 0600)
 }
 
 // NewAerospaceQuerier creates a new AerospaceQuerier.

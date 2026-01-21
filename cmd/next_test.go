@@ -2,8 +2,6 @@ package cmd_test
 
 import (
 	"errors"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -29,16 +27,6 @@ func TestNextCmd(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
-		// Reset round-robin state to ensure deterministic test
-		func() {
-			cacheDir, err := os.UserCacheDir()
-			if err != nil {
-				t.Logf("Unable to get cache dir: %v", err)
-				return
-			}
-			statePath := filepath.Join(cacheDir, "aerospace-scratchpad", "next-state.json")
-			os.Remove(statePath)
-		}()
 
 		tree := []testutils.AeroSpaceTree{
 			{
@@ -81,6 +69,7 @@ func TestNextCmd(t *testing.T) {
 		scratchpadWindows := testutils.ExtractScratchpadWindows(tree)
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		windowID := 9999
 		gomock.InOrder(
 			aerospaceClient.GetWorkspacesMock().EXPECT().
 				GetFocusedWorkspace().
@@ -99,7 +88,9 @@ func TestNextCmd(t *testing.T) {
 					workspaces.MoveWindowToWorkspaceArgs{
 						WorkspaceName: focusedTree.Workspace.Workspace,
 					},
-					gomock.Any(),
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &windowID,
+					},
 				).
 				Return(nil).
 				Times(1),
