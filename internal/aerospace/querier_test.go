@@ -756,12 +756,22 @@ func TestAeroSpaceQuerier(t *testing.T) {
 					ExitCode: 0,
 					StdOut:   `[{"workspace":".scratchpad.1","monitor-id":2},{"workspace":"1","monitor-id":1}]`,
 				}, nil).
-				Times(2)
-				// Called once by ResolveScratchpadWorkspaceNameForMonitor, once by repairMismatchedScratchpadWorkspace
+				Times(1)
+			// Call to list-monitors from monitorExists
 			socket.EXPECT().
 				SendCommand(
-					"rename-workspace",
-					[]string{".scratchpad.1", ".scratchpad.2"},
+					"list-monitors",
+					[]string{"--json", "--format", "%{monitor-id} %{monitor-name}"},
+				).
+				Return(&client.Response{
+					ExitCode: 0,
+					StdOut:   `[{"monitor-id":1,"monitor-name":"monitor1"},{"monitor-id":2,"monitor-name":"monitor2"}]`,
+				}, nil).
+				Times(1)
+			socket.EXPECT().
+				SendCommand(
+					"move-workspace-to-monitor",
+					[]string{".scratchpad.1", "1"},
 				).
 				Return(&client.Response{
 					ExitCode: 0,

@@ -100,19 +100,6 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				currentMonitorID,
 			)
 
-			// Auto-heal scratchpad workspace mappings before showing windows
-			_, err = aerospace.ResolveScratchpadWorkspaceNameForMonitor(
-				aerospaceClient.GetUnderlyingClient(),
-				currentMonitorID,
-			)
-			if err != nil {
-				logger.LogError(
-					"SHOW: unable to resolve scratchpad workspace for monitor",
-					"error",
-					err,
-				)
-			}
-
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
 			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 
