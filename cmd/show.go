@@ -12,7 +12,6 @@ import (
 	windowsipc "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/cli"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 )
@@ -81,6 +80,24 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				"SHOW: retrieved focused workspace",
 				"workspace",
 				focusedWorkspace,
+			)
+
+			// Get the current monitor ID before any focus changes
+			currentMonitorID := 0
+			monitor, err := aerospace.GetFocusedMonitor(aerospaceClient.GetUnderlyingClient())
+			if err != nil {
+				logger.LogError(
+					"SHOW: unable to get focused monitor, defaulting to 0",
+					"error",
+					err,
+				)
+			} else {
+				currentMonitorID = monitor.MonitorID
+			}
+			logger.LogDebug(
+				"SHOW: retrieved focused monitor",
+				"monitorID",
+				currentMonitorID,
 			)
 
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
@@ -201,30 +218,16 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				return
 			}
 
-			for i, window := range windowsInFocusedWorkspace {
+			for _, window := range windowsInFocusedWorkspace {
 				logger.LogDebug(
 					"SHOW: processing window in focused workspace",
 					"window", window,
 					"hasAtLeastOneWindowFocused", hasAtLeastOneWindowFocused,
 				)
-				if hasAtLeastOneWindowFocused { //nolint:nestif // conditional flow mirrors show toggle behavior
-					if i == 0 {
-						logger.LogDebug(
-							"SHOW: first window to hide, will focus next tiling window after hiding",
-							"window",
-							window,
-						)
-						if err = aerospaceClient.FocusNextTilingWindow(); err != nil {
-							// No need to exit here, just log the error and continue
-							logger.LogError(
-								"SHOW: unable to focus next tiling window",
-								"error",
-								err,
-							)
-						}
-					}
-
-					moveErr := mover.MoveWindowToScratchpad(window)
+				if hasAtLeastOneWindowFocused { // conditional flow mirrors show toggle behavior
+					targetWorkspace, moveErr := mover.MoveWindowToScratchpadForMonitor(
+						window, currentMonitorID,
+					)
 					if moveErr != nil {
 						logger.LogDebug(
 							"Error: unable to move window '%+v' to scratchpad\n%s",
@@ -239,7 +242,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 							WindowID:        window.WindowID,
 							AppName:         window.AppName,
 							Workspace:       window.Workspace,
-							TargetWorkspace: constants.DefaultScratchpadWorkspaceName,
+							TargetWorkspace: targetWorkspace,
 							Result:          "error",
 							Message:         moveErr.Error(),
 						}); printErr != nil {
@@ -254,7 +257,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 						WindowID:        window.WindowID,
 						AppName:         window.AppName,
 						Workspace:       window.Workspace,
-						TargetWorkspace: constants.DefaultScratchpadWorkspaceName,
+						TargetWorkspace: targetWorkspace,
 						Result:          "ok",
 					}); printErr != nil {
 						logger.LogError("SHOW: unable to write output", "error", printErr)

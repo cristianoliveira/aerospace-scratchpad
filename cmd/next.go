@@ -35,6 +35,12 @@ It does not send the windows back to the scratchpad, but rather focuses the next
 				return
 			}
 
+			monitorID, err := parseMonitorFlag(cmd)
+			if err != nil {
+				stderr.Printf("Error: %v\n", err)
+				return
+			}
+
 			focusedWorkspace, err := aerospaceClient.GetFocusedWorkspace()
 			if err != nil {
 				stderr.Println(
@@ -47,7 +53,7 @@ It does not send the windows back to the scratchpad, but rather focuses the next
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
 			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 
-			window, err := querier.GetNextScratchpadWindow()
+			window, err := querier.GetNextScratchpadWindowForMonitor(monitorID)
 			if err != nil {
 				stderr.Println("Error: %v", err)
 				return

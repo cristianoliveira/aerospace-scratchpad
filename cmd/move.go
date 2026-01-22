@@ -14,7 +14,6 @@ import (
 	windowsipc "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/cli"
-	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/stderr"
 )
@@ -107,6 +106,25 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
 			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 
+			// Get the current monitor ID before any focus changes
+			currentMonitorID := 0
+			var monitor *aerospace.MonitorInfo
+			monitor, err = aerospace.GetFocusedMonitor(aerospaceClient)
+			if err != nil {
+				logger.LogError(
+					"MOVE: unable to get focused monitor, defaulting to 0",
+					"error",
+					err,
+				)
+			} else {
+				currentMonitorID = monitor.MonitorID
+			}
+			logger.LogDebug(
+				"MOVE: retrieved focused monitor",
+				"monitorID",
+				currentMonitorID,
+			)
+
 			var windows []windowsipc.Window
 			if allFloatingFlag {
 				// Get all floating windows when --all-floating is set
@@ -144,18 +162,6 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 				"filterFlags", filterFlags,
 			)
 
-			logger.LogDebug(
-				"SHOW: first window to hide, will focus next tiling window after hiding",
-			)
-			if err = aerospaceClient.FocusNextTilingWindow(); err != nil {
-				// No need to exit here, just log the error and continue
-				logger.LogError(
-					"SHOW: unable to focus next tiling window",
-					"error",
-					err,
-				)
-			}
-
 			// When using --all-floating, skip the focused window check
 			if allFloatingFlag && len(windows) == 0 {
 				if printErr := formatter.Print(cli.OutputEvent{
@@ -183,7 +189,9 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 					continue
 				}
 
-				moveErr := mover.MoveWindowToScratchpad(window)
+				targetWorkspace, moveErr := mover.MoveWindowToScratchpadForMonitor(
+					window, currentMonitorID,
+				)
 				if moveErr != nil {
 					if strings.Contains(
 						moveErr.Error(),
@@ -195,7 +203,7 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 							WindowID:        window.WindowID,
 							AppName:         window.AppName,
 							Workspace:       window.Workspace,
-							TargetWorkspace: constants.DefaultScratchpadWorkspaceName,
+							TargetWorkspace: targetWorkspace,
 							Result:          "skipped",
 							Message:         "already in scratchpad",
 						}); printErr != nil {
@@ -220,7 +228,7 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 					WindowID:        window.WindowID,
 					AppName:         window.AppName,
 					Workspace:       window.Workspace,
-					TargetWorkspace: constants.DefaultScratchpadWorkspaceName,
+					TargetWorkspace: targetWorkspace,
 					Result:          "ok",
 				}); printErr != nil {
 					logger.LogError("MOVE: unable to write output", "error", printErr)

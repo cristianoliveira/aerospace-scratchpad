@@ -6,10 +6,14 @@ import (
 
 	"go.uber.org/mock/gomock"
 
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/focus"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/layout"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/client"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
+	client_mock "github.com/cristianoliveira/aerospace-scratchpad/internal/mocks/client"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
@@ -132,10 +136,16 @@ func TestAeroSpaceQuerier(t *testing.T) {
 
 		spWin := []windows.Window{{WindowID: 77}}
 		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
-		mockClient.GetWindowsMock().EXPECT().
-			GetAllWindowsByWorkspace(".scratchpad").
-			Return(spWin, nil).
-			Times(1)
+		gomock.InOrder(
+			mockClient.GetWindowsMock().EXPECT().
+				GetAllWindows().
+				Return([]windows.Window{}, nil).
+				Times(1),
+			mockClient.GetWindowsMock().EXPECT().
+				GetAllWindowsByWorkspace(".scratchpad").
+				Return(spWin, nil).
+				Times(1),
+		)
 		q := aerospace.NewAerospaceQuerier(mockClient)
 		w, err := q.GetNextScratchpadWindow()
 		if err != nil || w == nil || w.WindowID != 77 {
@@ -150,10 +160,16 @@ func TestAeroSpaceQuerier(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockClient := testutils.NewMockAeroSpaceWM(ctrl)
-			mockClient.GetWindowsMock().EXPECT().
-				GetAllWindowsByWorkspace(".scratchpad").
-				Return([]windows.Window{}, nil).
-				Times(1)
+			gomock.InOrder(
+				mockClient.GetWindowsMock().EXPECT().
+					GetAllWindows().
+					Return([]windows.Window{}, nil).
+					Times(1),
+				mockClient.GetWindowsMock().EXPECT().
+					GetAllWindowsByWorkspace(".scratchpad").
+					Return([]windows.Window{}, nil).
+					Times(1),
+			)
 			q := aerospace.NewAerospaceQuerier(mockClient)
 			if _, err := q.GetNextScratchpadWindow(); err == nil {
 				t.Fatalf("expected error when no scratchpad windows")
@@ -256,6 +272,74 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		}
 		if len(wins) != 1 {
 			t.Fatalf("expected 1 window (no duplicates), got %d windows", len(wins))
+		}
+	})
+
+	t.Run("GetScratchpadWindows collects per monitor scratchpads", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		mockClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: ".scratchpad", MonitorID: 1},
+			{Workspace: ".scratchpad.2", MonitorID: 2},
+			{Workspace: "work", MonitorID: 2},
+		})
+
+		allWindows := []windows.Window{
+			{WindowID: 1, WindowLayout: "floating", Workspace: ".scratchpad"},
+			{WindowID: 2, WindowLayout: "tiling", Workspace: ".scratchpad.2"},
+			{WindowID: 3, WindowLayout: "floating", Workspace: "ws1"},
+		}
+
+		gomock.InOrder(
+			mockClient.GetWindowsMock().EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1),
+			mockClient.GetWindowsMock().EXPECT().
+				GetAllWindowsByWorkspace(".scratchpad").
+				Return(
+					[]windows.Window{
+						{WindowID: 1, WindowLayout: "floating", Workspace: ".scratchpad"},
+					},
+					nil,
+				).
+				Times(1),
+			mockClient.GetWindowsMock().EXPECT().
+				GetAllWindowsByWorkspace(".scratchpad.2").
+				Return(
+					[]windows.Window{
+						{WindowID: 2, WindowLayout: "tiling", Workspace: ".scratchpad.2"},
+					},
+					nil,
+				).
+				Times(1),
+		)
+
+		q := aerospace.NewAerospaceQuerier(mockClient)
+		wins, err := q.GetScratchpadWindows()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if len(wins) != 3 {
+			t.Fatalf("expected 3 scratchpad windows, got %d", len(wins))
+		}
+
+		ids := make(map[int]struct{})
+		for _, win := range wins {
+			ids[win.WindowID] = struct{}{}
+		}
+
+		if _, ok := ids[1]; !ok {
+			t.Fatalf("expected window 1 from monitor 1 scratchpad")
+		}
+		if _, ok := ids[2]; !ok {
+			t.Fatalf("expected window 2 from monitor 2 scratchpad")
+		}
+		if _, ok := ids[3]; !ok {
+			t.Fatalf("expected floating window 3 to be included")
 		}
 	})
 
@@ -472,4 +556,296 @@ func TestAeroSpaceQuerier(t *testing.T) {
 			}
 		},
 	)
+
+	t.Run("ListWorkspacesWithMonitors returns workspace mapping", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+		socket.EXPECT().
+			SendCommand(
+				"list-workspaces",
+				[]string{"--all", "--json", "--format", "%{workspace} %{monitor-id}"},
+			).
+			Return(&client.Response{
+				ExitCode: 0,
+				StdOut:   `[{"workspace":"1","monitor-id":1},{"workspace":"dev","monitor-id":2}]`,
+			}, nil).
+			Times(1)
+
+		result, err := aerospace.ListWorkspacesWithMonitors(
+			&mockConnectionAeroSpaceClient{conn: socket},
+		)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(result) != 2 ||
+			result[0].Workspace != "1" || result[0].MonitorID != 1 ||
+			result[1].Workspace != "dev" || result[1].MonitorID != 2 {
+			t.Fatalf("unexpected workspace mapping: %+v", result)
+		}
+	})
+
+	t.Run("ListWorkspacesWithMonitors returns error on non-zero exit", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+		socket.EXPECT().
+			SendCommand(
+				"list-workspaces",
+				[]string{"--all", "--json", "--format", "%{workspace} %{monitor-id}"},
+			).
+			Return(&client.Response{
+				ExitCode: 1,
+				StdErr:   "boom",
+			}, nil).
+			Times(1)
+
+		if _, err := aerospace.ListWorkspacesWithMonitors(&mockConnectionAeroSpaceClient{conn: socket}); err == nil {
+			t.Fatalf("expected error when command fails")
+		}
+	})
+
+	t.Run("GetFocusedMonitor returns focused monitor", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+		socket.EXPECT().
+			SendCommand(
+				"list-monitors",
+				[]string{"--focused", "--json", "--format", "%{monitor-id} %{monitor-name}"},
+			).
+			Return(&client.Response{
+				ExitCode: 0,
+				StdOut:   `[{"monitor-id":2,"monitor-name":"DELL U2720"}]`,
+			}, nil).
+			Times(1)
+
+		monitor, err := aerospace.GetFocusedMonitor(&mockConnectionAeroSpaceClient{conn: socket})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if monitor.MonitorID != 2 || monitor.MonitorName != "DELL U2720" {
+			t.Fatalf("unexpected monitor info: %+v", monitor)
+		}
+	})
+
+	t.Run("GetFocusedMonitor returns error when none focused", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+		socket.EXPECT().
+			SendCommand(
+				"list-monitors",
+				[]string{"--focused", "--json", "--format", "%{monitor-id} %{monitor-name}"},
+			).
+			Return(&client.Response{
+				ExitCode: 0,
+				StdOut:   `[]`,
+			}, nil).
+			Times(1)
+
+		if _, err := aerospace.GetFocusedMonitor(&mockConnectionAeroSpaceClient{conn: socket}); err == nil {
+			t.Fatalf("expected error when no focused monitor is returned")
+		}
+	})
+
+	t.Run("IsScratchpadWorkspace matches default and per-monitor", func(t *testing.T) {
+		cases := map[string]bool{
+			".scratchpad":   true,
+			".scratchpad.2": true,
+			"scratchpad":    false,
+			".scratchpad-x": false,
+		}
+
+		for workspace, expected := range cases {
+			if aerospace.IsScratchpadWorkspace(workspace) != expected {
+				t.Fatalf("unexpected match result for %s", workspace)
+			}
+		}
+	})
+
+	t.Run(
+		"ScratchpadWorkspaceNameForMonitor keeps compatibility on single monitor",
+		func(t *testing.T) {
+			if got := aerospace.ScratchpadWorkspaceNameForMonitor(2, 1); got != ".scratchpad" {
+				t.Fatalf("expected default scratchpad for single monitor, got %s", got)
+			}
+		},
+	)
+
+	t.Run("ScratchpadWorkspaceNameForMonitor appends monitor on multi-monitor", func(t *testing.T) {
+		if got := aerospace.ScratchpadWorkspaceNameForMonitor(3, 2); got != ".scratchpad.3" {
+			t.Fatalf("expected per-monitor scratchpad name, got %s", got)
+		}
+	})
+
+	t.Run("ResolveScratchpadWorkspaceNameForMonitor returns existing mapping", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+		socket.EXPECT().
+			SendCommand(
+				"list-workspaces",
+				[]string{"--all", "--json", "--format", "%{workspace} %{monitor-id}"},
+			).
+			Return(&client.Response{
+				ExitCode: 0,
+				StdOut:   `[{"workspace":".scratchpad.2","monitor-id":2},{"workspace":"1","monitor-id":1}]`,
+			}, nil).
+			Times(1)
+
+		name, err := aerospace.ResolveScratchpadWorkspaceNameForMonitor(
+			&mockConnectionAeroSpaceClient{conn: socket},
+			2,
+		)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if name != ".scratchpad.2" {
+			t.Fatalf("expected existing scratchpad name, got %s", name)
+		}
+	})
+
+	t.Run("ResolveScratchpadWorkspaceNameForMonitor builds name when missing", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+		socket.EXPECT().
+			SendCommand(
+				"list-workspaces",
+				[]string{"--all", "--json", "--format", "%{workspace} %{monitor-id}"},
+			).
+			Return(&client.Response{
+				ExitCode: 0,
+				StdOut:   `[{"workspace":"1","monitor-id":1},{"workspace":"2","monitor-id":2}]`,
+			}, nil).
+			Times(1)
+
+		name, err := aerospace.ResolveScratchpadWorkspaceNameForMonitor(
+			&mockConnectionAeroSpaceClient{conn: socket},
+			2,
+		)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if name != ".scratchpad.2" {
+			t.Fatalf("expected generated scratchpad name, got %s", name)
+		}
+	})
+
+	t.Run(
+		"ResolveScratchpadWorkspaceNameForMonitor skips mismatched workspace name",
+		func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+			socket.EXPECT().
+				SendCommand(
+					"list-workspaces",
+					[]string{"--all", "--json", "--format", "%{workspace} %{monitor-id}"},
+				).
+				Return(&client.Response{
+					ExitCode: 0,
+					StdOut:   `[{"workspace":".scratchpad.1","monitor-id":2},{"workspace":"1","monitor-id":1}]`,
+				}, nil).
+				Times(1)
+
+			name, err := aerospace.ResolveScratchpadWorkspaceNameForMonitor(
+				&mockConnectionAeroSpaceClient{conn: socket},
+				2,
+			)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if name != ".scratchpad.2" {
+				t.Fatalf("expected generated scratchpad name, got %s", name)
+			}
+		},
+	)
+
+	t.Run("ListScratchpadWorkspaceNames returns detected scratchpads", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+		socket.EXPECT().
+			SendCommand(
+				"list-workspaces",
+				[]string{"--all", "--json", "--format", "%{workspace} %{monitor-id}"},
+			).
+			Return(&client.Response{
+				ExitCode: 0,
+				StdOut:   `[{"workspace":".scratchpad","monitor-id":1},{"workspace":".scratchpad.2","monitor-id":2},{"workspace":"work","monitor-id":2}]`,
+			}, nil).
+			Times(1)
+
+		names, err := aerospace.ListScratchpadWorkspaceNames(
+			&mockConnectionAeroSpaceClient{conn: socket},
+		)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(names) != 2 || names[0] != ".scratchpad" || names[1] != ".scratchpad.2" {
+			t.Fatalf("unexpected scratchpad names: %+v", names)
+		}
+	})
+
+	t.Run("ListScratchpadWorkspaceNames falls back to default when absent", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+		socket.EXPECT().
+			SendCommand(
+				"list-workspaces",
+				[]string{"--all", "--json", "--format", "%{workspace} %{monitor-id}"},
+			).
+			Return(&client.Response{
+				ExitCode: 0,
+				StdOut:   `[{"workspace":"1","monitor-id":1}]`,
+			}, nil).
+			Times(1)
+
+		names, err := aerospace.ListScratchpadWorkspaceNames(
+			&mockConnectionAeroSpaceClient{conn: socket},
+		)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(names) != 1 || names[0] != ".scratchpad" {
+			t.Fatalf("expected default scratchpad fallback, got %+v", names)
+		}
+	})
+}
+
+// mockConnectionAeroSpaceClient implements AeroSpaceWMClient by exposing only the raw connection.
+type mockConnectionAeroSpaceClient struct {
+	conn client.AeroSpaceConnection
+}
+
+func (m *mockConnectionAeroSpaceClient) Windows() *windows.Service {
+	return nil
+}
+
+func (m *mockConnectionAeroSpaceClient) Workspaces() *workspaces.Service {
+	return nil
+}
+
+func (m *mockConnectionAeroSpaceClient) Focus() *focus.Service {
+	return nil
+}
+
+func (m *mockConnectionAeroSpaceClient) Layout() *layout.Service {
+	return nil
+}
+
+func (m *mockConnectionAeroSpaceClient) Connection() client.AeroSpaceConnection {
+	return m.conn
 }
