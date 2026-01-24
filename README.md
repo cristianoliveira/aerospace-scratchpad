@@ -94,6 +94,13 @@ The scratchpad windows live on dedicated workspaces (default: `.scratchpad`, or 
 
 The `list` and `next` commands support a `--monitor` flag to filter scratchpad windows by monitor (current, all, or specific monitor ID).
 
+The `--monitor` flag accepts:
+- `current` (default): Filter by the currently focused monitor
+- `all`: Include scratchpad windows from all monitors
+- `<monitor-id>`: Specific monitor ID (e.g., `1`, `2`)
+
+Per-monitor scratchpad workspaces follow the pattern: `.scratchpad.<monitor-id>`
+
 ```toml
 # ~/.config/aerospace/config.toml
 # ...your configuration

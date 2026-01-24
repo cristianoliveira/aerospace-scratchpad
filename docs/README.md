@@ -250,9 +250,35 @@ aerospace-scratchpad hook pull-window --help
 
 It will send the window to a "special" workspace called `.scratchpad` (or `.scratchpad.<monitor-id>` for multi-monitor setups). This workspace is like any other workspace, but can be ignored. The window will be hidden until you show it again.
 
-When you have multiple monitors, each monitor can have its own scratchpad workspace (e.g., `.scratchpad.1`, `.scratchpad.2`). Windows are moved to the scratchpad workspace attached to the monitor they're currently on. This ensures that scratchpad windows stay associated with the same monitor.
+When you have multiple monitors, each monitor can have its own scratchpad workspace (e.g., `.scratchpad.1`, `.scratchpad.2`). Windows are moved to the scratchpad workspace attached to the **currently focused monitor** when the command is executed. This ensures scratchpad windows are organized by the monitor you're actively using.
 
 For single-monitor setups, the default `.scratchpad` workspace is used for backward compatibility.
+
+### Multi-Monitor Configuration
+
+For optimal multi-monitor scratchpad experience:
+
+1. **Prevent workspace drift**: Add to your `aerospace.toml`:
+   ```toml
+   workspace-to-monitor-force-assignment = {
+       ".scratchpad.1" = 1,
+       ".scratchpad.2" = 2
+   }
+   ```
+
+2. **Monitor-aware commands**: Use the `--monitor` flag with `list` and `next` commands:
+   ```bash
+   # List scratchpad windows on current monitor
+   aerospace-scratchpad list --monitor current
+   
+   # List all scratchpad windows across all monitors  
+   aerospace-scratchpad list --monitor all
+   
+   # List scratchpad windows on monitor 2
+   aerospace-scratchpad list --monitor 2
+   ```
+
+3. **Hook integration**: The `hook pull-window` command automatically handles both `.scratchpad` and `.scratchpad.<monitor-id>` workspaces.
 
 ### Communication with AeroSpaceWM
 
