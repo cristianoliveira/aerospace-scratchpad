@@ -740,7 +740,7 @@ func TestAeroSpaceQuerier(t *testing.T) {
 	})
 
 	t.Run(
-		"ResolveScratchpadWorkspaceNameForMonitor skips mismatched workspace name",
+		"ResolveScratchpadWorkspaceNameForMonitor accepts mismatched workspace name",
 		func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
@@ -764,8 +764,8 @@ func TestAeroSpaceQuerier(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if name != ".scratchpad.2" {
-				t.Fatalf("expected generated scratchpad name, got %s", name)
+			if name != ".scratchpad.1" {
+				t.Fatalf("expected existing mismatched scratchpad name, got %s", name)
 			}
 		},
 	)
