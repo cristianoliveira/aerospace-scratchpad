@@ -594,6 +594,11 @@ func (a *QueryMaker) GetScratchpadWindows() ([]windows.Window, error) {
 		scratchpadWindows = append(scratchpadWindows, window)
 	}
 
+	// Sort by WindowID ascending for stable ordering
+	sort.Slice(scratchpadWindows, func(i, j int) bool {
+		return scratchpadWindows[i].WindowID < scratchpadWindows[j].WindowID
+	})
+
 	logger.LogDebug(
 		"FILTER: found scratchpad windows",
 		"count", len(scratchpadWindows),
