@@ -19,7 +19,7 @@ Command: |
 Output:
   status: success
   stdout: |
-    command=next action=to-workspace window_id=9999 app_name="Scratchpad Window" workspace="" target_workspace=ws1 result=ok message=""
+    command=next action=to-workspace window_id=8888 app_name="Another Scratchpad Window" workspace="" target_workspace=ws1 result=ok message=""
   error: ""
 
 ---
@@ -60,6 +60,6 @@ Output:
   status: error
   stdout: ""
   error: |
-    Error: unable to move window '9999 | Scratchpad Window ' to workspace 'ws1': mocked_move_error
+    Error: unable to move window '8888 | Scratchpad Window ' to workspace 'ws1': mocked_move_error
 
 ---

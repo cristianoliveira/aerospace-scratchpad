@@ -386,3 +386,43 @@ Output:
   error: ""
 
 ---
+
+[TestShowCmd/shows_window_from_monitor-specific_scratchpad - 1]
+Context:
+  workspaces:
+  - workspace: .scratchpad.1
+  - workspace: ws2
+    focused-window-id: 91011
+  windows:
+  - window-id: 5678
+    app-name: Finder
+    workspace: .scratchpad.1
+  - window-id: 91011
+    app-name: Terminal
+Command: |
+  $ aerospace-scratchpad show Finder
+Output:
+  status: success
+  stdout: |
+    command=show action=to-workspace window_id=5678 app_name=Finder workspace=.scratchpad.1 target_workspace=ws2 result=ok message=""
+  error: ""
+
+---
+
+[TestShowCmd/hides_window_to_monitor-specific_scratchpad - 1]
+Context:
+  workspaces:
+  - workspace: ws1
+    focused-window-id: 5678
+  windows:
+  - window-id: 5678
+    app-name: Finder
+Command: |
+  $ aerospace-scratchpad show Finder
+Output:
+  status: success
+  stdout: |
+    command=show action=to-scratchpad window_id=5678 app_name=Finder workspace=ws1 target_workspace=.scratchpad.2 result=ok message=""
+  error: ""
+
+---

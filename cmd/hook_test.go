@@ -25,6 +25,16 @@ func cleanupMarkerFile(t *testing.T) {
 	}
 }
 
+// scratchpadWorkspaceNames returns a slice of scratchpad workspace names to test.
+func scratchpadWorkspaceNames() []string {
+	return []string{
+		".scratchpad",
+		".scratchpad.1",
+		".scratchpad.2",
+		".scratchpad.10",
+	}
+}
+
 func TestHookPullWindow(t *testing.T) {
 	logger.SetDefaultLogger(&logger.EmptyLogger{})
 
@@ -218,4 +228,86 @@ func TestHookPullWindow(t *testing.T) {
 			}
 		},
 	)
+}
+
+func TestHookPullWindowPerMonitor(t *testing.T) {
+	logger.SetDefaultLogger(&logger.EmptyLogger{})
+
+	t.Run("works with per-monitor scratchpad workspaces", func(t *testing.T) {
+		for _, scratchpadWorkspace := range scratchpadWorkspaceNames() {
+			t.Run(scratchpadWorkspace, func(t *testing.T) {
+				cleanupMarkerFile(t)
+
+				ctrl := gomock.NewController(t)
+				defer ctrl.Finish()
+
+				mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+
+				focusedWindow := &windows.Window{
+					WindowID:  99,
+					Workspace: scratchpadWorkspace,
+				}
+
+				gomock.InOrder(
+					mockClient.GetWindowsMock().
+						EXPECT().
+						GetFocusedWindow().
+						Return(focusedWindow, nil).
+						Times(1),
+					mockClient.GetWorkspacesMock().EXPECT().
+						MoveWindowToWorkspaceWithOpts(
+							workspaces.MoveWindowToWorkspaceArgs{
+								WorkspaceName: "prev-ws",
+							},
+							workspaces.MoveWindowToWorkspaceOpts{
+								WindowID: &focusedWindow.WindowID,
+							},
+						).
+						Return(nil).
+						Times(1),
+				)
+
+				wrappedClient := aerospace.NewAeroSpaceClient(mockClient)
+				_ = wrappedClient
+				rootCmd := cmd.RootCmd(mockClient)
+				_, err := testutils.CmdExecute(
+					rootCmd,
+					"hook",
+					"pull-window",
+					"prev-ws",
+					scratchpadWorkspace,
+				)
+
+				if err != nil {
+					t.Fatalf("expected success, got error %v", err)
+				}
+			})
+		}
+	})
+
+	t.Run("skips when previous workspace is per-monitor scratchpad", func(t *testing.T) {
+		for _, scratchpadWorkspace := range scratchpadWorkspaceNames() {
+			t.Run(scratchpadWorkspace, func(t *testing.T) {
+				cleanupMarkerFile(t)
+
+				ctrl := gomock.NewController(t)
+				defer ctrl.Finish()
+
+				mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+
+				rootCmd := cmd.RootCmd(mockClient)
+				_, err := testutils.CmdExecute(
+					rootCmd,
+					"hook",
+					"pull-window",
+					scratchpadWorkspace,
+					scratchpadWorkspace,
+				)
+
+				if err != nil {
+					t.Fatalf("expected success, got error %v", err)
+				}
+			})
+		}
+	})
 }

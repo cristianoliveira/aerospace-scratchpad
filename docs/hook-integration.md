@@ -12,7 +12,7 @@ The origin of this feature was this issue:
 
 In short:
 
-The scratchpad windows lives on a dedicated workspace (default: `.scratchpad`). When an action targets a hidden scratchpad window directly, AeroSpace WM focuses the scratchpad workspace instead of “summoning” the window into your current workspace. This is a bit annoying, you land on a workspace you were never supposed to see where is probably very messy.
+The scratchpad windows live on dedicated workspaces (default: `.scratchpad`, or `.scratchpad.<monitor-id>` for multi-monitor setups). When an action targets a hidden scratchpad window directly, AeroSpace WM focuses the scratchpad workspace instead of “summoning” the window into your current workspace. This is a bit annoying, you land on a workspace you were never supposed to see where is probably very messy.
 
 ## Hook: pull-window - To keep focus out of scratchpad workspace
 
@@ -57,7 +57,7 @@ This leverages AeroSpace’s environment variables:
 3. **Drop** the `exec-on-workspace-change` snippet above into your config.
 4. **Reload** AeroSpace (`aerospace reload-config`) or restart it.
 5. **Trigger** a notification/launcher that previously jumped you into scratchpad. The window should now be summoned in your current workspace.
-6. **Verify** The .scratchpad workspace is not focused at any point.
+6. **Verify** that no scratchpad workspace (`.scratchpad` or `.scratchpad.<monitor-id>`) is focused at any point.
 
 ### Troubleshooting
 

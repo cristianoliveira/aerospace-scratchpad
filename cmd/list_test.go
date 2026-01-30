@@ -75,6 +75,7 @@ func TestListCmd(t *testing.T) { //nolint:gocognit
 		scratchpadWindows := testutils.ExtractScratchpadWindows(tree)
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 0, MonitorName: "main"})
 		gomock.InOrder(
 			aerospaceClient.GetWindowsMock().EXPECT().
 				GetAllWindows().
@@ -131,6 +132,7 @@ func TestListCmd(t *testing.T) { //nolint:gocognit
 		allWindows := testutils.ExtractAllWindows(tree)
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 0, MonitorName: "main"})
 		gomock.InOrder(
 			aerospaceClient.GetWindowsMock().EXPECT().
 				GetAllWindows().
@@ -188,6 +190,7 @@ func TestListCmd(t *testing.T) { //nolint:gocognit
 		scratchpadWindows := testutils.ExtractScratchpadWindows(tree)
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 0, MonitorName: "main"})
 		gomock.InOrder(
 			aerospaceClient.GetWindowsMock().EXPECT().
 				GetAllWindows().
@@ -239,6 +242,7 @@ func TestListCmd(t *testing.T) { //nolint:gocognit
 		scratchpadWindows := testutils.ExtractScratchpadWindows(tree)
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 0, MonitorName: "main"})
 		gomock.InOrder(
 			aerospaceClient.GetWindowsMock().EXPECT().
 				GetAllWindows().
@@ -289,6 +293,7 @@ func TestListCmd(t *testing.T) { //nolint:gocognit
 		allWindows := testutils.ExtractAllWindows(tree)
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 0, MonitorName: "main"})
 		gomock.InOrder(
 			aerospaceClient.GetWindowsMock().EXPECT().
 				GetAllWindows().
@@ -340,6 +345,7 @@ func TestListCmd(t *testing.T) { //nolint:gocognit
 		scratchpadWindows := testutils.ExtractScratchpadWindows(tree)
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 0, MonitorName: "main"})
 		gomock.InOrder(
 			aerospaceClient.GetWindowsMock().EXPECT().
 				GetAllWindows().
@@ -373,6 +379,9 @@ func TestListCmd(t *testing.T) { //nolint:gocognit
 			defer ctrl.Finish()
 
 			aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+			aerospaceClient.SetFocusedMonitor(
+				aerospace.MonitorInfo{MonitorID: 0, MonitorName: "main"},
+			)
 			gomock.InOrder(
 				aerospaceClient.GetWindowsMock().EXPECT().
 					GetAllWindows().
@@ -407,6 +416,12 @@ func TestListCmd(t *testing.T) { //nolint:gocognit
 			defer ctrl.Finish()
 
 			aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+			aerospaceClient.SetFocusedMonitor(
+				aerospace.MonitorInfo{MonitorID: 0, MonitorName: "main"},
+			)
+			aerospaceClient.SetFocusedMonitor(
+				aerospace.MonitorInfo{MonitorID: 0, MonitorName: "main"},
+			)
 			gomock.InOrder(
 				aerospaceClient.GetWindowsMock().EXPECT().
 					GetAllWindows().
@@ -446,6 +461,9 @@ func TestListCmd(t *testing.T) { //nolint:gocognit
 
 			// No mock expectations needed as output format validation fails before API calls
 			aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+			aerospaceClient.SetFocusedMonitor(
+				aerospace.MonitorInfo{MonitorID: 0, MonitorName: "main"},
+			)
 
 			wrappedClient := aerospace.NewAeroSpaceClient(aerospaceClient)
 			_ = wrappedClient

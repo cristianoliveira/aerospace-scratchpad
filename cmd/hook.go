@@ -31,7 +31,7 @@ func HookCmd(
 		Use:   "hook",
 		Short: "Hook commands to react to specific actions outside AeroSpace WM",
 		Long: `Hook commands to react to actions that aren't handled by AeroSpace WM.
-Example of such action is when a window in the scratchpad workspace is focused, which happens when clicking in a notification or
+Example of such action is when a window in a scratchpad workspace is focused, which happens when clicking in a notification or
 when a program is focused by the launcher (alfred, raycast, etc).
 `,
 	}
@@ -94,7 +94,7 @@ func (h *hookHandler) handlePullWindow(
 		"focused-workspace", focusedWorkspace,
 	)
 
-	if prevWorkspace == constants.DefaultScratchpadWorkspaceName {
+	if aerospace.IsScratchpadWorkspace(prevWorkspace) {
 		h.logger.LogDebug(
 			"HOOK: previous workspace is scratchpad, nothing to do",
 			"workspace", prevWorkspace,
@@ -102,7 +102,7 @@ func (h *hookHandler) handlePullWindow(
 		return nil
 	}
 
-	if focusedWorkspace != constants.DefaultScratchpadWorkspaceName {
+	if !aerospace.IsScratchpadWorkspace(focusedWorkspace) {
 		h.logger.LogDebug(
 			"HOOK: focused workspace is not scratchpad",
 			"workspace", focusedWorkspace,
@@ -123,7 +123,7 @@ func (h *hookHandler) handlePullWindow(
 
 	h.logger.LogInfo("HOOK: focused window", "window", focusedWindow)
 
-	if focusedWindow.Workspace != constants.DefaultScratchpadWorkspaceName {
+	if !aerospace.IsScratchpadWorkspace(focusedWindow.Workspace) {
 		h.logger.LogDebug(
 			"HOOK: focused window is no longer in scratchpad, skipping move",
 			"workspace", focusedWindow.Workspace,

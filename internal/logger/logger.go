@@ -24,6 +24,8 @@ type Logger interface {
 	LogInfo(msg string, args ...any)
 	// Error logs an error message
 	LogError(msg string, args ...any)
+	// Warn logs a warning message
+	LogWarn(msg string, args ...any)
 	// Debug logs a debug message
 	LogDebug(msg string, args ...any)
 
@@ -50,6 +52,10 @@ func (l *Client) LogInfo(msg string, args ...any) {
 
 func (l *Client) LogError(msg string, args ...any) {
 	l.logger.Error(msg, args...)
+}
+
+func (l *Client) LogWarn(msg string, args ...any) {
+	l.logger.Warn(msg, args...)
 }
 
 func (l *Client) LogDebug(msg string, args ...any) {
@@ -85,6 +91,9 @@ func (l *EmptyLogger) LogInfo(_ string, _ ...any) {
 	// No-op
 }
 func (l *EmptyLogger) LogError(_ string, _ ...any) {
+	// No-op
+}
+func (l *EmptyLogger) LogWarn(_ string, _ ...any) {
 	// No-op
 }
 func (l *EmptyLogger) LogDebug(_ string, _ ...any) {

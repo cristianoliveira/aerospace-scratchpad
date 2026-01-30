@@ -14,6 +14,9 @@ func (l *TestingLogger) LogInfo(msg string, args ...any) {
 func (l *TestingLogger) LogError(msg string, args ...any) {
 	l.Logger(msg, args...)
 }
+func (l *TestingLogger) LogWarn(msg string, args ...any) {
+	l.Logger(msg, args...)
+}
 func (l *TestingLogger) LogDebug(msg string, args ...any) {
 	l.Logger(msg, args...)
 }

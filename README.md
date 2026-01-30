@@ -90,7 +90,16 @@ exec-and-forget aerospace-scratchpad show alacritty -F window-title='terminal-sc
 
 _Minimum version: 0.3.0_
 
-The scratchpad windows lives on a dedicated workspace (default: `.scratchpad`). In order to avoid that workspace taking focus add this to your config:
+The scratchpad windows live on dedicated workspaces (default: `.scratchpad`, or `.scratchpad.<monitor-id>` for multi-monitor setups). In order to avoid those workspaces taking focus add this to your config:
+
+The `list` and `next` commands support a `--monitor` flag to filter scratchpad windows by monitor (current, all, or specific monitor ID).
+
+The `--monitor` flag accepts:
+- `current` (default): Filter by the currently focused monitor
+- `all`: Include scratchpad windows from all monitors
+- `<monitor-id>`: Specific monitor ID (e.g., `1`, `2`)
+
+Per-monitor scratchpad workspaces follow the pattern: `.scratchpad.<monitor-id>`
 
 ```toml
 # ~/.config/aerospace/config.toml
@@ -98,6 +107,16 @@ The scratchpad windows lives on a dedicated workspace (default: `.scratchpad`). 
 exec-on-workspace-change = ["/bin/bash", "-c",
   "aerospace-scratchpad hook pull-window $AEROSPACE_PREV_WORKSPACE $AEROSPACE_FOCUSED_WORKSPACE"
 ]
+```
+
+This optional configuration prevents scratchpad workspaces from drifting between monitors, ensuring each scratchpad workspace stays on its designated monitor:
+
+```toml
+# ~/.config/aerospace/config.toml
+workspace-to-monitor-force-assignment = {
+    ".scratchpad.1" = 1,
+    ".scratchpad.2" = 2
+}
 ```
 
 For more details check [Hook commands](docs/hook-integration.md)

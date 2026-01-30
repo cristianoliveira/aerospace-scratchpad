@@ -55,10 +55,14 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 		enableOutputFlag,
 		enableFilterFlag,
 	}, SummonCmd(customClient)))
-	rootCmd.AddCommand(enableOutputFlag(NextCmd(customClient)))
+	rootCmd.AddCommand(compose([]flagsFn{
+		enableOutputFlag,
+		enableMonitorFlag,
+	}, NextCmd(customClient)))
 	rootCmd.AddCommand(compose([]flagsFn{
 		enableOutputFlag,
 		enableFilterFlag,
+		enableMonitorFlag,
 	}, ListCmd(customClient)))
 	rootCmd.AddCommand(InfoCmd(aerospaceClient))
 	rootCmd.AddCommand(HookCmd(aerospaceClient))
@@ -92,6 +96,14 @@ func enableOutputFlag(command *cobra.Command) *cobra.Command {
 	return command
 }
 
+func enableMonitorFlag(command *cobra.Command) *cobra.Command {
+	command.Flags().StringP(
+		"monitor", "m", "current",
+		`Monitor filter: "current" (default) for current monitor, "all" for all monitors, or a monitor ID (e.g., 1)`,
+	)
+	return command
+}
+
 func Execute(
 	aerospaceClient aerospace.AeroSpaceWMClient,
 ) {
@@ -108,4 +120,4 @@ func Execute(
 // and then run scripts/validate-version.sh.
 //
 //nolint:gochecknoglobals // version is overridden via build flags
-var VERSION = "v0.5.0"
+var VERSION = "v0.6.0-a"

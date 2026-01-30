@@ -174,3 +174,25 @@ Output:
   error: ""
 
 ---
+
+[TestSummonCmd/summons_window_from_monitor-specific_scratchpad - 1]
+Context:
+  workspaces:
+  - workspace: .scratchpad.1
+  - workspace: ws2
+    focused-window-id: 91011
+  windows:
+  - window-id: 5678
+    app-name: Finder
+    workspace: .scratchpad.1
+  - window-id: 91011
+    app-name: Terminal
+Command: |
+  $ aerospace-scratchpad summon Finder
+Output:
+  status: success
+  stdout: |
+    command=summon action=to-workspace window_id=5678 app_name=Finder workspace=.scratchpad.1 target_workspace=ws2 result=ok message=""
+  error: ""
+
+---
