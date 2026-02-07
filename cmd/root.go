@@ -120,4 +120,4 @@ func Execute(
 // and then run scripts/validate-version.sh.
 //
 //nolint:gochecknoglobals // version is overridden via build flags
-var VERSION = "v0.6.0-a"
+var VERSION = "v0.5.1"
