@@ -1,10 +1,11 @@
 module github.com/cristianoliveira/aerospace-scratchpad
 
-go 1.24.2
+go 1.26.0
 
 require (
 	github.com/cristianoliveira/aerospace-ipc v0.3.1-0.20251202063927-7295ab8b40b9
 	github.com/gkampitakis/go-snaps v0.5.11
+	github.com/goccy/go-yaml v1.15.13
 	github.com/spf13/cobra v1.9.1
 	go.uber.org/mock v0.5.2
 )
@@ -12,7 +13,6 @@ require (
 require (
 	github.com/gkampitakis/ciinfo v0.3.1 // indirect
 	github.com/gkampitakis/go-diff v1.3.2 // indirect
-	github.com/goccy/go-yaml v1.15.13 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
