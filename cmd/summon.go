@@ -23,11 +23,11 @@ func SummonCmd(
 ) *cobra.Command {
 	command := &cobra.Command{
 		Use:   "summon <pattern>",
-		Short: "Summon a window from scratchpad",
-		Long: `Summon a window from the scratchpad to the current workspace.
+		Short: "Summon a matching window to the current workspace",
+		Long: `Summon a matching window to the current workspace.
 
-This command brings a window from the scratchpad to the current workspace using a regex to match the window name or title.
-If no pattern is provided, it summons the first window in the scratchpad.
+This command brings windows matching the regex pattern to the current workspace and focuses them.
+Use "next" to cycle through scratchpad windows without specifying a pattern.
 `,
 
 		Args: cobra.MatchAll(
@@ -114,7 +114,8 @@ If no pattern is provided, it summons the first window in the scratchpad.
 							"error",
 							moveErr,
 						)
-						if focusErr := aerospaceClient.SetFocusByWindowID(window.WindowID); focusErr != nil {
+						focusErr := aerospaceClient.SetFocusByWindowID(window.WindowID)
+						if focusErr != nil {
 							logger.LogError(
 								"SUMMON: unable to set focus to window",
 								"window",
@@ -131,8 +132,8 @@ If no pattern is provided, it summons the first window in the scratchpad.
 						}
 
 						if printErr := formatter.Print(cli.OutputEvent{
-							Command:         "summon",
-							Action:          "to-workspace",
+							Command:         commandSummon,
+							Action:          actionToWorkspace,
 							WindowID:        window.WindowID,
 							AppName:         window.AppName,
 							Workspace:       window.Workspace,
@@ -159,8 +160,8 @@ If no pattern is provided, it summons the first window in the scratchpad.
 				}
 
 				if printErr := formatter.Print(cli.OutputEvent{
-					Command:         "summon",
-					Action:          "to-workspace",
+					Command:         commandSummon,
+					Action:          actionToWorkspace,
 					WindowID:        window.WindowID,
 					AppName:         window.AppName,
 					Workspace:       window.Workspace,

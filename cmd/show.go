@@ -172,8 +172,8 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				}
 
 				if printErr := formatter.Print(cli.OutputEvent{
-					Command:         "show",
-					Action:          "to-workspace",
+					Command:         commandShow,
+					Action:          actionToWorkspace,
 					WindowID:        window.WindowID,
 					AppName:         window.AppName,
 					Workspace:       window.Workspace,
@@ -204,7 +204,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 						window,
 					)
 					if printErr := formatter.Print(cli.OutputEvent{
-						Command:   "show",
+						Command:   commandShow,
 						Action:    "focus",
 						WindowID:  window.WindowID,
 						AppName:   window.AppName,
@@ -237,8 +237,8 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 							moveErr,
 						)
 						if printErr := formatter.Print(cli.OutputEvent{
-							Command:         "show",
-							Action:          "to-scratchpad",
+							Command:         commandShow,
+							Action:          actionToScratchpad,
 							WindowID:        window.WindowID,
 							AppName:         window.AppName,
 							Workspace:       window.Workspace,
@@ -252,8 +252,8 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					}
 
 					if printErr := formatter.Print(cli.OutputEvent{
-						Command:         "show",
-						Action:          "to-scratchpad",
+						Command:         commandShow,
+						Action:          actionToScratchpad,
 						WindowID:        window.WindowID,
 						AppName:         window.AppName,
 						Workspace:       window.Workspace,
@@ -275,7 +275,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					return
 				}
 				if printErr := formatter.Print(cli.OutputEvent{
-					Command:   "show",
+					Command:   commandShow,
 					Action:    "focus",
 					WindowID:  window.WindowID,
 					AppName:   window.AppName,

@@ -298,9 +298,9 @@ func (a *MoverAeroSpace) moveWindowToScratchpadWorkspace(
 
 	// Use wrapper's SetLayout if available (for dry-run support)
 	if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
-		err = wrapper.SetLayout(window.WindowID, "floating")
+		err = wrapper.SetLayout(window.WindowID, floatingLayout)
 	} else {
-		err = a.aerospace.Layout().SetLayout([]string{"floating"}, layout.SetLayoutOpts{
+		err = a.aerospace.Layout().SetLayout([]string{floatingLayout}, layout.SetLayoutOpts{
 			WindowID: layout.IntPtr(window.WindowID),
 		})
 	}

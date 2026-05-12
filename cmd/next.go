@@ -70,8 +70,8 @@ It does not send the windows back to the scratchpad, but rather focuses the next
 			}
 
 			if printErr := formatter.Print(cli.OutputEvent{
-				Command:         "next",
-				Action:          "to-workspace",
+				Command:         commandNext,
+				Action:          actionToWorkspace,
 				WindowID:        window.WindowID,
 				AppName:         window.AppName,
 				Workspace:       window.Workspace,
