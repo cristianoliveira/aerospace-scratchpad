@@ -52,7 +52,7 @@ type Querier interface {
 	// GetScratchpadWindows returns all scratchpad windows
 	// A scratchpad window is defined as:
 	// - A window in a scratchpad workspace (.scratchpad or .scratchpad.<monitor-id>), OR
-	// - A floating window (WindowLayout == "floating")
+	// - A floating window (WindowLayout == floatingLayout)
 	GetScratchpadWindows() ([]windows.Window, error)
 
 	// GetScratchpadWindowsForMonitor returns scratchpad windows filtered by monitor.
@@ -106,6 +106,8 @@ type nextState struct {
 const (
 	listWorkspacesMonitorFormat = "%{workspace} %{monitor-id}"
 	focusedMonitorFormat        = "%{monitor-id} %{monitor-name}"
+	jsonFlag                    = "--json"
+	formatFlag                  = "--format"
 	nextStateFileName           = "next-state.json"
 	filterLogPrefix             = "FILTER: "
 	floatingLayout              = "floating"
@@ -212,8 +214,8 @@ func ListWorkspacesWithMonitors(cli AeroSpaceWMClient) ([]WorkspaceMonitor, erro
 		"list-workspaces",
 		[]string{
 			"--all",
-			"--json",
-			"--format",
+			jsonFlag,
+			formatFlag,
 			listWorkspacesMonitorFormat,
 		},
 	)
@@ -253,8 +255,8 @@ func GetFocusedMonitor(cli AeroSpaceWMClient) (*MonitorInfo, error) {
 		"list-monitors",
 		[]string{
 			"--focused",
-			"--json",
-			"--format",
+			jsonFlag,
+			formatFlag,
 			focusedMonitorFormat,
 		},
 	)
@@ -288,8 +290,8 @@ func ListMonitors(cli AeroSpaceWMClient) ([]MonitorInfo, error) {
 	response, err := cli.Connection().SendCommand(
 		"list-monitors",
 		[]string{
-			"--json",
-			"--format",
+			jsonFlag,
+			formatFlag,
 			focusedMonitorFormat,
 		},
 	)
@@ -523,7 +525,7 @@ func (a *QueryMaker) GetAllFloatingWindows() ([]windows.Window, error) {
 
 	var floatingWindows []windows.Window
 	for _, window := range allWindows {
-		if window.WindowLayout == "floating" {
+		if window.WindowLayout == floatingLayout {
 			floatingWindows = append(floatingWindows, window)
 		}
 	}
@@ -580,7 +582,7 @@ func (a *QueryMaker) GetScratchpadWindows() ([]windows.Window, error) {
 
 	// Add floating windows
 	for _, window := range allWindows {
-		if window.WindowLayout == "floating" {
+		if window.WindowLayout == floatingLayout {
 			// Only add if not already in map (avoid duplicates)
 			if _, exists := scratchpadWindowMap[window.WindowID]; !exists {
 				scratchpadWindowMap[window.WindowID] = window

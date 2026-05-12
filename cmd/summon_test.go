@@ -97,6 +97,24 @@ func TestSummonCmd(t *testing.T) {
 		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
 	})
 
+	t.Run("fails when pattern is omitted", func(t *testing.T) {
+		command := "summon"
+		args := []string{command}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		cmd := cmd.RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err == nil {
+			t.Errorf("Expected error when pattern is omitted, got nil")
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
+		testutils.MatchSnapshot(t, nil, cmdAsString, out, err)
+	})
+
 	t.Run("fails when pattern doesn't match any window", func(t *testing.T) {
 		command := "summon"
 		args := []string{command, "NonExistentApp"}

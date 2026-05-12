@@ -124,6 +124,7 @@ func NewLogger() (Logger, error) {
 		path = "/tmp/aerospace-scratchpad.log"
 	}
 
+	// #nosec G304,G703 -- log path is intentionally configurable via env var.
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open log file: %w", err)

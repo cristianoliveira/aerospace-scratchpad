@@ -54,7 +54,7 @@ func parseMonitorFlag(cmd *cobra.Command) (int, error) {
 // ListCmd represents the list command.
 func ListCmd(aerospaceClient *aerospace.AeroSpaceClient) *cobra.Command {
 	command := &cobra.Command{
-		Use:     "list",
+		Use:     commandList,
 		Aliases: []string{"ls"},
 		Short:   "List scratchpad windows",
 		Long: `List all scratchpad windows.
@@ -175,7 +175,7 @@ func outputWindows(formatter *cli.OutputFormatter, windows []windowsipc.Window) 
 
 	if len(windows) == 0 {
 		if printErr := formatter.Print(cli.OutputEvent{
-			Command:   "list",
+			Command:   commandList,
 			Action:    "list",
 			Result:    "none",
 			Message:   "no scratchpad windows found",
@@ -188,7 +188,7 @@ func outputWindows(formatter *cli.OutputFormatter, windows []windowsipc.Window) 
 
 	for _, window := range windows {
 		if printErr := formatter.Print(cli.OutputEvent{
-			Command:   "list",
+			Command:   commandList,
 			Action:    "list",
 			WindowID:  window.WindowID,
 			AppName:   window.AppName,

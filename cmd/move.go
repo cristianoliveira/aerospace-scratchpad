@@ -165,8 +165,8 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 			// When using --all-floating, skip the focused window check
 			if allFloatingFlag && len(windows) == 0 {
 				if printErr := formatter.Print(cli.OutputEvent{
-					Command:   "move",
-					Action:    "to-scratchpad",
+					Command:   commandMove,
+					Action:    actionToScratchpad,
 					Result:    "none",
 					Message:   "no floating windows found",
 					Workspace: "",
@@ -198,8 +198,8 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 						"already belongs to workspace",
 					) {
 						if printErr := formatter.Print(cli.OutputEvent{
-							Command:         "move",
-							Action:          "to-scratchpad",
+							Command:         commandMove,
+							Action:          actionToScratchpad,
 							WindowID:        window.WindowID,
 							AppName:         window.AppName,
 							Workspace:       window.Workspace,
@@ -223,8 +223,8 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 				}
 
 				if printErr := formatter.Print(cli.OutputEvent{
-					Command:         "move",
-					Action:          "to-scratchpad",
+					Command:         commandMove,
+					Action:          actionToScratchpad,
 					WindowID:        window.WindowID,
 					AppName:         window.AppName,
 					Workspace:       window.Workspace,

@@ -602,7 +602,9 @@ func TestAeroSpaceQuerier(t *testing.T) {
 			}, nil).
 			Times(1)
 
-		if _, err := aerospace.ListWorkspacesWithMonitors(&mockConnectionAeroSpaceClient{conn: socket}); err == nil {
+		if _, err := aerospace.ListWorkspacesWithMonitors(
+			&mockConnectionAeroSpaceClient{conn: socket},
+		); err == nil {
 			t.Fatalf("expected error when command fails")
 		}
 	})
@@ -648,7 +650,9 @@ func TestAeroSpaceQuerier(t *testing.T) {
 			}, nil).
 			Times(1)
 
-		if _, err := aerospace.GetFocusedMonitor(&mockConnectionAeroSpaceClient{conn: socket}); err == nil {
+		if _, err := aerospace.GetFocusedMonitor(
+			&mockConnectionAeroSpaceClient{conn: socket},
+		); err == nil {
 			t.Fatalf("expected error when no focused monitor is returned")
 		}
 	})

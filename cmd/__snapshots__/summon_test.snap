@@ -196,3 +196,17 @@ Output:
   error: ""
 
 ---
+
+
+[TestSummonCmd/fails_when_pattern_is_omitted - 1]
+Context:
+  {}
+Command: |
+  $ aerospace-scratchpad summon
+Output:
+  status: error
+  stdout: ""
+  error: |
+    accepts 1 arg(s), received 0
+
+---

@@ -44,9 +44,10 @@ From [I3 User Guide](https://i3wm.org/docs/userguide.html#_scratchpad):
 
 ## Basic Usage
 
-Summon or move a window from the scratchpad workspace to the current workspace.
+Show, summon, or move a matching window by app-name pattern.
 ```text
 aerospace-scratchpad show <pattern>
+aerospace-scratchpad summon <pattern>
 ```
 
 To find the correct `pattern` run `aerospace list-windows --all --json | grep app-name`
@@ -69,13 +70,13 @@ aerospace-scratchpad move --all-floating
 # This toggle the scratchpad window show/hide
 cmd-ctrl-1 = "exec-and-forget aerospace-scratchpad show Finder"
 
-# Or using summon instead
+# Or using summon instead: bring matching window to current workspace without toggling it back
 cmd-ctrl-2 = """
 exec-and-forget aerospace-scratchpad summon Finder || \
                 aerospace-scratchpad move Finder
 """
 
-# Bring windows one by one to current workspace
+# Cycle scratchpad windows without specifying a pattern
 ctrl-minus = "exec-and-forget aerospace-scratchpad next"
 
 # Hide all scratchpad windows at once

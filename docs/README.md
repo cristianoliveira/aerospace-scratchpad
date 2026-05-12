@@ -85,7 +85,9 @@ See also [flags](#flags).
 
 ## Command: `summon`
 
-Unlike the `show` command, this command will only summon the window to the current workspace and set focus on it.
+Like `show`, this command requires a pattern. Unlike `show`, it only brings matching windows to the current workspace and focuses them; it does not toggle visible windows back to scratchpad.
+
+Use `next` when you want to cycle through scratchpad windows without specifying a pattern.
 
 ### USAGE
 
@@ -99,7 +101,7 @@ See also [flags](#flags).
 
 ## Command: `next`
 
-This command will summon the next window from the scratchpad workspace until there are no more windows to summon.
+This command cycles through scratchpad windows and summons the next one to the current workspace.
 
 ### USAGE
 
