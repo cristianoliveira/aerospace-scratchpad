@@ -93,7 +93,7 @@ exec-and-forget aerospace-scratchpad show alacritty -F window-title='terminal-sc
 
 _Minimum version: 0.3.0_
 
-##### Issue: Scratchpad takes focus
+##### Issue: Scratchpad workspace takes focus
 
 The scratchpad windows live on dedicated workspaces (default: `.scratchpad`, or `.scratchpad.<monitor-id>` for multi-monitor setups). 
 When an external app focus on a scratchpad window, the workspace takes focus. 
@@ -105,10 +105,12 @@ exec-on-workspace-change = ["/bin/bash", "-c",
   "aerospace-scratchpad hook pull-window $AEROSPACE_PREV_WORKSPACE $AEROSPACE_FOCUSED_WORKSPACE"
 ]
 ```
+ 
+For more details check [Hook commands](docs/hook-integration.md)
 
-##### Issue: Scratchpad focus across monitor
+##### Issue: Scratchpad windows summon across monitor
 
-When in a multiple monitor setup the scratchpad windows are focused in the monitor where they originally are, instead of summoning to the current fosused monitor.
+When in a multiple monitor setup the windows take focus on the monitor where they currently are instead of summoning to the current fosused monitor.
 This optional configuration ensure workspaces stays on its designated monitor and windows are summoned correctly.
 
 ```toml
@@ -118,8 +120,6 @@ workspace-to-monitor-force-assignment = {
     ".scratchpad.2" = 2
 }
 ```
-
-For more details check [Hook commands](docs/hook-integration.md)
 
 ## Advanced Usage
 
