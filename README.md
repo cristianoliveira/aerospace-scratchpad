@@ -83,6 +83,8 @@ aerospace-scratchpad pin ".*Alacritty.*" --filter window-title="terminal-scratch
 
 When `[pattern]` is omitted, the focused window is pinned or unpinned by window ID. When `[pattern]` is provided, the pin is saved as a rule, so future windows matching the same app-name regex and filters are pinned too.
 
+Pinned state is stored at `~/.config/aerospace-scratchpad/pinned.json`. For tests or custom setups, override it with `AEROSPACE_SCRATCHPAD_PINS_PATH`.
+
 ### Config Usage
 
 ```toml

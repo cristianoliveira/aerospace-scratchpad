@@ -1,12 +1,29 @@
 package aerospace_test
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 )
+
+func TestPinsUseDefaultConfigPath(t *testing.T) {
+	homeDir := t.TempDir()
+	t.Setenv("HOME", homeDir)
+	t.Setenv("AEROSPACE_SCRATCHPAD_PINS_PATH", "")
+
+	pinErr := aerospace.PinWindow(123, 2)
+	if pinErr != nil {
+		t.Fatalf("pin window: %v", pinErr)
+	}
+
+	path := filepath.Join(homeDir, ".config", "aerospace-scratchpad", "pinned.json")
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("expected pins state at %s: %v", path, err)
+	}
+}
 
 func TestPinsState(t *testing.T) {
 	t.Setenv("AEROSPACE_SCRATCHPAD_PINS_PATH", filepath.Join(t.TempDir(), "pins.json"))

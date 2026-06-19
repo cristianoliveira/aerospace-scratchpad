@@ -32,7 +32,12 @@ func pinsStatePath() string {
 	if path := os.Getenv(pinsPathEnv); path != "" {
 		return path
 	}
-	return filepath.Join(os.TempDir(), "aerospace-scratchpad-pins.json")
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return filepath.Join(os.TempDir(), "aerospace-scratchpad-pins.json")
+	}
+	return filepath.Join(homeDir, ".config", "aerospace-scratchpad", "pinned.json")
 }
 
 func LoadPins() (PinsState, error) {
