@@ -79,9 +79,13 @@ aerospace-scratchpad pin ".*Brave.*"
 
 # Pin a specific terminal scratchpad rule
 aerospace-scratchpad pin ".*Alacritty.*" --filter window-title="terminal-scratchpad"
+
+# Temporarily disable or re-enable a saved pattern rule without deleting it
+aerospace-scratchpad pin --disable ".*Brave.*"
+aerospace-scratchpad pin --enable ".*Brave.*"
 ```
 
-When `[pattern]` is omitted, the focused window is pinned or unpinned by window ID. When `[pattern]` is provided, the pin is saved as a rule, so future windows matching the same app-name regex and filters are pinned too.
+When `[pattern]` is omitted, the focused window is pinned or unpinned by window ID. When `[pattern]` is provided, the pin is saved as a rule, so future windows matching the same app-name regex and filters are pinned too. Use `pin --disable [pattern]` and `pin --enable [pattern]` to toggle a saved rule without removing it.
 
 Pinned state is stored at `~/.config/aerospace-scratchpad/pinned.json`. For tests or custom setups, override it with `AEROSPACE_SCRATCHPAD_PINS_PATH`.
 

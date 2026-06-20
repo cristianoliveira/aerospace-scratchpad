@@ -102,6 +102,50 @@ func TestPinCmdStoresPatternRule(t *testing.T) {
 	}
 }
 
+func TestPinCmdDisablesAndEnablesPatternRule(t *testing.T) {
+	logger.SetDefaultLogger(&logger.EmptyLogger{})
+	stderr.SetBehavior(false)
+	t.Setenv("AEROSPACE_SCRATCHPAD_PINS_PATH", filepath.Join(t.TempDir(), "pins.json"))
+
+	if err := aerospace.PinRuleForPattern(".*Brave.*", nil, 2); err != nil {
+		t.Fatalf("seed pin rule: %v", err)
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+	rootCmd := cmd.RootCmd(aerospaceClient)
+
+	_, err := testutils.CmdExecute(rootCmd, "pin", "--disable", ".*Brave.*")
+	if err != nil {
+		t.Fatalf("disable pin rule command failed: %v", err)
+	}
+	_, ok, err := aerospace.PinnedMonitorIDForWindow(windows.Window{
+		AppName: "Brave Browser",
+	})
+	if err != nil {
+		t.Fatalf("read disabled pin rule: %v", err)
+	}
+	if ok {
+		t.Fatal("expected disabled pin rule not to match")
+	}
+
+	rootCmd = cmd.RootCmd(aerospaceClient)
+	_, err = testutils.CmdExecute(rootCmd, "pin", "--enable", ".*Brave.*")
+	if err != nil {
+		t.Fatalf("enable pin rule command failed: %v", err)
+	}
+	monitorID, ok, err := aerospace.PinnedMonitorIDForWindow(windows.Window{
+		AppName: "Brave Browser",
+	})
+	if err != nil {
+		t.Fatalf("read enabled pin rule: %v", err)
+	}
+	if !ok || monitorID != 2 {
+		t.Fatalf("expected enabled pin rule on monitor 2, got ok=%v monitor=%d", ok, monitorID)
+	}
+}
+
 func TestUnpinCmdRemovesFocusedWindowPin(t *testing.T) {
 	logger.SetDefaultLogger(&logger.EmptyLogger{})
 	stderr.SetBehavior(false)

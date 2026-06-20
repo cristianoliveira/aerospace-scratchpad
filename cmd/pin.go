@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"os"
 	"strconv"
 	"strings"
@@ -20,54 +21,11 @@ func PinCmd(aerospaceClient *aerospace.AeroSpaceClient) *cobra.Command {
 		Short: "Pin a scratchpad window to its current monitor",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			logger := logger.GetDefaultLogger()
-			formatter, err := outputFormatterFrom(cmd)
-			if err != nil {
-				stderr.Println("Error: %v", err)
-				return
-			}
-
-			windows, err := windowsForOptionalPattern(cmd, args, aerospaceClient)
-			if err != nil {
-				stderr.Println("Error: %v", err)
-				return
-			}
-
-			filterFlags, err := cmd.Flags().GetStringArray("filter")
-			if err != nil {
-				stderr.Println("Error: %v", err)
-				return
-			}
-			pattern := optionalPattern(args)
-
-			for _, window := range windows {
-				monitorID, resolveErr := aerospace.ResolveWindowMonitorID(
-					aerospaceClient.GetUnderlyingClient(),
-					window,
-				)
-				if resolveErr != nil {
-					stderr.Println("Error: %v", resolveErr)
-					return
-				}
-				pinErr := pinWindowOrRule(pattern, filterFlags, window.WindowID, monitorID)
-				if pinErr != nil {
-					stderr.Println("Error: %v", pinErr)
-					return
-				}
-				if printErr := formatter.Print(cli.OutputEvent{
-					Command:   commandPin,
-					Action:    "pin",
-					WindowID:  window.WindowID,
-					AppName:   window.AppName,
-					Workspace: window.Workspace,
-					Result:    "ok",
-					Message:   "pinned to monitor " + strconv.Itoa(monitorID),
-				}); printErr != nil {
-					logger.LogError("PIN: unable to write output", "error", printErr)
-				}
-			}
+			handlePinCommand(cmd, args, aerospaceClient)
 		},
 	}
+	command.Flags().Bool("disable", false, "Disable a saved pin rule without removing it")
+	command.Flags().Bool("enable", false, "Enable a saved pin rule")
 	return command
 }
 
@@ -124,6 +82,83 @@ func UnpinCmd(aerospaceClient *aerospace.AeroSpaceClient) *cobra.Command {
 		},
 	}
 	return command
+}
+
+func handlePinCommand(
+	cmd *cobra.Command,
+	args []string,
+	aerospaceClient *aerospace.AeroSpaceClient,
+) {
+	logger := logger.GetDefaultLogger()
+	disableRule, _ := cmd.Flags().GetBool("disable")
+	enableRule, _ := cmd.Flags().GetBool("enable")
+	if disableRule && enableRule {
+		stderr.Println("Error: --enable and --disable cannot be used together")
+		return
+	}
+	if disableRule || enableRule {
+		if err := setPinRuleState(cmd, args, enableRule); err != nil {
+			stderr.Println("Error: %v", err)
+		}
+		return
+	}
+
+	formatter, err := outputFormatterFrom(cmd)
+	if err != nil {
+		stderr.Println("Error: %v", err)
+		return
+	}
+
+	windows, err := windowsForOptionalPattern(cmd, args, aerospaceClient)
+	if err != nil {
+		stderr.Println("Error: %v", err)
+		return
+	}
+
+	filterFlags, err := cmd.Flags().GetStringArray("filter")
+	if err != nil {
+		stderr.Println("Error: %v", err)
+		return
+	}
+	pattern := optionalPattern(args)
+
+	for _, window := range windows {
+		monitorID, resolveErr := aerospace.ResolveWindowMonitorID(
+			aerospaceClient.GetUnderlyingClient(),
+			window,
+		)
+		if resolveErr != nil {
+			stderr.Println("Error: %v", resolveErr)
+			return
+		}
+		pinErr := pinWindowOrRule(pattern, filterFlags, window.WindowID, monitorID)
+		if pinErr != nil {
+			stderr.Println("Error: %v", pinErr)
+			return
+		}
+		if printErr := formatter.Print(cli.OutputEvent{
+			Command:   commandPin,
+			Action:    "pin",
+			WindowID:  window.WindowID,
+			AppName:   window.AppName,
+			Workspace: window.Workspace,
+			Result:    "ok",
+			Message:   "pinned to monitor " + strconv.Itoa(monitorID),
+		}); printErr != nil {
+			logger.LogError("PIN: unable to write output", "error", printErr)
+		}
+	}
+}
+
+func setPinRuleState(cmd *cobra.Command, args []string, enabled bool) error {
+	if len(args) == 0 || strings.TrimSpace(args[0]) == "" {
+		return errors.New("pattern is required when using --enable or --disable")
+	}
+	filterFlags, err := cmd.Flags().GetStringArray("filter")
+	if err != nil {
+		return err
+	}
+	return aerospace.SetPinRuleEnabled(strings.TrimSpace(args[0]), filterFlags, enabled)
 }
 
 func outputFormatterFrom(cmd *cobra.Command) (*cli.OutputFormatter, error) {

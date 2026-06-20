@@ -21,6 +21,7 @@ type PinRule struct {
 	Pattern   string   `json:"pattern"`
 	Filters   []string `json:"filters,omitempty"`
 	MonitorID int      `json:"monitor_id"`
+	Enabled   *bool    `json:"enabled,omitempty"`
 }
 
 type PinsState struct {
@@ -92,10 +93,12 @@ func PinRuleForPattern(pattern string, filters []string, monitorID int) error {
 	if err != nil {
 		return err
 	}
+	enabled := true
 	state.Rules = upsertPinRule(state.Rules, PinRule{
 		Pattern:   pattern,
 		Filters:   filters,
 		MonitorID: monitorID,
+		Enabled:   &enabled,
 	})
 	return SavePins(state)
 }
@@ -148,6 +151,20 @@ func UnpinRuleForPattern(pattern string, filters []string) error {
 	return SavePins(state)
 }
 
+func SetPinRuleEnabled(pattern string, filters []string, enabled bool) error {
+	state, err := LoadPins()
+	if err != nil {
+		return err
+	}
+
+	for index, rule := range state.Rules {
+		if rule.Pattern == pattern && sameStrings(rule.Filters, filters) {
+			state.Rules[index].Enabled = &enabled
+		}
+	}
+	return SavePins(state)
+}
+
 func PinnedMonitorID(windowID int) (int, bool, error) {
 	state, err := LoadPins()
 	if err != nil {
@@ -167,6 +184,9 @@ func PinnedMonitorIDForWindow(window windows.Window) (int, bool, error) {
 	}
 
 	for _, rule := range state.Rules {
+		if !pinRuleEnabled(rule) {
+			continue
+		}
 		matches, matchErr := pinRuleMatchesWindow(rule, window)
 		if matchErr != nil {
 			return 0, false, matchErr
@@ -176,6 +196,10 @@ func PinnedMonitorIDForWindow(window windows.Window) (int, bool, error) {
 		}
 	}
 	return 0, false, nil
+}
+
+func pinRuleEnabled(rule PinRule) bool {
+	return rule.Enabled == nil || *rule.Enabled
 }
 
 func pinRuleMatchesWindow(rule PinRule, window windows.Window) (bool, error) {

@@ -82,3 +82,40 @@ func TestPinRulesMatchFutureWindowsByPattern(t *testing.T) {
 		t.Fatalf("expected pattern-pinned window on monitor 2, got ok=%v monitor=%d", ok, monitorID)
 	}
 }
+
+func TestDisabledPinRulesDoNotMatch(t *testing.T) {
+	t.Setenv("AEROSPACE_SCRATCHPAD_PINS_PATH", filepath.Join(t.TempDir(), "pins.json"))
+
+	if err := aerospace.PinRuleForPattern(".*Brave.*", nil, 2); err != nil {
+		t.Fatalf("pin rule: %v", err)
+	}
+	if err := aerospace.SetPinRuleEnabled(".*Brave.*", nil, false); err != nil {
+		t.Fatalf("disable rule: %v", err)
+	}
+
+	_, ok, err := aerospace.PinnedMonitorIDForWindow(windows.Window{
+		WindowID: 9876,
+		AppName:  "Brave Browser",
+	})
+	if err != nil {
+		t.Fatalf("match pin rule: %v", err)
+	}
+	if ok {
+		t.Fatal("expected disabled pin rule not to match")
+	}
+
+	enableErr := aerospace.SetPinRuleEnabled(".*Brave.*", nil, true)
+	if enableErr != nil {
+		t.Fatalf("enable rule: %v", enableErr)
+	}
+	monitorID, ok, err := aerospace.PinnedMonitorIDForWindow(windows.Window{
+		WindowID: 9877,
+		AppName:  "Brave Browser",
+	})
+	if err != nil {
+		t.Fatalf("match enabled pin rule: %v", err)
+	}
+	if !ok || monitorID != 2 {
+		t.Fatalf("expected enabled rule on monitor 2, got ok=%v monitor=%d", ok, monitorID)
+	}
+}
