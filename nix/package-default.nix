@@ -1,7 +1,7 @@
 { pkgs, ... }:
   pkgs.buildGoModule rec {
     name = "aerospace-scratchpad";
-    version = "v0.5.1";
+    version = "v0.6.0";
 
     src = pkgs.fetchFromGitHub {
       owner = "cristianoliveira";
