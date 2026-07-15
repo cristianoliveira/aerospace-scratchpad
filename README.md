@@ -19,7 +19,8 @@ A I3/Sway like scratchpad extension for [AeroSpace WM](https://github.com/nikita
 
 ## AeroSpace Compatibility
 
- - AeroSpace v0.20.x use v0.4.x or higher
+ - AeroSpace v0.21.x use the latest version (socket protocol v1)
+ - AeroSpace v0.20.x use v0.5.x
  - AeroSpace v0.19.x use v0.3.x or lower
 
 **Work in Progress**
@@ -183,7 +184,7 @@ exec-and-forget aerospace-scratchpad show \
 
 ## Installation
 
-**Min AeroSpace version**: 0.20.x
+**Min AeroSpace version**: 0.21.0
 
 ### Using Homebrew
 
