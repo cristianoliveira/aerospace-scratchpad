@@ -4,22 +4,22 @@ go 1.26.0
 
 require (
 	github.com/cristianoliveira/aerospace-ipc v0.4.0
-	github.com/gkampitakis/go-snaps v0.5.11
-	github.com/goccy/go-yaml v1.15.13
-	github.com/spf13/cobra v1.9.1
-	go.uber.org/mock v0.5.2
+	github.com/gkampitakis/go-snaps v0.5.23
+	github.com/goccy/go-yaml v1.19.2
+	github.com/spf13/cobra v1.10.2
+	go.uber.org/mock v0.6.0
 )
 
 require (
-	github.com/gkampitakis/ciinfo v0.3.1 // indirect
-	github.com/gkampitakis/go-diff v1.3.2 // indirect
+	github.com/gkampitakis/ciinfo v0.3.4 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/maruel/natural v1.1.1 // indirect
+	github.com/maruel/natural v1.3.0 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
-	github.com/spf13/pflag v1.0.6 // indirect
-	github.com/tidwall/gjson v1.18.0 // indirect
+	github.com/sergi/go-diff v1.4.0 // indirect
+	github.com/spf13/pflag v1.0.9 // indirect
+	github.com/tidwall/gjson v1.19.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect

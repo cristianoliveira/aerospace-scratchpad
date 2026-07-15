@@ -226,11 +226,11 @@ Context:
     focused-window-id: 91011
   windows:
   - window-id: 5678
-    window-title: Finder - foo and zas
+    window-title: "Finder - foo and zas"
     app-name: Finder1
     workspace: ws1
   - window-id: 5679
-    app-name: Finder2 - bar and baz
+    app-name: "Finder2 - bar and baz"
     workspace: ws1
   - window-id: 91011
     app-name: Terminal
@@ -309,17 +309,17 @@ Context:
     focused-window-id: 91011
   windows:
   - window-id: 5678
-    window-title: Finder - foo and zas
+    window-title: "Finder - foo and zas"
     app-name: Finder1
     app-bundle-id: com.linux.finder
     workspace: ws1
   - window-id: 5679
-    window-title: Finder2 - foo and baz
+    window-title: "Finder2 - foo and baz"
     app-name: Finder2
     app-bundle-id: com.apple.finder
     workspace: ws1
   - window-id: 5680
-    window-title: Finder2 - bar and baz
+    window-title: "Finder2 - bar and baz"
     app-name: Finder2
     app-bundle-id: com.apple.finder
     workspace: ws1
@@ -367,11 +367,11 @@ Context:
     focused-window-id: 91011
   windows:
   - window-id: 5678
-    window-title: Finder - foo and zas
+    window-title: "Finder - foo and zas"
     app-name: Finder1
     workspace: ws1
   - window-id: 5679
-    app-name: Finder2 - bar and baz
+    app-name: "Finder2 - bar and baz"
     workspace: ws1
   - window-id: 91011
     app-name: Terminal
