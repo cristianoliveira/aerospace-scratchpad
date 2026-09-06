@@ -1,34 +1,23 @@
-# aerospace-scratchpad
+# Purpose
 
-Go CLI providing i3/Sway-like scratchpads for AeroSpace WM through `aerospace-ipc`.
+AeroSpace Scratchpad provides an i3/Sway-style scratchpad experience for AeroSpace through a scriptable command-line interface.
 
-## Architecture
+# Architecture
 
-- `main.go`: composition root; create logger and IPC client, then call `cmd.Execute`.
-- `cmd/`: Cobra commands and use-case orchestration. See `cmd/AGENTS.md`.
-- `internal/aerospace/`: AeroSpace adapter and scratchpad query/move logic. See its guide.
-- `internal/cli/`: output formatting and CLI validation.
-- `internal/constants/`, `internal/logger/`, `internal/stderr/`: shared infrastructure.
-- `internal/mocks/`, `internal/testutils/`: generated mocks and test support.
-- `docs/`, `examples/`: user documentation and integrations.
-- `nix/`, `scripts/`, `.github/`: packaging and automation.
+The composition root owns dependency wiring and process lifetime. The application layer owns command orchestration and user-facing command contracts. Private packages separate AeroSpace state translation, output policy, shared configuration names, logging, and error presentation. Packaging, documentation, examples, maintenance automation, and repository automation remain outside the runtime path.
 
-Dependency direction is `main -> cmd -> internal packages`. Keep business decisions out of `main.go`. Production packages must not import test support.
+Runtime dependencies point inward: composition wiring calls the application layer; the application layer consumes private contracts; the AeroSpace boundary owns communication with the window manager. Shared support packages must not pull command orchestration back into infrastructure.
 
-## Domain rules
+# Modules
 
-- Hidden windows live in `.scratchpad` or `.scratchpad.<monitor-id>`.
-- Scratchpad windows include windows on scratchpad workspaces and floating windows.
-- Preserve distinct semantics: `show` toggles, `summon` brings forward, `move` hides, `next` cycles.
-- Use the injected `AeroSpaceWMClient`; do not spawn `aerospace` processes when IPC supports the operation.
+- [Application commands](cmd/AGENTS.md): Defines the CLI surface and coordinates use cases.
+- [Private runtime packages](internal/AGENTS.md): Contains domain adapters and shared infrastructure.
+- [Documentation](docs/AGENTS.md): Maintains user-facing product guidance.
+- [Examples](examples/AGENTS.md): Demonstrates portable integrations with the CLI.
+- [Packaging](nix/AGENTS.md): Defines Nix build and distribution variants.
+- [Maintenance scripts](scripts/AGENTS.md): Owns repository maintenance automation.
+- [Repository automation](.github/AGENTS.md): Owns GitHub workflows and issue templates.
 
-## Workflow
+# Placement
 
-- Follow test-first development. Cover successful and error paths.
-- Match nearby table-driven and snapshot test style.
-- Run `make test`, `make lint`, and `make build` before finishing.
-- Update snapshots only for intentional output changes: `make update-snap-all`.
-- Use `make fmt` for Go formatting and lint fixes.
-- Generated files under `internal/mocks/` must be regenerated, not hand-edited.
-
-External AeroSpace references are available under `.tmp/docs/`; runtime logs are under `.tmp/aerospace-scratchpad.log`.
+Place behavior that coordinates a user command in the application layer, and place window-manager translation behind the private AeroSpace boundary. Keep formatting, configuration names, logging, and error presentation in their focused support modules. A new module is justified when a responsibility has a cohesive owner and a distinct dependency direction; otherwise extend the nearest existing module. Keep packaging and documentation changes outside runtime packages.

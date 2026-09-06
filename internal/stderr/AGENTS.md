@@ -1,10 +1,16 @@
-# internal/stderr
+# Purpose
 
-Central error presentation and exit behavior.
+Owns consistent presentation of command failures on standard error.
 
-- Keep stderr output consistent and separate from scriptable stdout.
-- Log errors before presenting them.
-- Preserve configurable exit behavior used by tests.
-- Do not introduce business decisions here.
+# Boundaries
 
-Any output wording change is user-visible: test failure and non-exiting test paths and inspect affected snapshots.
+This module separates actionable error presentation from scriptable standard output and applies the process's exit behavior. It does not decide domain outcomes or replace returned errors with logging.
+
+# Connections
+
+- [Application commands](../../cmd/AGENTS.md): Delegates command failure presentation here.
+- [Logging](../logger/AGENTS.md): Records failures before presentation.
+
+# Placement
+
+Put shared standard-error wording and exit behavior here. Keep domain context and recovery decisions with the originating module. Create another presentation module only when a separate output channel has a distinct contract.

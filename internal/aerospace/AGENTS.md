@@ -1,24 +1,18 @@
-# internal/aerospace
+# Purpose
 
-Owns the translation between scratchpad behavior and AeroSpace IPC.
+Owns the translation between scratchpad behavior and the AeroSpace window-manager boundary.
 
-## Files
+# Boundaries
 
-- `client.go`: wraps upstream client, exposes common operations, connection lifetime, and dry-run behavior.
-- `querier.go`: finds/filter windows, resolves monitor/workspace names, and persists `next` cycling state.
-- `mover.go`: performs workspace, focus, and floating-layout transitions.
+This module queries window, workspace, and monitor state and applies scratchpad movements, focus changes, and layout transitions through the injected window-manager client. It owns domain decisions that require AeroSpace state. It does not define CLI syntax, serialize command output, or own process-wide lifecycle.
 
-## Rules
+# Connections
 
-- Depend on the injected `AeroSpaceWMClient`; keep IPC details behind this boundary.
-- Query code discovers state; mover code changes state.
-- Preserve `.scratchpad` for single-monitor behavior and `.scratchpad.<monitor-id>` for monitor-specific behavior.
-- Use raw `Connection().SendCommand` only when the upstream typed API does not expose the operation.
-- Dry-run must avoid mutations while preserving useful output.
-- Wrap errors with operation context; do not silently discard IPC failures.
+- [Application commands](../../cmd/AGENTS.md): Consumes this module's query and movement contracts to implement user-facing operations.
+- [Constants](../constants/AGENTS.md): Provides stable scratchpad and state names used when translating window-manager state.
+- [Logging](../logger/AGENTS.md): Receives diagnostics for boundary operations and recoverable fallbacks.
+- [Test utilities](../testutils/AGENTS.md): Supplies deterministic window-manager scenarios around this boundary.
 
-## Tests
+# Placement
 
-- Write focused tests before behavior changes, including no-window/error paths and multi-monitor cases.
-- Use deterministic mock monitor/window/workspace state.
-- Run `go test ./internal/aerospace -v` and then `make test`.
+Put a responsibility here when it interprets or changes AeroSpace state for a scratchpad use case. Keep command-specific sequencing in the application layer and generic policies in support modules. Add another adapter module only for a separate external system with its own contract and lifecycle.

@@ -1,8 +1,16 @@
-# internal/mocks
+# Purpose
 
-Generated GoMock implementations for AeroSpace IPC boundaries.
+Provides generated test doubles for private contracts and external service boundaries.
 
-- Do not hand-edit generated `*.go` files.
-- Change the source interface, then regenerate with `scripts/mock-generator.sh`.
-- Keep generated mocks test-only; production packages must not import this tree.
-- After regeneration, run `make test` and review the generated diff for unexpected interface changes.
+# Boundaries
+
+This module is test-only. Generated artifacts are owned by their generator and must not contain hand-written production behavior. Production packages must not depend on this tree.
+
+# Connections
+
+- [AeroSpace integration](../aerospace/AGENTS.md): Defines the boundary contracts that require isolated test doubles.
+- [Test utilities](../testutils/AGENTS.md): Composes generated doubles into deterministic scenarios.
+
+# Placement
+
+Put generated doubles here when a contract needs isolation in tests. Change the contract or generator input rather than editing generated output. Keep scenario setup and higher-level fixtures in test utilities.

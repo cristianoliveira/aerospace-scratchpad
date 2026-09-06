@@ -1,11 +1,19 @@
-# internal/logger
+# Purpose
 
-Process-wide structured logging infrastructure.
+Owns process-wide diagnostic logging infrastructure.
 
-- Configuration comes from the environment constants package.
-- Keep logger initialization and closing in the composition root.
-- Logging must not alter command stdout contracts.
-- Preserve the no-op logger for deterministic tests.
-- Never log as a substitute for returning an actionable error.
+# Boundaries
 
-Run package tests when changing configuration, levels, file handling, or JSON helpers, followed by `make test`.
+This module configures and exposes logging without changing command standard output or making business decisions. Lifecycle ownership remains with the composition root. Test callers may provide no-op or recording implementations through the logging contract.
+
+# Connections
+
+- [Constants](../constants/AGENTS.md): Provides stable logging configuration names.
+- [Composition root](../../AGENTS.md): Owns logger construction, registration, and shutdown.
+- [AeroSpace integration](../aerospace/AGENTS.md): Emits diagnostics for window-manager operations.
+- [Application commands](../../cmd/AGENTS.md): Emits command diagnostics.
+- [Error presentation](../stderr/AGENTS.md): Records failures before they are presented to users.
+
+# Placement
+
+Put process diagnostics and logger lifecycle primitives here. Keep user-facing error wording in error presentation and keep domain decisions in their owning module. Add another observability module only when it represents a distinct signal type with an independent contract.

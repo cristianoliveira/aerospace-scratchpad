@@ -1,9 +1,17 @@
-# scripts
+# Purpose
 
-Repository maintenance automation.
+Owns repository maintenance automation that supports development, packaging, and generated artifacts.
 
-- Scripts must be non-interactive when used by CI and fail on errors.
-- Keep version validation, mock generation, Nix hash updates, and benchmarks focused in separate scripts.
-- Resolve paths relative to repository root rather than caller working directory.
-- Do not hand-edit outputs when an existing generator owns them.
-- Test changed scripts with a timeout and run the related Make target.
+# Boundaries
+
+Scripts coordinate focused maintenance tasks and should remain independent of runtime business decisions. They may invoke repository tools and generators, but they should not become an alternative implementation of application behavior.
+
+# Connections
+
+- [Generated mocks](../internal/mocks/AGENTS.md): Receives generated output from mock-maintenance workflows.
+- [Packaging](../nix/AGENTS.md): Supports reproducible packaging metadata maintenance.
+- [Repository architecture](../AGENTS.md): Operates within repository-wide ownership and dependency boundaries.
+
+# Placement
+
+Put a responsibility here when it is repeatable repository maintenance rather than runtime behavior. Keep one concern per script and place reusable domain logic in the owning runtime module. Add a new script when the task has a distinct lifecycle or tool contract.
