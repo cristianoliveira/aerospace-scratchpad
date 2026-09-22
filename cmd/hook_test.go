@@ -16,6 +16,27 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
+type hookLogEvent struct {
+	level string
+	msg   string
+	args  []any
+}
+
+type hookRecordingLogger struct {
+	events []hookLogEvent
+}
+
+func (l *hookRecordingLogger) record(level, msg string, args ...any) {
+	l.events = append(l.events, hookLogEvent{level: level, msg: msg, args: args})
+}
+func (l *hookRecordingLogger) LogInfo(msg string, args ...any)  { l.record("INFO", msg, args...) }
+func (l *hookRecordingLogger) LogError(msg string, args ...any) { l.record("ERROR", msg, args...) }
+func (l *hookRecordingLogger) LogWarn(msg string, args ...any)  { l.record("WARN", msg, args...) }
+func (l *hookRecordingLogger) LogDebug(msg string, args ...any) { l.record("DEBUG", msg, args...) }
+func (l *hookRecordingLogger) Close() error                     { return nil }
+func (l *hookRecordingLogger) GetConfig() logger.LogConfig      { return logger.LogConfig{} }
+func (l *hookRecordingLogger) AsJSON(any) string                { return "" }
+
 func cleanupMarkerFile(t *testing.T) {
 	t.Helper()
 
@@ -37,6 +58,46 @@ func scratchpadWorkspaceNames() []string {
 
 func TestHookPullWindow(t *testing.T) {
 	logger.SetDefaultLogger(&logger.EmptyLogger{})
+
+	t.Run("logs one info outcome for a move", func(t *testing.T) {
+		cleanupMarkerFile(t)
+		recorder := &hookRecordingLogger{}
+		logger.SetDefaultLogger(recorder)
+		t.Cleanup(func() { logger.SetDefaultLogger(&logger.EmptyLogger{}) })
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		focusedWindow := &windows.Window{WindowID: 99, Workspace: constants.DefaultScratchpadWorkspaceName}
+		gomock.InOrder(
+			mockClient.GetWindowsMock().EXPECT().GetFocusedWindow().Return(focusedWindow, nil),
+			mockClient.GetWorkspacesMock().EXPECT().MoveWindowToWorkspaceWithOpts(
+				workspaces.MoveWindowToWorkspaceArgs{WorkspaceName: "prev-ws"},
+				workspaces.MoveWindowToWorkspaceOpts{WindowID: &focusedWindow.WindowID},
+			).Return(nil),
+		)
+
+		_, err := testutils.CmdExecute(cmd.RootCmd(mockClient), "hook", "pull-window", "prev-ws", constants.DefaultScratchpadWorkspaceName)
+		if err != nil {
+			t.Fatalf("expected success, got error %v", err)
+		}
+		if len(recorder.events) != 1 || recorder.events[0].level != "INFO" || recorder.events[0].msg != "HOOK: [final] moved window to new focused workspace" {
+			t.Fatalf("expected one move outcome log, got %+v", recorder.events)
+		}
+	})
+
+	t.Run("logs one debug outcome for a non-scratchpad workspace", func(t *testing.T) {
+		recorder := &hookRecordingLogger{}
+		logger.SetDefaultLogger(recorder)
+		t.Cleanup(func() { logger.SetDefaultLogger(&logger.EmptyLogger{}) })
+		_, err := testutils.CmdExecute(cmd.RootCmd(testutils.NewMockAeroSpaceWM(gomock.NewController(t))), "hook", "pull-window", "prev-ws", "work")
+		if err != nil {
+			t.Fatalf("expected success, got error %v", err)
+		}
+		if len(recorder.events) != 1 || recorder.events[0].level != "DEBUG" || recorder.events[0].msg != "HOOK: pull-window skipped" {
+			t.Fatalf("expected one skip outcome log, got %+v", recorder.events)
+		}
+	})
 
 	t.Run("moves focused scratchpad window to previous workspace", func(t *testing.T) {
 		cleanupMarkerFile(t)

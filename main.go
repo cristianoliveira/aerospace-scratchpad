@@ -23,8 +23,6 @@ func main() {
 		}
 	}()
 	logger.SetDefaultLogger(defaultLogger)
-	defaultLogger.LogInfo("Executing Aerospace Scratchpad CLI")
-
 	aerospaceMarkClient, err := aerospacecli.NewClient()
 	if err != nil {
 		log.Printf("Error creating Aerospace client: %v", err)

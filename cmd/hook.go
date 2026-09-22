@@ -88,29 +88,25 @@ func (h *hookHandler) handlePullWindow(
 	prevWorkspace string,
 	focusedWorkspace string,
 ) error {
-	h.logger.LogInfo(
-		"HOOK: pull-window invoked",
-		"previous-workspace", prevWorkspace,
-		"focused-workspace", focusedWorkspace,
-	)
-
 	if aerospace.IsScratchpadWorkspace(prevWorkspace) {
 		h.logger.LogDebug(
-			"HOOK: previous workspace is scratchpad, nothing to do",
-			"workspace", prevWorkspace,
+			"HOOK: pull-window skipped",
+			"reason", "previous workspace is scratchpad",
+			"previous-workspace", prevWorkspace,
+			"focused-workspace", focusedWorkspace,
 		)
 		return nil
 	}
 
 	if !aerospace.IsScratchpadWorkspace(focusedWorkspace) {
 		h.logger.LogDebug(
-			"HOOK: focused workspace is not scratchpad",
-			"workspace", focusedWorkspace,
+			"HOOK: pull-window skipped",
+			"reason", "focused workspace is not scratchpad",
+			"previous-workspace", prevWorkspace,
+			"focused-workspace", focusedWorkspace,
 		)
 		return nil
 	}
-
-	h.logger.LogInfo("HOOK: focused workspace is scratchpad")
 
 	focusedWindow, err := h.client.Windows().GetFocusedWindow()
 	if err != nil {
@@ -121,12 +117,13 @@ func (h *hookHandler) handlePullWindow(
 		)
 	}
 
-	h.logger.LogInfo("HOOK: focused window", "window", focusedWindow)
-
 	if !aerospace.IsScratchpadWorkspace(focusedWindow.Workspace) {
 		h.logger.LogDebug(
-			"HOOK: focused window is no longer in scratchpad, skipping move",
-			"workspace", focusedWindow.Workspace,
+			"HOOK: pull-window skipped",
+			"reason", "focused window is no longer in scratchpad",
+			"previous-workspace", prevWorkspace,
+			"focused-workspace", focusedWorkspace,
+			"window-workspace", focusedWindow.Workspace,
 		)
 		return nil
 	}
@@ -141,7 +138,13 @@ func (h *hookHandler) handlePullWindow(
 	}
 
 	if cleared {
-		h.logger.LogInfo("HOOK: temp file exists, returning")
+		h.logger.LogDebug(
+			"HOOK: pull-window skipped",
+			"reason", "moving marker exists",
+			"previous-workspace", prevWorkspace,
+			"focused-workspace", focusedWorkspace,
+			"window-id", focusedWindow.WindowID,
+		)
 		return nil
 	}
 
