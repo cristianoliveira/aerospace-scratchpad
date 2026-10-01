@@ -6,7 +6,7 @@
     utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { nixpkgs, utils, ... }: 
+  outputs = { nixpkgs, utils, ... }:
     utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
@@ -36,10 +36,10 @@
             # socat -v UNIX-LISTEN:/tmp/bobko.aerospace-$USER.sock,fork UNIX-CONNECT:/tmp/bobko.aerospace-$USER.sock.real | tee /tmp/socket.log
             socat
 
-            # File watcher 
+            # File watcher
             # USAGE: (check .watch.yaml for config)
-            # fzz 
-            funzzy
+            # fzz
+            # funzzy
           ];
         };
 

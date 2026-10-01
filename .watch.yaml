@@ -1,51 +1,50 @@
-## Funzzy events file
-# more details see: https://github.com/cristianoliveira/funzzy
-#
-# List here the tasks and the commands for this workflow
-# then run `fzz` to start to work.
+## Funzzy events file — .watch.yaml
+# Repository guardrails migrated from .tmp/old.watch.yaml.
+# `fzz check` validates this configuration; `fzz list` shows jobs.
 
-- name: quick checks
-  run: 
-    - gotestsum --format pkgname
-  run_on_init: true
-  change: 
+on:
+  socket: .watch.sock
+  change:
     - '**/*.go'
     - '**/*.snap'
     - '.golangci.yml'
-  ignore: 
+  ignore:
     - '.tmp/**/*'
     - '**/*.log'
+  respect_gitignore: true
 
-- name: install after checks
-  run: 
-    # Validate if file .install contains 1 otherwise 
-    - if [ -f .tmp/install ]; then go install . && echo "installed latest" ; fi
-    - aerospace-scratchpad -v
-  change: 
-    - '**/*.go'
-    - '**/*.snap'
-  ignore: 
-    - '.tmp/**/*'
-    - '**/*.log'
+execution:
+  concurrency: 2
+  output: show-on-failure
+  timeout: 10m
+  recovery_policy: skip
 
-- name: quick checks style
-  run: 
-    - go fmt ./...
-    - make fmt
-  run_on_init: true
-  change: 
-    - '**/*.go'
-    - '**/*.snap'
-    - '.golangci.yml'
-  ignore: 
-    - '.tmp/**/*'
-    - '**/*.log'
+jobs:
+  - name: quick checks
+    run: gotestsum --format pkgname
+    run_on_init: true
+    timeout: 10m
 
-- name: git stage changes
-  run: git add {{relative_path}}
-  change: 
-    - '**/*.go'
-    - '**/*.snap'
-  ignore: 
-    - '.tmp/**/*'
-    - '**/*.log'
+  - name: quick checks style
+    run:
+      - go fmt ./...
+      - make fmt
+    run_on_init: true
+    change:
+      - '**/*.go'
+      - '**/*.snap'
+      - '.golangci.yml'
+    timeout: 5m
+
+  # These side effects were in the old automatic workflow. Keep them
+  # available, but require an explicit `fzz run` to invoke them.
+  - name: install after checks
+    trigger: manual
+    run:
+      - if [ -f .tmp/install ]; then go install . && echo "installed latest"; fi
+      - aerospace-scratchpad -v
+    timeout: 5m
+
+  - name: git stage changes
+    trigger: manual
+    run: git add {{relative_filepath}}
