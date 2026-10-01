@@ -481,4 +481,78 @@ func TestListCmd(t *testing.T) { //nolint:gocognit
 			testutils.MatchSnapshot(t, nil, cmdAsString, out, err)
 		},
 	)
+
+	t.Run("defaults to all monitors and scopes explicit current", func(t *testing.T) {
+		for _, test := range []struct {
+			name  string
+			args  []string
+			want  []string
+			avoid []string
+		}{
+			{name: "all monitors by default", args: []string{"list"}, want: []string{"Monitor One", "Monitor Two"}},
+			{name: "explicit current monitor", args: []string{"list", "--monitor", "current"}, want: []string{"Monitor One"}, avoid: []string{"Monitor Two"}},
+		} {
+			t.Run(test.name, func(t *testing.T) {
+				ctrl := gomock.NewController(t)
+				client := testutils.NewMockAeroSpaceWM(ctrl)
+				client.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 1, MonitorName: "main"})
+				client.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+					{Workspace: ".scratchpad.1", MonitorID: 1},
+					{Workspace: ".scratchpad.2", MonitorID: 2},
+				})
+				client.GetWindowsMock().EXPECT().GetAllWindows().Return([]windows.Window{
+					{
+						WindowID:     1,
+						AppName:      "Monitor One",
+						WindowLayout: "tiling",
+						Workspace:    ".scratchpad.1",
+					},
+					{
+						WindowID:     2,
+						AppName:      "Monitor Two",
+						WindowLayout: "tiling",
+						Workspace:    ".scratchpad.2",
+					},
+				}, nil)
+				client.GetWindowsMock().
+					EXPECT().
+					GetAllWindowsByWorkspace(".scratchpad.1").
+					Return([]windows.Window{
+						{
+							WindowID:     1,
+							AppName:      "Monitor One",
+							WindowLayout: "tiling",
+							Workspace:    ".scratchpad.1",
+						},
+					}, nil)
+				client.GetWindowsMock().
+					EXPECT().
+					GetAllWindowsByWorkspace(".scratchpad.2").
+					Return([]windows.Window{
+						{
+							WindowID:     2,
+							AppName:      "Monitor Two",
+							WindowLayout: "tiling",
+							Workspace:    ".scratchpad.2",
+						},
+					}, nil)
+
+				root := cmd.RootCmd(client)
+				out, err := testutils.CmdExecute(root, test.args...)
+				if err != nil {
+					t.Fatalf("command failed: %v", err)
+				}
+				for _, want := range test.want {
+					if !strings.Contains(out, want) {
+						t.Errorf("output %q does not include %q", out, want)
+					}
+				}
+				for _, avoid := range test.avoid {
+					if strings.Contains(out, avoid) {
+						t.Errorf("output %q unexpectedly includes %q", out, avoid)
+					}
+				}
+			})
+		}
+	})
 }
