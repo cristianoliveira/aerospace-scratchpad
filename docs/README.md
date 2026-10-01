@@ -122,7 +122,7 @@ The output is scriptable and supports multiple formats (text, json, tsv, csv).
 ### USAGE
 
 ```bash
-# List all scratchpad windows (text format)
+# List scratchpad windows across all monitors (text format; default)
 aerospace-scratchpad list
 
 # Using the alias
@@ -268,7 +268,7 @@ For optimal multi-monitor scratchpad experience:
    }
    ```
 
-2. **Monitor-aware commands**: Use the `--monitor` flag with `list` and `next` commands:
+2. **Monitor-aware commands**: `list` defaults to all monitors; use `--monitor` to narrow its results. `next` defaults to the current monitor:
    ```bash
    # List scratchpad windows on current monitor
    aerospace-scratchpad list --monitor current

@@ -130,7 +130,7 @@ See more in [documentation](docs/)
 
 All window-manipulation commands (`move`, `show`, `summon`, `next`, `list`) can emit machine-friendly output with `--output` like `--output json`
 
-List scratchpad windows:
+List scratchpad windows across all monitors (the default):
 ```text
 aerospace-scratchpad list --output json
 ```
