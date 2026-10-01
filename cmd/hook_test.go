@@ -68,7 +68,10 @@ func TestHookPullWindow(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
-		focusedWindow := &windows.Window{WindowID: 99, Workspace: constants.DefaultScratchpadWorkspaceName}
+		focusedWindow := &windows.Window{
+			WindowID:  99,
+			Workspace: constants.DefaultScratchpadWorkspaceName,
+		}
 		gomock.InOrder(
 			mockClient.GetWindowsMock().EXPECT().GetFocusedWindow().Return(focusedWindow, nil),
 			mockClient.GetWorkspacesMock().EXPECT().MoveWindowToWorkspaceWithOpts(
@@ -77,11 +80,18 @@ func TestHookPullWindow(t *testing.T) {
 			).Return(nil),
 		)
 
-		_, err := testutils.CmdExecute(cmd.RootCmd(mockClient), "hook", "pull-window", "prev-ws", constants.DefaultScratchpadWorkspaceName)
+		_, err := testutils.CmdExecute(
+			cmd.RootCmd(mockClient),
+			"hook",
+			"pull-window",
+			"prev-ws",
+			constants.DefaultScratchpadWorkspaceName,
+		)
 		if err != nil {
 			t.Fatalf("expected success, got error %v", err)
 		}
-		if len(recorder.events) != 1 || recorder.events[0].level != "INFO" || recorder.events[0].msg != "HOOK: [final] moved window to new focused workspace" {
+		if len(recorder.events) != 1 || recorder.events[0].level != "INFO" ||
+			recorder.events[0].msg != "HOOK: [final] moved window to new focused workspace" {
 			t.Fatalf("expected one move outcome log, got %+v", recorder.events)
 		}
 	})
@@ -90,14 +100,25 @@ func TestHookPullWindow(t *testing.T) {
 		recorder := &hookRecordingLogger{}
 		logger.SetDefaultLogger(recorder)
 		t.Cleanup(func() { logger.SetDefaultLogger(&logger.EmptyLogger{}) })
-		_, err := testutils.CmdExecute(cmd.RootCmd(testutils.NewMockAeroSpaceWM(gomock.NewController(t))), "hook", "pull-window", "prev-ws", "work")
+		_, err := testutils.CmdExecute(
+			cmd.RootCmd(testutils.NewMockAeroSpaceWM(gomock.NewController(t))),
+			"hook",
+			"pull-window",
+			"prev-ws",
+			"work",
+		)
 		if err != nil {
 			t.Fatalf("expected success, got error %v", err)
 		}
-		if len(recorder.events) != 1 || recorder.events[0].level != "DEBUG" || recorder.events[0].msg != "HOOK: pull-window skipped" {
+		if len(recorder.events) != 1 || recorder.events[0].level != "DEBUG" ||
+			recorder.events[0].msg != "HOOK: pull-window skipped" {
 			t.Fatalf("expected one skip outcome log, got %+v", recorder.events)
 		}
 	})
+}
+
+func TestHookPullWindowScenarios(t *testing.T) {
+	logger.SetDefaultLogger(&logger.EmptyLogger{})
 
 	t.Run("moves focused scratchpad window to previous workspace", func(t *testing.T) {
 		cleanupMarkerFile(t)
