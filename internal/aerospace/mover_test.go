@@ -69,7 +69,7 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		}
 	})
 
-	t.Run("legacy mover routes by window source monitor when another is focused", func(t *testing.T) {
+	t.Run("legacy mover routes by source monitor, ignoring focus", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
