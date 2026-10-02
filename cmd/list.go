@@ -63,6 +63,8 @@ A scratchpad window is defined as:
 - A window in a scratchpad workspace (.scratchpad or .scratchpad.<monitor-id>), OR
 - A floating window (WindowLayout == "floating")
 
+By default, windows from all monitors are included. Use --monitor current to limit
+results to the current monitor, or provide a monitor ID to select one monitor.
 The output is scriptable and supports multiple formats (text, json, tsv, csv).
 `,
 		Run: func(cmd *cobra.Command, args []string) {

@@ -62,7 +62,7 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 	rootCmd.AddCommand(compose([]flagsFn{
 		enableOutputFlag,
 		enableFilterFlag,
-		enableMonitorFlag,
+		enableListMonitorFlag,
 	}, ListCmd(customClient)))
 	rootCmd.AddCommand(InfoCmd(aerospaceClient))
 	rootCmd.AddCommand(HookCmd(aerospaceClient))
@@ -100,6 +100,14 @@ func enableMonitorFlag(command *cobra.Command) *cobra.Command {
 	command.Flags().StringP(
 		"monitor", "m", "current",
 		`Monitor filter: "current" (default) for current monitor, "all" for all monitors, or a monitor ID (e.g., 1)`,
+	)
+	return command
+}
+
+func enableListMonitorFlag(command *cobra.Command) *cobra.Command {
+	command.Flags().StringP(
+		"monitor", "m", "all",
+		`Monitor filter: "all" (default) for all monitors, "current" for the current monitor, or a monitor ID (e.g., 1)`,
 	)
 	return command
 }
