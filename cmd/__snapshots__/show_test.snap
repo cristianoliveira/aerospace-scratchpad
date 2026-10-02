@@ -426,3 +426,64 @@ Output:
   error: ""
 
 ---
+
+[TestShowCmd/still_brings_a_scratchpad_window_to_a_workspace_on_another_monitor - 1]
+Context:
+  workspaces:
+  - workspace: .scratchpad
+  - workspace: ws2
+    focused-window-id: 5678
+  windows:
+  - window-id: 1111
+    app-name: Terminal
+    workspace: .scratchpad
+  - window-id: 5678
+    app-name: Finder
+    workspace: ws2
+Command: |
+  $ aerospace-scratchpad show Terminal
+Output:
+  status: success
+  stdout: |
+    command=show action=to-workspace window_id=1111 app_name=Terminal workspace=.scratchpad target_workspace=ws2 result=ok message=""
+  error: ""
+
+---
+
+[TestShowCmd/fails_closed_on_hide_when_scratchpad_target_is_attached_to_another_monitor - 1]
+Context:
+  workspaces:
+  - workspace: ws2
+    focused-window-id: 5678
+  windows:
+  - window-id: 5678
+    app-name: Finder
+    workspace: ws2
+Command: |
+  $ aerospace-scratchpad show Finder
+Output:
+  status: success
+  stdout: |
+    command=show action=to-scratchpad window_id=5678 app_name=Finder workspace=ws2 target_workspace="" result=error message="unable to resolve scratchpad workspace for monitor 2: scratchpad workspace '.scratchpad.2' is attached to monitor 1, not monitor 2; refusing cross-monitor move"
+  error: ""
+
+---
+
+[TestShowCmd/fails_closed_on_hide_with_cross-monitor_target - 1]
+Context:
+  workspaces:
+  - workspace: ws2
+    focused-window-id: 5678
+  windows:
+  - window-id: 5678
+    app-name: Finder
+    workspace: ws2
+Command: |
+  $ aerospace-scratchpad show Finder
+Output:
+  status: success
+  stdout: |
+    command=show action=to-scratchpad window_id=5678 app_name=Finder workspace=ws2 target_workspace="" result=error message="unable to resolve scratchpad workspace for monitor 2: scratchpad workspace '.scratchpad.2' is attached to monitor 1, not monitor 2; refusing cross-monitor move"
+  error: ""
+
+---

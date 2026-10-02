@@ -69,6 +69,46 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		}
 	})
 
+	t.Run("legacy mover routes by window source monitor when another is focused", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		window := windows.Window{AppName: "Notepad", WindowID: 112, Workspace: "ws1"}
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 2, MonitorName: "HDMI"})
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: "ws2", MonitorID: 2},
+			{Workspace: ".scratchpad.1", MonitorID: 1},
+			{Workspace: ".scratchpad.2", MonitorID: 2},
+		})
+
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(
+				workspaces.MoveWindowToWorkspaceArgs{WorkspaceName: ".scratchpad.1"},
+				workspaces.MoveWindowToWorkspaceOpts{WindowID: &window.WindowID},
+			).
+			Return(nil).
+			Times(1)
+		aerospaceClient.GetLayoutMock().EXPECT().
+			SetLayout(
+				[]string{"floating"},
+				layout.SetLayoutOpts{WindowID: &window.WindowID},
+			).
+			Return(nil).
+			Times(1)
+
+		mover := aerospace.NewAeroSpaceMover(aerospaceClient)
+		target, err := mover.MoveWindowToScratchpad(window)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if target != ".scratchpad.1" {
+			t.Fatalf("expected source monitor scratchpad .scratchpad.1, got %s", target)
+		}
+	})
+
 	t.Run("fails closed when target scratchpad is attached to another monitor", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -127,6 +167,36 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		_, err := mover.MoveWindowToScratchpadForMonitor(window, 2)
 		if err == nil {
 			t.Fatalf("expected error when new scratchpad cannot be safely provisioned")
+		}
+	})
+
+	t.Run("fails closed when absent target and focused monitor match source", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		window := windows.Window{AppName: "Notepad", WindowID: 334, Workspace: "ws2"}
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		// The focus/source match does not prove where an absent workspace will
+		// be created: AeroSpace may place it on the main monitor instead.
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 2, MonitorName: "HDMI"})
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: "ws2", MonitorID: 2},
+		})
+
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+		aerospaceClient.GetLayoutMock().EXPECT().
+			SetLayout(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+
+		mover := aerospace.NewAeroSpaceMover(aerospaceClient)
+		if _, err := mover.MoveWindowToScratchpadForMonitor(window, 2); err == nil {
+			t.Fatal("expected error rather than trusting focused monitor for absent target")
 		}
 	})
 
