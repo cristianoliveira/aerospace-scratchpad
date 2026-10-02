@@ -196,8 +196,9 @@ func ResolveScratchpadWorkspaceNameForMonitor(
 }
 
 // ResolveSourceMonitorForWorkspace returns the monitor the workspace is
-// currently attached to. It fails closed when the workspace is missing from
-// the workspace-to-monitor mapping, as the source monitor cannot be trusted.
+// currently attached to. It fails closed when the workspace is missing or
+// ambiguous in the workspace-to-monitor mapping, as the source monitor cannot
+// be trusted.
 func ResolveSourceMonitorForWorkspace(
 	cli AeroSpaceWMClient,
 	workspace string,
@@ -213,10 +214,23 @@ func ResolveSourceMonitorForWorkspace(
 		return 0, err
 	}
 
+	var sourceMonitorID int
 	for _, workspaceMonitor := range workspaces {
-		if workspaceMonitor.Workspace == workspace {
-			return workspaceMonitor.MonitorID, nil
+		if workspaceMonitor.Workspace != workspace {
+			continue
 		}
+		if sourceMonitorID != 0 && sourceMonitorID != workspaceMonitor.MonitorID {
+			return 0, fmt.Errorf(
+				"workspace '%s' is ambiguously attached to monitors %d and %d; unable to determine source monitor",
+				workspace,
+				sourceMonitorID,
+				workspaceMonitor.MonitorID,
+			)
+		}
+		sourceMonitorID = workspaceMonitor.MonitorID
+	}
+	if sourceMonitorID != 0 {
+		return sourceMonitorID, nil
 	}
 
 	return 0, fmt.Errorf(

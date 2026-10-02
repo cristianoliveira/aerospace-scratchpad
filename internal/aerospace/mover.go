@@ -177,11 +177,12 @@ func (a *MoverAeroSpace) validateScratchpadMonitorAffinity(
 	// monitor, and focus can change between this check and the move, so a
 	// focused-matches-source match at validation time is not proof. Only a
 	// proven single-monitor setup (exactly one monitor in the mapping) has no
-	// other monitor to cross; otherwise fail closed.
+	// other monitor to cross; otherwise fail closed with actionable guidance.
 	if countUniqueMonitors(workspaces) != 1 {
 		return fmt.Errorf(
-			"scratchpad workspace '%s' does not exist and cannot be safely provisioned in a multi-monitor setup; refusing cross-monitor move",
+			"scratchpad workspace '%s' does not exist and cannot be safely provisioned in a multi-monitor setup; refusing cross-monitor move. Create it from a window on monitor %d, or pin it with workspace-to-monitor-force-assignment in aerospace.toml",
 			targetWorkspace,
+			sourceMonitorID,
 		)
 	}
 	return nil
