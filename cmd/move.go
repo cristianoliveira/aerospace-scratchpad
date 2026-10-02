@@ -106,25 +106,9 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
 			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 
-			// Get the current monitor ID before any focus changes
-			currentMonitorID := 0
-			var monitor *aerospace.MonitorInfo
-			monitor, err = aerospace.GetFocusedMonitor(aerospaceClient)
-			if err != nil {
-				logger.LogError(
-					"MOVE: unable to get focused monitor, defaulting to 0",
-					"error",
-					err,
-				)
-			} else {
-				currentMonitorID = monitor.MonitorID
-			}
-			logger.LogDebug(
-				"MOVE: retrieved focused monitor",
-				"monitorID",
-				currentMonitorID,
-			)
-
+			// Each window is routed by its own source monitor, never by the
+			// globally focused monitor: a pattern or --all-floating can select
+			// windows living on different monitors.
 			var windows []windowsipc.Window
 			if allFloatingFlag {
 				// Get all floating windows when --all-floating is set
@@ -189,8 +173,12 @@ To move all floating windows (scratchpad windows) to the scratchpad, use the --a
 					continue
 				}
 
-				targetWorkspace, moveErr := mover.MoveWindowToScratchpadForMonitor(
-					window, currentMonitorID,
+				// Route by the window's own source monitor: never move a
+				// window to a scratchpad on another monitor.
+				targetWorkspace, moveErr := moveWindowToSourceMonitorScratchpad(
+					aerospaceClient,
+					&mover,
+					window,
 				)
 				if moveErr != nil {
 					if strings.Contains(

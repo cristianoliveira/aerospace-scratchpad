@@ -241,6 +241,10 @@ func TestShowCmd(t *testing.T) {
 		focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: ".scratchpad", MonitorID: 1},
+		})
 		aerospaceClient.GetWindowsMock().EXPECT().
 			GetAllWindows().
 			Return(allWindows, nil).
@@ -350,6 +354,11 @@ func TestShowCmd(t *testing.T) {
 			focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 			aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+			// Bringing from monitor 1 to the focused workspace on monitor 2 is allowed.
+			aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+				{Workspace: "ws1", MonitorID: 1},
+				{Workspace: "ws2", MonitorID: 2},
+			})
 			aerospaceClient.GetWindowsMock().EXPECT().
 				GetAllWindows().
 				Return(allWindows, nil).
@@ -586,6 +595,10 @@ func TestShowCmd(t *testing.T) {
 				focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 				aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+				aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+					{Workspace: "ws2", MonitorID: 2},
+					{Workspace: ".scratchpad", MonitorID: 2},
+				})
 				aerospaceClient.GetWindowsMock().EXPECT().
 					GetAllWindows().
 					Return(allWindows, nil).

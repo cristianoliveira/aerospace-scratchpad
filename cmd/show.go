@@ -82,24 +82,6 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				focusedWorkspace,
 			)
 
-			// Get the current monitor ID before any focus changes
-			currentMonitorID := 0
-			monitor, err := aerospace.GetFocusedMonitor(aerospaceClient.GetUnderlyingClient())
-			if err != nil {
-				logger.LogError(
-					"SHOW: unable to get focused monitor, defaulting to 0",
-					"error",
-					err,
-				)
-			} else {
-				currentMonitorID = monitor.MonitorID
-			}
-			logger.LogDebug(
-				"SHOW: retrieved focused monitor",
-				"monitorID",
-				currentMonitorID,
-			)
-
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
 			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 
@@ -225,16 +207,18 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					"hasAtLeastOneWindowFocused", hasAtLeastOneWindowFocused,
 				)
 				if hasAtLeastOneWindowFocused { // conditional flow mirrors show toggle behavior
-					targetWorkspace, moveErr := mover.MoveWindowToScratchpadForMonitor(
-						window, currentMonitorID,
+					// Route by the window's own source monitor: never move a
+					// window to a scratchpad on another monitor.
+					targetWorkspace, moveErr := moveWindowToSourceMonitorScratchpad(
+						aerospaceClient,
+						&mover,
+						window,
 					)
 					if moveErr != nil {
-						logger.LogDebug(
-							"Error: unable to move window '%+v' to scratchpad\n%s",
-							"window",
-							window,
-							"error",
-							moveErr,
+						logger.LogError(
+							"SHOW: unable to move window to its source monitor scratchpad",
+							"window", window,
+							"error", moveErr,
 						)
 						if printErr := formatter.Print(cli.OutputEvent{
 							Command:         commandShow,

@@ -204,9 +204,11 @@ Context:
   - window-id: 1111
     window-layout: floating
     app-name: Terminal
+    workspace: .scratchpad
   - window-id: 2222
     window-layout: floating
     app-name: Calculator
+    workspace: .scratchpad.2
   - window-id: 1234
     window-layout: tiling
     app-name: Notepad
@@ -215,8 +217,8 @@ Command: |
 Output:
   status: success
   stdout: |
-    command=move action=to-scratchpad window_id=1111 app_name=Terminal workspace="" target_workspace=.scratchpad result=ok message=""
-    command=move action=to-scratchpad window_id=2222 app_name=Calculator workspace="" target_workspace=.scratchpad result=ok message=""
+    command=move action=to-scratchpad window_id=1111 app_name=Terminal workspace=.scratchpad target_workspace=.scratchpad result=ok message=""
+    command=move action=to-scratchpad window_id=2222 app_name=Calculator workspace=.scratchpad.2 target_workspace=.scratchpad.2 result=ok message=""
   error: ""
 
 ---
@@ -246,6 +248,7 @@ Context:
   - window-id: 1111
     window-layout: floating
     app-name: Terminal
+    workspace: .scratchpad
 Command: |
   $ aerospace-scratchpad move --all-floating --dry-run
 Output:
@@ -253,7 +256,7 @@ Output:
   stdout: |
     [dry-run] MoveWindowToWorkspace(windowID=1111, workspace=.scratchpad)
     [dry-run] SetLayout(windowID=1111, layout=floating)
-    command=move action=to-scratchpad window_id=1111 app_name=Terminal workspace="" target_workspace=.scratchpad result=ok message=""
+    command=move action=to-scratchpad window_id=1111 app_name=Terminal workspace=.scratchpad target_workspace=.scratchpad result=ok message=""
   error: ""
 
 ---
@@ -300,6 +303,86 @@ Output:
     [dry-run] MoveWindowToWorkspace(windowID=5678, workspace=.scratchpad)
     [dry-run] SetLayout(windowID=5678, layout=floating)
     command=move action=to-scratchpad window_id=5678 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
+  error: ""
+
+---
+
+[TestMoveCmd/moves_window_to_scratchpad_on_its_source_monitor_when_another_monitor_is_focused - 1]
+Context:
+  workspaces:
+  - workspace: ws1
+    focused-window-id: 5678
+  windows:
+  - window-id: 5678
+    app-name: Finder
+Command: |
+  $ aerospace-scratchpad move
+Output:
+  status: success
+  stdout: |
+    command=move action=to-scratchpad window_id=5678 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
+  error: ""
+
+---
+
+[TestMoveCmd/moves_each_matched_window_to_its_own_monitor_scratchpad_with_--all-matching - 1]
+Context:
+  workspaces:
+  - workspace: ws1
+    focused-window-id: 1111
+  - workspace: ws2
+  windows:
+  - window-id: 1111
+    app-name: Finder
+  - window-id: 2222
+    app-name: Finder
+Command: |
+  $ aerospace-scratchpad move  --all-matching
+Output:
+  status: success
+  stdout: |
+    command=move action=to-scratchpad window_id=1111 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
+    command=move action=to-scratchpad window_id=2222 app_name=Finder workspace=ws2 target_workspace=.scratchpad.2 result=ok message=""
+  error: ""
+
+---
+
+[TestMoveCmd/routes_by_source_monitor_when_another_monitor_is_focused - 1]
+Context:
+  workspaces:
+  - workspace: ws1
+    focused-window-id: 5678
+  windows:
+  - window-id: 5678
+    app-name: Finder
+Command: |
+  $ aerospace-scratchpad move
+Output:
+  status: success
+  stdout: |
+    command=move action=to-scratchpad window_id=5678 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
+  error: ""
+
+---
+
+[TestMoveCmd/moves_each_matched_window_to_its_own_monitor_scratchpad - 1]
+Context:
+  workspaces:
+  - workspace: ws1
+    focused-window-id: 1111
+  - workspace: ws2
+  windows:
+  - window-id: 1111
+    app-name: Finder
+  - window-id: 2222
+    app-name: Finder
+Command: |
+  $ aerospace-scratchpad move  --all-matching
+Output:
+  status: success
+  stdout: |
+    command=move action=to-scratchpad window_id=1111 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
+    command=move action=to-scratchpad window_id=2222 app_name=Finder workspace=ws2 target_workspace=.scratchpad.2 result=ok message=""
   error: ""
 
 ---

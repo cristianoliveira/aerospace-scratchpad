@@ -7,6 +7,8 @@ Here you will find extensive documentation about the CLI.
 Move the currently focused window to the scratchpad workspace (`.scratchpad` or `.scratchpad.<monitor-id>`). The window will be hidden until you show it again.
 You can actually see this in your workspace list, but it can be ignored—it's just used to store windows that are "hidden".
 
+Each window is routed to the scratchpad attached to **its own source monitor** — the monitor of the workspace the window currently lives in — never to the globally focused monitor. When a safe same-monitor scratchpad target cannot be established (unknown source monitor, the target scratchpad is attached to another monitor, or a missing target in a multi-monitor setup, which AeroSpace would provision on the main monitor), the command fails for that window and leaves it where it is instead of moving it across monitors. Missing scratchpads are only provisioned on single-monitor setups. The check is performed just before the move over separate IPC calls and is not race-free.
+
 ### USAGE
 
 `pattern` is a regex pattern to match the app name.
@@ -56,7 +58,7 @@ aerospace-scratchpad move --all-floating
 
 This command will:
 - Find all windows with `WindowLayout == "floating"`
-- Move each floating window to a scratchpad workspace (`.scratchpad` or `.scratchpad.<monitor-id>`)
+- Move each floating window to the scratchpad workspace attached to that window's own source monitor (`.scratchpad` or `.scratchpad.<monitor-id>`)
 - Ensure they remain floating
 
 See more [flags](#flags).
@@ -252,7 +254,7 @@ aerospace-scratchpad hook pull-window --help
 
 It will send the window to a "special" workspace called `.scratchpad` (or `.scratchpad.<monitor-id>` for multi-monitor setups). This workspace is like any other workspace, but can be ignored. The window will be hidden until you show it again.
 
-When you have multiple monitors, each monitor can have its own scratchpad workspace (e.g., `.scratchpad.1`, `.scratchpad.2`). Windows are moved to the scratchpad workspace attached to the **currently focused monitor** when the command is executed. This ensures scratchpad windows are organized by the monitor you're actively using.
+When you have multiple monitors, each monitor can have its own scratchpad workspace (e.g., `.scratchpad.1`, `.scratchpad.2`). When **sending a window into the scratchpad** with `move` or the hide/toggle path in `show`, the destination is the scratchpad attached to that window's source monitor (the monitor of the workspace it currently lives in), resolved independently per window. If a same-monitor destination cannot be verified — unknown source monitor, destination attached to another monitor, or a destination that does not exist yet — the send fails for that window and leaves it where it is. A missing scratchpad is only provisioned on single-monitor setups: in multi-monitor setups AeroSpace would create the workspace on the main monitor, which is not necessarily the window's monitor. This no-cross-monitor guarantee applies only when sending into the scratchpad; bringing a window out with `show`, `summon`, or `hook pull-window` may move it to a workspace on another monitor. Note the guard is check-then-move validation over separate IPC calls: it is enforced at validation time and is not race-free against concurrent workspace changes.
 
 For single-monitor setups, the default `.scratchpad` workspace is used for backward compatibility.
 
