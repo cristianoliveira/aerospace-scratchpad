@@ -2,6 +2,7 @@ package aerospace_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"go.uber.org/mock/gomock"
@@ -265,6 +266,14 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 				}
 				if opts.WindowID == nil || *opts.WindowID != window.WindowID {
 					t.Errorf("expected window %d to be moved", window.WindowID)
+				}
+				// Order guard: summon must precede the move; the
+				// visible-workspace restore must follow it.
+				if summoned := aerospaceClient.GetSummonedWorkspaces(); len(summoned) != 1 {
+					t.Errorf("expected summon before move, got %v", summoned)
+				}
+				if got := aerospaceClient.GetWorkspaceBackAndForthCalls(); got != 0 {
+					t.Errorf("expected restore after move, got %d calls", got)
 				}
 				return nil
 			}).
@@ -536,6 +545,117 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		}
 		if got := aerospaceClient.GetWorkspaceBackAndForthCalls(); got != 1 {
 			t.Fatalf("expected workspace-back-and-forth restore, got %d calls", got)
+		}
+	})
+
+	t.Run("restores state when the move fails after provisioning", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		window := windows.Window{AppName: "Spotify", WindowID: 666, Workspace: "ws2"}
+		prevFocused := windows.Window{AppName: "Finder", WindowID: 999, Workspace: "ws1"}
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 1, MonitorName: "HDMI"})
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: "ws2", MonitorID: 2},
+		})
+
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetFocusedWindow().
+			Return(&prevFocused, nil).
+			Times(1)
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetAllWindows().
+			DoAndReturn(func() ([]windows.Window, error) {
+				return []windows.Window{window, prevFocused}, nil
+			}).
+			AnyTimes()
+
+		aerospaceClient.GetFocusMock().EXPECT().
+			SetFocusByWindowID(666).
+			Return(nil).
+			Times(1)
+		// Cleanup must run even though the move failed.
+		aerospaceClient.GetFocusMock().EXPECT().
+			SetFocusByWindowID(999).
+			Return(nil).
+			Times(1)
+
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+			Return(errors.New("move rejected")).
+			Times(1)
+		aerospaceClient.GetLayoutMock().EXPECT().
+			SetLayout(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+
+		mover := aerospace.NewAeroSpaceMover(aerospaceClient)
+		if _, err := mover.MoveWindowToScratchpadForMonitor(window, 2); err == nil {
+			t.Fatalf("expected move error to surface")
+		}
+		if got := aerospaceClient.GetWorkspaceBackAndForthCalls(); got != 1 {
+			t.Fatalf("expected workspace restore on move failure, got %d calls", got)
+		}
+	})
+
+	t.Run("surfaces restoration failure after a successful provisioned move", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		window := windows.Window{AppName: "Spotify", WindowID: 777, Workspace: "ws2"}
+		prevFocused := windows.Window{AppName: "Finder", WindowID: 999, Workspace: "ws1"}
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 2, MonitorName: "HDMI"})
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: "ws2", MonitorID: 2},
+		})
+
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetFocusedWindow().
+			Return(&prevFocused, nil).
+			Times(1)
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetAllWindows().
+			DoAndReturn(func() ([]windows.Window, error) {
+				return []windows.Window{window, prevFocused}, nil
+			}).
+			AnyTimes()
+
+		aerospaceClient.GetFocusMock().EXPECT().
+			SetFocusByWindowID(777).
+			Return(nil).
+			Times(1)
+		// User focus restore is still attempted when the visible-workspace
+		// restore fails.
+		aerospaceClient.GetFocusMock().EXPECT().
+			SetFocusByWindowID(999).
+			Return(nil).
+			Times(1)
+
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(1)
+		aerospaceClient.GetLayoutMock().EXPECT().
+			SetLayout(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(1)
+
+		// Inject workspace-back-and-forth failure through the harness.
+		aerospaceClient.SetWorkspaceBackAndForthError(errors.New("restore rejected"))
+
+		mover := aerospace.NewAeroSpaceMover(aerospaceClient)
+		_, err := mover.MoveWindowToScratchpadForMonitor(window, 2)
+		if err == nil {
+			t.Fatalf("expected restoration failure to surface")
+		}
+		if !strings.Contains(err.Error(), "focus restoration failed") {
+			t.Fatalf("expected actionable restoration error, got %v", err)
 		}
 	})
 

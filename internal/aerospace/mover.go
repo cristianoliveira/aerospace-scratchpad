@@ -135,11 +135,23 @@ func (a *MoverAeroSpace) MoveWindowToScratchpadForMonitor(
 	}
 
 	if err := a.moveWindowToScratchpadWorkspace(window, targetWorkspace); err != nil {
+		// Provisioning changed focus and the source monitor's visible
+		// workspace; restore them even though the move failed. Restoration
+		// errors are logged inside; the move error takes precedence.
+		if provisioned {
+			_ = a.restoreSourceMonitorAndFocus(window, prevFocused)
+		}
 		return targetWorkspace, err
 	}
 
 	if provisioned {
-		a.restoreSourceMonitorAndFocus(window, prevFocused)
+		if restoreErr := a.restoreSourceMonitorAndFocus(window, prevFocused); restoreErr != nil {
+			return targetWorkspace, fmt.Errorf(
+				"window moved to '%s' but focus restoration failed; check your visible workspaces: %w",
+				targetWorkspace,
+				restoreErr,
+			)
+		}
 	}
 	return targetWorkspace, nil
 }
@@ -194,6 +206,8 @@ func (a *MoverAeroSpace) ensureScratchpadTarget(
 		targetWorkspace,
 		sourceMonitorID,
 	)
+	// On provisioning failure the caller returns early with the error, so
+	// provisioned only matters on success.
 	return true, prevFocused, provisionErr
 }
 
@@ -313,14 +327,17 @@ func (a *MoverAeroSpace) verifyProvisionedPlacement(
 	)
 }
 
-// restoreSourceMonitorAndFocus runs after a successful provisioned move: it
-// returns the source monitor's visible workspace to the pre-summon one and
-// gives focus back to the user's window unless it is the moved window.
+// restoreSourceMonitorAndFocus runs after a provisioned move: it returns the
+// source monitor's visible workspace to the pre-summon one and gives focus
+// back to the user's window unless it is the moved window. Both restoration
+// steps are attempted; failures are joined and surfaced to the caller.
 func (a *MoverAeroSpace) restoreSourceMonitorAndFocus(
 	window windows.Window,
 	prevFocused *windows.Window,
-) {
+) error {
 	logger := logger.GetDefaultLogger()
+
+	var restoreErrs []error
 
 	// Leave the empty scratchpad: return the source monitor's visible
 	// workspace to the one focused before the summon.
@@ -330,12 +347,31 @@ func (a *MoverAeroSpace) restoreSourceMonitorAndFocus(
 			"error",
 			err,
 		)
+		restoreErrs = append(restoreErrs, fmt.Errorf(
+			"unable to restore the source monitor workspace: %w",
+			err,
+		))
 	}
 
 	// Refocusing the moved window would expose it inside the scratchpad.
 	if prevFocused != nil && prevFocused.WindowID != window.WindowID {
-		a.restoreFocus(prevFocused)
+		if err := a.focusWindowForProvisioning(*prevFocused); err != nil {
+			logger.LogError(
+				"MOVER: unable to restore focus after provisioning",
+				"window",
+				prevFocused,
+				"error",
+				err,
+			)
+			restoreErrs = append(restoreErrs, fmt.Errorf(
+				"unable to restore focus to window %d: %w",
+				prevFocused.WindowID,
+				err,
+			))
+		}
 	}
+
+	return errors.Join(restoreErrs...)
 }
 
 func (a *MoverAeroSpace) focusWindowForProvisioning(window windows.Window) error {

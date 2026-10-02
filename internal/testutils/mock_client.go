@@ -143,6 +143,12 @@ func (m *MockAeroSpaceWM) SetSummonWorkspaceError(err error) {
 	m.routingConn.summonErr = err
 }
 
+// SetWorkspaceBackAndForthError injects a failure for
+// workspace-back-and-forth commands.
+func (m *MockAeroSpaceWM) SetWorkspaceBackAndForthError(err error) {
+	m.routingConn.backAndForthErr = err
+}
+
 // SetSummonPlacementMonitor forces the monitor a summoned workspace lands on,
 // overriding the focused-window derivation; -1 restores derived placement.
 func (m *MockAeroSpaceWM) SetSummonPlacementMonitor(monitorID int) {
@@ -174,6 +180,7 @@ type routingConnection struct {
 	summonErr               error
 	summonPlacementOverride int
 	backAndForthCalls       int
+	backAndForthErr         error
 	ctrl                    *gomock.Controller
 }
 
@@ -238,6 +245,12 @@ func (r *routingConnection) handleSummonWorkspace(args []string) (*client.Respon
 // generated workspaces mock does not cover MoveBackAndForth, so calls are
 // tracked as state and asserted via GetWorkspaceBackAndForthCalls.
 func (r *routingConnection) handleWorkspaceBackAndForth(_ []string) (*client.Response, error) {
+	if r.backAndForthErr != nil {
+		return &client.Response{
+			ExitCode: 1,
+			StdErr:   r.backAndForthErr.Error(),
+		}, r.backAndForthErr
+	}
 	r.backAndForthCalls++
 	return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
 }
