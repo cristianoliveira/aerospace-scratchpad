@@ -18,11 +18,11 @@ type Mover interface {
 	// MoveWindowToScratchpadForMonitor sends a window to a scratchpad workspace
 	// attached to the given source monitor. The monitor invariant is enforced
 	// best-effort (check-then-move over separate IPC calls, not race-free): if a
-	// same-monitor target cannot be established (unknown monitor, target
-	// attached elsewhere, or a missing target in a multi-monitor setup, where
-	// safe provisioning cannot be proven), it returns an error and leaves the
-	// window where it is. Missing targets are only provisioned on proven
-	// single-monitor setups.
+	// same-monitor target cannot be established (unknown monitor, or target
+	// attached elsewhere), it returns an error and leaves the window where it
+	// is. A missing target is provisioned on the source monitor: focus moves
+	// to the source window, the empty workspace is summoned, its placement is
+	// verified, and the previous focus state is restored best-effort.
 	MoveWindowToScratchpadForMonitor(window windows.Window, monitorID int) (string, error)
 
 	// MoveWindowToWorkspace sends a window to a workspace and set focus
@@ -114,10 +114,12 @@ func (a *MoverAeroSpace) MoveWindowToScratchpadForMonitor(
 		)
 	}
 
-	if affinityErr := a.validateScratchpadMonitorAffinity(
+	provisioned, prevFocused, affinityErr := a.ensureScratchpadTarget(
+		window,
 		targetWorkspace,
 		monitorID,
-	); affinityErr != nil {
+	)
+	if affinityErr != nil {
 		logger.LogError(
 			"MOVER: scratchpad target is not attached to the window's source monitor",
 			"window",
@@ -135,23 +137,28 @@ func (a *MoverAeroSpace) MoveWindowToScratchpadForMonitor(
 	if err := a.moveWindowToScratchpadWorkspace(window, targetWorkspace); err != nil {
 		return targetWorkspace, err
 	}
+
+	if provisioned {
+		a.restoreSourceMonitorAndFocus(window, prevFocused)
+	}
 	return targetWorkspace, nil
 }
 
-// validateScratchpadMonitorAffinity guarantees the invariant: the window must
-// never cross monitors. The target must be attached to the source monitor.
-// A target that does not exist yet is only allowed on proven single-monitor
-// setups, where no other monitor exists to cross. This is a check-then-move
-// guard over separate IPC calls: AeroSpace state can change between
-// validation and move, so the invariant is enforced best-effort at
-// validation time, not race-free.
-func (a *MoverAeroSpace) validateScratchpadMonitorAffinity(
+// ensureScratchpadTarget guarantees the invariant: the window must never cross
+// monitors. An existing target must be attached to the source monitor. An
+// absent target is provisioned on the source monitor (multi-monitor) or left
+// to implicit creation on the single move (proven single-monitor setups).
+// This is a check-then-act guard over separate IPC calls: AeroSpace state can
+// change between validation, provisioning, and move, so the invariant is
+// enforced best-effort, not race-free.
+func (a *MoverAeroSpace) ensureScratchpadTarget(
+	window windows.Window,
 	targetWorkspace string,
 	sourceMonitorID int,
-) error {
+) (bool, *windows.Window, error) {
 	workspaces, err := ListWorkspacesWithMonitors(a.aerospace)
 	if err != nil {
-		return fmt.Errorf(
+		return false, nil, fmt.Errorf(
 			"unable to verify scratchpad target '%s' attachment: %w",
 			targetWorkspace,
 			err,
@@ -163,8 +170,136 @@ func (a *MoverAeroSpace) validateScratchpadMonitorAffinity(
 			continue
 		}
 		if workspaceMonitor.MonitorID != sourceMonitorID {
-			return fmt.Errorf(
+			return false, nil, fmt.Errorf(
 				"scratchpad workspace '%s' is attached to monitor %d, but the window source monitor is %d; refusing cross-monitor move",
+				targetWorkspace,
+				workspaceMonitor.MonitorID,
+				sourceMonitorID,
+			)
+		}
+		return false, nil, nil
+	}
+
+	// Target does not exist yet. On single-monitor setups there is no other
+	// monitor to cross, so the move itself can create it (compatibility case).
+	// On multi-monitor setups, provision it explicitly on the source monitor:
+	// where AeroSpace places a newly created workspace cannot be verified
+	// atomically, so we focus the source window first and verify the result.
+	if countUniqueMonitors(workspaces) == 1 {
+		return false, nil, nil
+	}
+
+	prevFocused, provisionErr := a.provisionScratchpadOnSourceMonitor(
+		window,
+		targetWorkspace,
+		sourceMonitorID,
+	)
+	return true, prevFocused, provisionErr
+}
+
+// provisionScratchpadOnSourceMonitor creates an absent scratchpad on the
+// window's source monitor. It returns the previously focused window so the
+// caller can restore focus state after the move (restoreSourceMonitorAndFocus).
+func (a *MoverAeroSpace) provisionScratchpadOnSourceMonitor(
+	window windows.Window,
+	targetWorkspace string,
+	sourceMonitorID int,
+) (*windows.Window, error) {
+	wrapper, isWrapper := a.aerospace.(*AeroSpaceClient)
+	if isWrapper && wrapper.IsDryRun() {
+		// Dry-run simulates provisioning without state, so the placement
+		// verification below would fail against a workspace that was never
+		// created. Write steps still log through the wrapper.
+		if err := a.focusWindowForProvisioning(window); err != nil {
+			return nil, err
+		}
+		if err := wrapper.SummonWorkspace(targetWorkspace); err != nil {
+			return nil, fmt.Errorf(
+				"unable to provision scratchpad workspace '%s': %w",
+				targetWorkspace,
+				err,
+			)
+		}
+		if err := wrapper.WorkspaceBackAndForth(); err != nil {
+			return nil, err
+		}
+		// Dry-run captures no focus to restore, so nil prevFocused is correct.
+		return nil, nil //nolint:nilnil // no captured window in dry-run
+	}
+
+	prevFocused, err := a.aerospace.Windows().GetFocusedWindow()
+	if err != nil {
+		return nil, fmt.Errorf(
+			"unable to capture focused window before provisioning '%s': %w",
+			targetWorkspace,
+			err,
+		)
+	}
+
+	// Focus a window on the source monitor so the summoned workspace is
+	// created there.
+	if focusErr := a.focusWindowForProvisioning(window); focusErr != nil {
+		a.restoreFocus(prevFocused)
+		return nil, fmt.Errorf(
+			"unable to focus source window for provisioning '%s': %w",
+			targetWorkspace,
+			focusErr,
+		)
+	}
+
+	// The target is known to be absent, so this creates an empty workspace on
+	// the focused (source) monitor; never summon an existing name.
+	if summonErr := a.summonWorkspace(targetWorkspace); summonErr != nil {
+		a.restoreFocus(prevFocused)
+		return nil, fmt.Errorf(
+			"unable to provision scratchpad workspace '%s': %w",
+			targetWorkspace,
+			summonErr,
+		)
+	}
+
+	// Verify the provisioned workspace actually landed on the source monitor.
+	workspaces, verifyErr := ListWorkspacesWithMonitors(a.aerospace)
+	verifyErr = a.verifyProvisionedPlacement(
+		workspaces,
+		targetWorkspace,
+		sourceMonitorID,
+		verifyErr,
+	)
+	if verifyErr != nil {
+		a.restoreFocus(prevFocused)
+		return prevFocused, fmt.Errorf(
+			"unable to provision scratchpad workspace '%s': %w",
+			targetWorkspace,
+			verifyErr,
+		)
+	}
+
+	return prevFocused, nil
+}
+
+// verifyProvisionedPlacement checks that the provisioned workspace exists and
+// is attached to the source monitor.
+func (a *MoverAeroSpace) verifyProvisionedPlacement(
+	workspaces []WorkspaceMonitor,
+	targetWorkspace string,
+	sourceMonitorID int,
+	priorErr error,
+) error {
+	if priorErr != nil {
+		return fmt.Errorf(
+			"unable to verify provisioned workspace placement: %w",
+			priorErr,
+		)
+	}
+
+	for _, workspaceMonitor := range workspaces {
+		if workspaceMonitor.Workspace != targetWorkspace {
+			continue
+		}
+		if workspaceMonitor.MonitorID != sourceMonitorID {
+			return fmt.Errorf(
+				"provisioned workspace '%s' landed on monitor %d, not %d",
 				targetWorkspace,
 				workspaceMonitor.MonitorID,
 				sourceMonitorID,
@@ -172,21 +307,85 @@ func (a *MoverAeroSpace) validateScratchpadMonitorAffinity(
 		}
 		return nil
 	}
+	return fmt.Errorf(
+		"provisioned workspace '%s' was not found in the monitor mapping",
+		targetWorkspace,
+	)
+}
 
-	// Target does not exist yet. Where AeroSpace places a newly created
-	// workspace (monitor topology, force assignments) cannot be verified
-	// atomically with the move, so a focused-matches-source observation at
-	// validation time is not proof. Only a proven single-monitor setup (exactly
-	// one monitor in the mapping) has no other monitor to cross; otherwise
-	// fail closed with actionable guidance.
-	if countUniqueMonitors(workspaces) != 1 {
+// restoreSourceMonitorAndFocus runs after a successful provisioned move: it
+// returns the source monitor's visible workspace to the pre-summon one and
+// gives focus back to the user's window unless it is the moved window.
+func (a *MoverAeroSpace) restoreSourceMonitorAndFocus(
+	window windows.Window,
+	prevFocused *windows.Window,
+) {
+	logger := logger.GetDefaultLogger()
+
+	// Leave the empty scratchpad: return the source monitor's visible
+	// workspace to the one focused before the summon.
+	if err := a.workspaceBackAndForth(); err != nil {
+		logger.LogError(
+			"MOVER: unable to restore source monitor workspace after provisioning",
+			"error",
+			err,
+		)
+	}
+
+	// Refocusing the moved window would expose it inside the scratchpad.
+	if prevFocused != nil && prevFocused.WindowID != window.WindowID {
+		a.restoreFocus(prevFocused)
+	}
+}
+
+func (a *MoverAeroSpace) focusWindowForProvisioning(window windows.Window) error {
+	if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
+		return wrapper.SetFocusByWindowID(window.WindowID)
+	}
+	return a.aerospace.Focus().SetFocusByWindowID(window.WindowID)
+}
+
+func (a *MoverAeroSpace) summonWorkspace(name string) error {
+	if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
+		return wrapper.SummonWorkspace(name)
+	}
+	response, err := a.aerospace.Connection().SendCommand(
+		"summon-workspace",
+		[]string{name},
+	)
+	if err != nil {
+		return fmt.Errorf("unable to summon workspace '%s': %w", name, err)
+	}
+	if response.ExitCode != 0 {
 		return fmt.Errorf(
-			"scratchpad workspace '%s' does not exist and cannot be safely provisioned in a multi-monitor setup; refusing cross-monitor move. Create it from a window on monitor %d, or pin it with workspace-to-monitor-force-assignment in aerospace.toml",
-			targetWorkspace,
-			sourceMonitorID,
+			"unable to summon workspace '%s': %s",
+			name,
+			response.StdErr,
 		)
 	}
 	return nil
+}
+
+func (a *MoverAeroSpace) workspaceBackAndForth() error {
+	if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
+		return wrapper.WorkspaceBackAndForth()
+	}
+	return a.aerospace.Workspaces().MoveBackAndForth()
+}
+
+func (a *MoverAeroSpace) restoreFocus(prevFocused *windows.Window) {
+	if prevFocused == nil {
+		return
+	}
+	if err := a.focusWindowForProvisioning(*prevFocused); err != nil {
+		logger.GetDefaultLogger().LogError(
+			"MOVER: unable to restore focus",
+			"window",
+			prevFocused,
+			"error",
+			err,
+		)
+	}
 }
 
 func (a *MoverAeroSpace) MoveWindowToWorkspace(

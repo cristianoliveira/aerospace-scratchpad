@@ -754,6 +754,69 @@ func TestMoveCmd(t *testing.T) {
 		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
 	})
 
+	t.Run("[dry-run] provisions absent scratchpad without writing", func(t *testing.T) {
+		command := "move"
+		args := []string{command, "", "--dry-run"}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows: []windows.Window{
+					{AppName: "Spotify", WindowID: 5678},
+				},
+				Workspace:       &workspaces.Workspace{Workspace: "ws2"},
+				FocusedWindowID: 5678,
+			},
+		}
+		allWindows := testutils.ExtractAllWindows(tree)
+		focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 1, MonitorName: "HDMI"})
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: "ws2", MonitorID: 2},
+		})
+
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetFocusedWindow().
+			Return(focusedWindow, nil).
+			Times(1)
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetAllWindows().
+			Return(allWindows, nil).
+			Times(1)
+
+		// Dry-run must not write anything.
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+		aerospaceClient.GetLayoutMock().EXPECT().
+			SetLayout(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+		aerospaceClient.GetFocusMock().EXPECT().
+			SetFocusByWindowID(gomock.Any()).
+			Return(nil).
+			Times(0)
+
+		cmd := cmd.RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if summoned := aerospaceClient.GetSummonedWorkspaces(); len(summoned) != 0 {
+			t.Errorf("expected no summon in dry-run, got %v", summoned)
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
+		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
+	})
+
 	t.Run("[dry-run] fails closed on cross-monitor target", func(t *testing.T) {
 		command := "move"
 		args := []string{command, "", "--dry-run"}

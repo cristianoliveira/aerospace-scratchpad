@@ -43,12 +43,13 @@ func NewMockAeroSpaceWM(ctrl *gomock.Controller) *MockAeroSpaceWM {
 
 	// Create routing connection that delegates to service mocks
 	routingConn := &routingConnection{
-		windowsMock:       windowsMock,
-		workspacesMock:    workspacesMock,
-		focusMock:         focusMock,
-		layoutMock:        layoutMock,
-		workspaceMonitors: []aerospace.WorkspaceMonitor{},
-		ctrl:              ctrl,
+		windowsMock:             windowsMock,
+		workspacesMock:          workspacesMock,
+		focusMock:               focusMock,
+		layoutMock:              layoutMock,
+		workspaceMonitors:       []aerospace.WorkspaceMonitor{},
+		summonPlacementOverride: -1,
+		ctrl:                    ctrl,
 	}
 
 	// Create real Service instances with the routing connection
@@ -132,6 +133,28 @@ func (m *MockAeroSpaceWM) SetFocusedMonitor(monitor aerospace.MonitorInfo) {
 	m.routingConn.focusedMonitor = &monitor
 }
 
+// GetSummonedWorkspaces returns the workspace names passed to summon-workspace.
+func (m *MockAeroSpaceWM) GetSummonedWorkspaces() []string {
+	return m.routingConn.summonCalls
+}
+
+// SetSummonWorkspaceError injects a failure for summon-workspace commands.
+func (m *MockAeroSpaceWM) SetSummonWorkspaceError(err error) {
+	m.routingConn.summonErr = err
+}
+
+// SetSummonPlacementMonitor forces the monitor a summoned workspace lands on,
+// overriding the focused-window derivation; -1 restores derived placement.
+func (m *MockAeroSpaceWM) SetSummonPlacementMonitor(monitorID int) {
+	m.routingConn.summonPlacementOverride = monitorID
+}
+
+// GetWorkspaceBackAndForthCalls returns how many workspace-back-and-forth
+// commands were issued.
+func (m *MockAeroSpaceWM) GetWorkspaceBackAndForthCalls() int {
+	return m.routingConn.backAndForthCalls
+}
+
 const (
 	minArgsForMoveCommand = 3
 	windowIDFlag          = "--window-id"
@@ -140,13 +163,18 @@ const (
 // routingConnection is a connection that routes Service method calls to the appropriate mocks
 // It intercepts SendCommand calls and routes them to the service mocks.
 type routingConnection struct {
-	windowsMock       *windows_mock.MockWindowsService
-	workspacesMock    *workspaces_mock.MockWorkspacesService
-	focusMock         *focus_mock.MockFocusService
-	layoutMock        *layout_mock.MockLayoutService
-	workspaceMonitors []aerospace.WorkspaceMonitor
-	focusedMonitor    *aerospace.MonitorInfo
-	ctrl              *gomock.Controller
+	windowsMock             *windows_mock.MockWindowsService
+	workspacesMock          *workspaces_mock.MockWorkspacesService
+	focusMock               *focus_mock.MockFocusService
+	layoutMock              *layout_mock.MockLayoutService
+	workspaceMonitors       []aerospace.WorkspaceMonitor
+	focusedMonitor          *aerospace.MonitorInfo
+	focusedWindowID         int
+	summonCalls             []string
+	summonErr               error
+	summonPlacementOverride int
+	backAndForthCalls       int
+	ctrl                    *gomock.Controller
 }
 
 func (r *routingConnection) SendCommand(command string, args []string) (*client.Response, error) {
@@ -164,9 +192,78 @@ func (r *routingConnection) SendCommand(command string, args []string) (*client.
 		return r.handleListMonitors(args)
 	case "move-node-to-workspace":
 		return r.handleMoveNodeToWorkspace(args)
+	case "summon-workspace":
+		return r.handleSummonWorkspace(args)
+	case "workspace-back-and-forth":
+		return r.handleWorkspaceBackAndForth(args)
 	default:
 		return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
 	}
+}
+
+// handleSummonWorkspace models AeroSpace summon-workspace: the named workspace
+// is created on the focused monitor (derived from the last focused window's
+// workspace, falling back to the configured focused monitor) and recorded so
+// subsequent list-workspaces queries observe it.
+func (r *routingConnection) handleSummonWorkspace(args []string) (*client.Response, error) {
+	if len(args) < 1 {
+		return &client.Response{
+			ExitCode: 1,
+			StdErr:   "invalid summon-workspace command",
+		}, nil
+	}
+	if r.summonErr != nil {
+		return &client.Response{ExitCode: 1, StdOut: "", StdErr: r.summonErr.Error()}, r.summonErr
+	}
+
+	name := args[0]
+	placedOn := 0
+	if r.summonPlacementOverride >= 0 {
+		placedOn = r.summonPlacementOverride
+	} else if monitorID := r.monitorOfFocusedWindow(); monitorID != 0 {
+		placedOn = monitorID
+	} else if r.focusedMonitor != nil {
+		placedOn = r.focusedMonitor.MonitorID
+	}
+
+	r.summonCalls = append(r.summonCalls, name)
+	r.workspaceMonitors = append(r.workspaceMonitors, aerospace.WorkspaceMonitor{
+		Workspace: name,
+		MonitorID: placedOn,
+	})
+	return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
+}
+
+// handleWorkspaceBackAndForth records the workspace visibility toggle. The
+// generated workspaces mock does not cover MoveBackAndForth, so calls are
+// tracked as state and asserted via GetWorkspaceBackAndForthCalls.
+func (r *routingConnection) handleWorkspaceBackAndForth(_ []string) (*client.Response, error) {
+	r.backAndForthCalls++
+	return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
+}
+
+// monitorOfFocusedWindow resolves the monitor of the last focused window via
+// window -> workspace -> monitor mapping. Returns 0 when unknown.
+func (r *routingConnection) monitorOfFocusedWindow() int {
+	if r.focusedWindowID == 0 {
+		return 0
+	}
+	wins, err := r.windowsMock.GetAllWindows()
+	if err != nil {
+		return 0
+	}
+	workspaceByName := make(map[string]aerospace.WorkspaceMonitor)
+	for _, wm := range r.workspaceMonitors {
+		workspaceByName[wm.Workspace] = wm
+	}
+	for _, w := range wins {
+		if w.WindowID == r.focusedWindowID {
+			if wm, ok := workspaceByName[w.Workspace]; ok {
+				return wm.MonitorID
+			}
+		}
+	}
+	return 0
 }
 
 func (r *routingConnection) handleListWindows(args []string) (*client.Response, error) {
@@ -204,6 +301,8 @@ func (r *routingConnection) handleListWindows(args []string) (*client.Response, 
 	return &client.Response{ExitCode: 0, StdOut: "[]", StdErr: ""}, nil
 }
 
+// handleFocus records the focused window so summon-workspace placement can
+// derive the focused monitor, then routes to the focus mock.
 func (r *routingConnection) handleFocus(args []string) (*client.Response, error) {
 	// Find --window-id
 	for i, arg := range args {
@@ -213,6 +312,7 @@ func (r *routingConnection) handleFocus(args []string) (*client.Response, error)
 			if err != nil {
 				return &client.Response{ExitCode: 1, StdOut: "", StdErr: err.Error()}, err
 			}
+			r.focusedWindowID = windowID
 			return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
 		}
 	}

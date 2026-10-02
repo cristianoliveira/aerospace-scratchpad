@@ -130,6 +130,45 @@ func (c *AeroSpaceClient) SetLayout(windowID int, layoutName string) error {
 	})
 }
 
+// SummonWorkspace creates an absent workspace on the currently focused
+// monitor via the summon-workspace command. It must only be called for names
+// that do not exist yet: summoning an existing workspace relocates it —
+// windows included — to the focused monitor.
+func (c *AeroSpaceClient) SummonWorkspace(name string) error {
+	if c.dryRun {
+		fmt.Fprintf(os.Stdout, "[dry-run] SummonWorkspace(%s)\n", name)
+		return nil
+	}
+	response, err := c.Connection().SendCommand("summon-workspace", []string{name})
+	if err != nil {
+		return fmt.Errorf("unable to summon workspace '%s': %w", name, err)
+	}
+	if response.ExitCode != 0 {
+		return fmt.Errorf(
+			"unable to summon workspace '%s': %s",
+			name,
+			response.StdErr,
+		)
+	}
+	return nil
+}
+
+// WorkspaceBackAndForth switches the visible workspace back and forth
+// (workspace-back-and-forth), used to restore a monitor's visible workspace
+// after provisioning.
+func (c *AeroSpaceClient) WorkspaceBackAndForth() error {
+	if c.dryRun {
+		fmt.Fprintln(os.Stdout, "[dry-run] WorkspaceBackAndForth()")
+		return nil
+	}
+	return c.client.Workspaces().MoveBackAndForth()
+}
+
+// IsDryRun reports whether write commands are suppressed.
+func (c *AeroSpaceClient) IsDryRun() bool {
+	return c.dryRun
+}
+
 func (c *AeroSpaceClient) Connection() client.AeroSpaceConnection {
 	if c.client != nil {
 		return c.client.Connection()

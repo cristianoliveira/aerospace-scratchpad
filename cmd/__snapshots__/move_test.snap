@@ -412,3 +412,27 @@ Output:
   error: ""
 
 ---
+
+[TestMoveCmd/[dry-run]_provisions_absent_scratchpad_without_writing - 1]
+Context:
+  workspaces:
+  - workspace: ws2
+    focused-window-id: 5678
+  windows:
+  - window-id: 5678
+    app-name: Spotify
+Command: |
+  $ aerospace-scratchpad move  --dry-run
+Output:
+  status: success
+  stdout: |
+    [dry-run] SetFocusByWindowID(5678)
+    [dry-run] SummonWorkspace(.scratchpad.2)
+    [dry-run] WorkspaceBackAndForth()
+    [dry-run] MoveWindowToWorkspace(windowID=5678, workspace=.scratchpad.2)
+    [dry-run] SetLayout(windowID=5678, layout=floating)
+    [dry-run] WorkspaceBackAndForth()
+    command=move action=to-scratchpad window_id=5678 app_name=Spotify workspace=ws2 target_workspace=.scratchpad.2 result=ok message=""
+  error: ""
+
+---
