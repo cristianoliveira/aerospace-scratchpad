@@ -270,7 +270,9 @@ For optimal multi-monitor scratchpad experience:
    }
    ```
 
-2. **Monitor-aware commands**: `list` defaults to all monitors; use `--monitor` to narrow its results. `next` defaults to the current monitor:
+2. **Pre-create per-monitor scratchpads**: a scratchpad that does not exist yet is never provisioned in a multi-monitor setup (a move would fail closed rather than place it on the wrong monitor). Create each one once from a window on its monitor — e.g. focus a window on monitor 2 and run `aerospace move-node-to-workspace .scratchpad.2` (or move a scratchpad window while focused there) — then pin it with `workspace-to-monitor-force-assignment` above.
+
+3. **Monitor-aware commands**: `list` defaults to all monitors; use `--monitor` to narrow its results. `next` defaults to the current monitor:
    ```bash
    # List scratchpad windows on current monitor
    aerospace-scratchpad list --monitor current
