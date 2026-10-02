@@ -104,6 +104,7 @@ const (
 	focusedMonitorFormat        = "%{monitor-id} %{monitor-name}"
 	jsonFlag                    = "--json"
 	formatFlag                  = "--format"
+	noFocusedWindowError        = "no windows focused found"
 	filterLogPrefix             = "FILTER: "
 	floatingLayout              = "floating"
 )
@@ -460,7 +461,7 @@ func (a *QueryMaker) GetNextScratchpadWindowForMonitor(monitorID int) (*windows.
 	}
 
 	focusedWindow, err := a.cli.Windows().GetFocusedWindow()
-	if err != nil {
+	if err != nil && err.Error() != noFocusedWindowError {
 		return nil, fmt.Errorf("unable to get focused window: %w", err)
 	}
 

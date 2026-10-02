@@ -24,7 +24,7 @@ func TestNextCmd(t *testing.T) {
 	logger.SetDefaultLogger(&logger.EmptyLogger{})
 	stderr.SetBehavior(false)
 
-	t.Run("summon next window from scratchpad", func(t *testing.T) {
+	t.Run("summons first scratchpad window when no window is focused", func(t *testing.T) {
 		command := "next"
 		args := []string{command}
 
@@ -88,7 +88,7 @@ func TestNextCmd(t *testing.T) {
 				Times(1),
 			aerospaceClient.GetWindowsMock().EXPECT().
 				GetFocusedWindow().
-				Return(testutils.ExtractFocusedWindow(tree), nil).
+				Return(nil, errors.New("no windows focused found")).
 				Times(1),
 			aerospaceClient.GetWorkspacesMock().EXPECT().
 				MoveWindowToWorkspaceWithOpts(
@@ -240,6 +240,46 @@ func TestNextCmd(t *testing.T) {
 					t.Fatalf("moved windows %v, want %v", movedWindowIDs, test.wantWindowIDs)
 				}
 			})
+		}
+	})
+
+	t.Run("fails when getting the focused window returns an unexpected error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		scratchpadWindows := []windows.Window{
+			{
+				WindowID:  8888,
+				Workspace: constants.DefaultScratchpadWorkspaceName,
+			},
+		}
+
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			GetFocusedWorkspace().
+			Return(&workspaces.Workspace{Workspace: "work"}, nil).
+			Times(1)
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetAllWindows().
+			Return(scratchpadWindows, nil).
+			Times(1)
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetAllWindowsByWorkspace(constants.DefaultScratchpadWorkspaceName).
+			Return(scratchpadWindows, nil).
+			Times(1)
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetFocusedWindow().
+			Return(nil, errors.New("mocked focus error")).
+			Times(1)
+
+		root := cmd.RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(root, "next")
+		if err == nil {
+			t.Fatal("expected focused window error")
+		}
+		if !strings.Contains(err.Error(), "unable to get focused window: mocked focus error") {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if out != "" {
+			t.Fatalf("expected no output, got %q", out)
 		}
 	})
 
