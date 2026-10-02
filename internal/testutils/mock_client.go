@@ -283,7 +283,11 @@ func (r *routingConnection) handleWorkspaceBackAndForth(_ []string) (*client.Res
 // invalidated.
 func (r *routingConnection) handleFocusMonitor(args []string) (*client.Response, error) {
 	if len(args) < 1 {
-		return &client.Response{ExitCode: 1, StdOut: "", StdErr: "invalid focus-monitor command"}, nil
+		return &client.Response{
+			ExitCode: 1,
+			StdOut:   "",
+			StdErr:   "invalid focus-monitor command",
+		}, nil
 	}
 	r.focusMonitorCalls++
 	monitorID, convErr := strconv.Atoi(args[0])

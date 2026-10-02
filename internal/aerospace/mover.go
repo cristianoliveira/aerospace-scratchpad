@@ -198,7 +198,7 @@ func (a *MoverAeroSpace) ensureScratchpadTarget(
 				sourceMonitorID,
 			)
 		}
-		return nil, nil
+		return nil, nil //nolint:nilnil // target exists, no provisioning needed
 	}
 
 	// Target does not exist yet. On single-monitor setups there is no other
@@ -208,7 +208,7 @@ func (a *MoverAeroSpace) ensureScratchpadTarget(
 	// atomically, so we focus the source monitor, capture its active
 	// workspace, summon, and verify the result.
 	if countUniqueMonitors(workspaces) == 1 {
-		return nil, nil
+		return nil, nil //nolint:nilnil // single-monitor, no cross risk
 	}
 
 	state, provisionErr := a.provisionScratchpadOnSourceMonitor(
@@ -263,12 +263,12 @@ func (a *MoverAeroSpace) provisionScratchpadOnSourceMonitor(
 
 	// Make the source monitor the focused one so the summoned workspace is
 	// created there, then capture its currently active workspace.
-	if err := a.focusMonitor(sourceMonitorID); err != nil {
+	if focusErr := a.focusMonitor(sourceMonitorID); focusErr != nil {
 		a.restoreFocus(prevFocused)
 		return nil, fmt.Errorf(
 			"unable to focus source monitor for provisioning '%s': %w",
 			targetWorkspace,
-			err,
+			focusErr,
 		)
 	}
 

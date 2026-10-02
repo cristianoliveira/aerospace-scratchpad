@@ -302,7 +302,8 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		if got := aerospaceClient.GetFocusMonitorCalls(); got != 1 {
 			t.Fatalf("expected focus-monitor on source monitor, got %d calls", got)
 		}
-		if switched := aerospaceClient.GetWorkspaceSwitchCalls(); len(switched) != 1 || switched[0] != "ws2" {
+		if switched := aerospaceClient.GetWorkspaceSwitchCalls(); len(switched) != 1 ||
+			switched[0] != "ws2" {
 			t.Fatalf("expected workspace restore to ws2, got %v", switched)
 		}
 	})
@@ -354,7 +355,8 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		if _, err := mover.MoveWindowToScratchpadForMonitor(window, 2); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if switched := aerospaceClient.GetWorkspaceSwitchCalls(); len(switched) != 1 || switched[0] != "ws2" {
+		if switched := aerospaceClient.GetWorkspaceSwitchCalls(); len(switched) != 1 ||
+			switched[0] != "ws2" {
 			t.Fatalf("expected workspace restore to ws2, got %v", switched)
 		}
 	})
@@ -440,7 +442,8 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		if _, err := mover.MoveWindowToScratchpadForMonitor(window, 2); err == nil {
 			t.Fatalf("expected error when summon fails")
 		}
-		if switched := aerospaceClient.GetWorkspaceSwitchCalls(); len(switched) != 1 || switched[0] != "ws2" {
+		if switched := aerospaceClient.GetWorkspaceSwitchCalls(); len(switched) != 1 ||
+			switched[0] != "ws2" {
 			t.Fatalf("expected source workspace restore on failure, got %v", switched)
 		}
 	})
@@ -545,7 +548,8 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		if _, err := mover.MoveWindowToScratchpadForMonitor(window, 2); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if switched := aerospaceClient.GetWorkspaceSwitchCalls(); len(switched) != 1 || switched[0] != "ws2" {
+		if switched := aerospaceClient.GetWorkspaceSwitchCalls(); len(switched) != 1 ||
+			switched[0] != "ws2" {
 			t.Fatalf("expected workspace restore to ws2, got %v", switched)
 		}
 	})
