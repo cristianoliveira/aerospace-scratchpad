@@ -63,6 +63,33 @@ Move all floating windows (scratchpad windows) to the scratchpad:
 aerospace-scratchpad move --all-floating
 ```
 
+Pin a scratchpad window to its current monitor so `show`, `summon`, and `next` focus it there instead of moving it to the focused monitor:
+```text
+aerospace-scratchpad pin [pattern]
+aerospace-scratchpad unpin [pattern]
+```
+
+Pin follows the same pattern rules as `show`, `summon`, and `move`: `[pattern]` is a regular expression matched against app name and can be combined with `--filter`.
+
+```text
+# Pin current focused window by window ID
+aerospace-scratchpad pin
+
+# Pin every current and future Brave window to the matched window's current monitor
+aerospace-scratchpad pin ".*Brave.*"
+
+# Pin a specific terminal scratchpad rule
+aerospace-scratchpad pin ".*Alacritty.*" --filter window-title="terminal-scratchpad"
+
+# Temporarily disable or re-enable a saved pattern rule without deleting it
+aerospace-scratchpad pin --disable ".*Brave.*"
+aerospace-scratchpad pin --enable ".*Brave.*"
+```
+
+When `[pattern]` is omitted, the focused window is pinned or unpinned by window ID. When `[pattern]` is provided, the pin is saved as a rule, so future windows matching the same app-name regex and filters are pinned too. Use `pin --disable [pattern]` and `pin --enable [pattern]` to toggle a saved rule without removing it.
+
+Pinned state is stored at `~/.config/aerospace-scratchpad/pinned.json`. For tests or custom setups, override it with `AEROSPACE_SCRATCHPAD_PINS_PATH`.
+
 ### Config Usage
 
 ```toml

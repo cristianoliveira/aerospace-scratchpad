@@ -41,6 +41,14 @@ It does not send the windows back to the scratchpad, but rather focuses the next
 				return
 			}
 
+			currentMonitorID := 0
+			monitor, monitorErr := aerospace.GetFocusedMonitor(
+				aerospaceClient.GetUnderlyingClient(),
+			)
+			if monitorErr == nil {
+				currentMonitorID = monitor.MonitorID
+			}
+
 			focusedWorkspace, err := aerospaceClient.GetFocusedWorkspace()
 			if err != nil {
 				stderr.Println(
@@ -56,6 +64,21 @@ It does not send the windows back to the scratchpad, but rather focuses the next
 			window, err := querier.GetNextScratchpadWindowForMonitor(monitorID)
 			if err != nil {
 				stderr.Println("Error: %v", err)
+				return
+			}
+
+			handled, err := focusPinnedWindowOnOtherMonitor(
+				commandNext,
+				aerospaceClient,
+				formatter,
+				*window,
+				currentMonitorID,
+			)
+			if err != nil {
+				stderr.Println("Error: %v", err)
+				return
+			}
+			if handled {
 				return
 			}
 

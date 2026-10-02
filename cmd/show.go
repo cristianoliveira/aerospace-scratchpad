@@ -139,6 +139,21 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 			)
 
 			for _, window := range windowsOutsideView {
+				handled, pinErr := focusPinnedWindowOnOtherMonitor(
+					commandShow,
+					aerospaceClient,
+					formatter,
+					window,
+					currentMonitorID,
+				)
+				if pinErr != nil {
+					stderr.Printf("Error: unable to focus pinned window '%+v'\n%s", window, pinErr)
+					return
+				}
+				if handled {
+					continue
+				}
+
 				moveErr := mover.MoveWindowToWorkspace(
 					&window,
 					focusedWorkspace,
@@ -187,7 +202,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 					)
 					if printErr := formatter.Print(cli.OutputEvent{
 						Command:   commandShow,
-						Action:    "focus",
+						Action:    actionFocus,
 						WindowID:  window.WindowID,
 						AppName:   window.AppName,
 						Workspace: window.Workspace,
@@ -260,7 +275,7 @@ Similar to I3/Sway WM, it will toggle show/hide the window if called multiple ti
 				}
 				if printErr := formatter.Print(cli.OutputEvent{
 					Command:   commandShow,
-					Action:    "focus",
+					Action:    actionFocus,
 					WindowID:  window.WindowID,
 					AppName:   window.AppName,
 					Workspace: window.Workspace,
