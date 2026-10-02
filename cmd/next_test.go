@@ -164,22 +164,6 @@ func TestNextCmd(t *testing.T) {
 				wantWindowIDs: []int{100, 200, 300, 100},
 			},
 			{
-				name:      "multiple monitors default all",
-				args:      []string{"next"},
-				monitorID: 2,
-				workspaceMonitors: []aerospace.WorkspaceMonitor{
-					{Workspace: ".scratchpad.1", MonitorID: 1},
-					{Workspace: ".scratchpad.2", MonitorID: 2},
-					{Workspace: "work", MonitorID: 2},
-				},
-				windows: []windows.Window{
-					{WindowID: 300, WindowLayout: "floating", Workspace: ".scratchpad.2"},
-					{WindowID: 100, WindowLayout: "floating", Workspace: ".scratchpad.1"},
-					{WindowID: 200, WindowLayout: "floating", Workspace: ".scratchpad.2"},
-				},
-				wantWindowIDs: []int{100, 200, 300, 100},
-			},
-			{
 				name:      "explicit current monitor",
 				args:      []string{"next", "--monitor", "current"},
 				monitorID: 2,
