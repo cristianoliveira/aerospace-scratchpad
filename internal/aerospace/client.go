@@ -3,6 +3,7 @@ package aerospace
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/focus"
@@ -128,6 +129,79 @@ func (c *AeroSpaceClient) SetLayout(windowID int, layoutName string) error {
 	return c.client.Layout().SetLayout([]string{layoutName}, layout.SetLayoutOpts{
 		WindowID: layout.IntPtr(windowID),
 	})
+}
+
+// SummonWorkspace creates an absent workspace on the currently focused
+// monitor via the summon-workspace command. It must only be called for names
+// that do not exist yet: summoning an existing workspace relocates it —
+// windows included — to the focused monitor.
+func (c *AeroSpaceClient) SummonWorkspace(name string) error {
+	if c.dryRun {
+		fmt.Fprintf(os.Stdout, "[dry-run] SummonWorkspace(%s)\n", name)
+		return nil
+	}
+	response, err := c.Connection().SendCommand("summon-workspace", []string{name})
+	if err != nil {
+		return fmt.Errorf("unable to summon workspace '%s': %w", name, err)
+	}
+	if response.ExitCode != 0 {
+		return fmt.Errorf(
+			"unable to summon workspace '%s': %s",
+			name,
+			response.StdErr,
+		)
+	}
+	return nil
+}
+
+// FocusMonitor focuses the given monitor (focus-monitor), making it the
+// target for workspace creation.
+func (c *AeroSpaceClient) FocusMonitor(monitorID int) error {
+	if c.dryRun {
+		fmt.Fprintf(os.Stdout, "[dry-run] FocusMonitor(%d)\n", monitorID)
+		return nil
+	}
+	response, err := c.Connection().SendCommand(
+		"focus-monitor",
+		[]string{strconv.Itoa(monitorID)},
+	)
+	if err != nil {
+		return fmt.Errorf("unable to focus monitor %d: %w", monitorID, err)
+	}
+	if response.ExitCode != 0 {
+		return fmt.Errorf(
+			"unable to focus monitor %d: %s",
+			monitorID,
+			response.StdErr,
+		)
+	}
+	return nil
+}
+
+// SwitchWorkspace focuses the named workspace (workspace command), used to
+// restore a monitor's active workspace after provisioning.
+func (c *AeroSpaceClient) SwitchWorkspace(name string) error {
+	if c.dryRun {
+		fmt.Fprintf(os.Stdout, "[dry-run] SwitchWorkspace(%s)\n", name)
+		return nil
+	}
+	response, err := c.Connection().SendCommand("workspace", []string{name})
+	if err != nil {
+		return fmt.Errorf("unable to switch to workspace '%s': %w", name, err)
+	}
+	if response.ExitCode != 0 {
+		return fmt.Errorf(
+			"unable to switch to workspace '%s': %s",
+			name,
+			response.StdErr,
+		)
+	}
+	return nil
+}
+
+// IsDryRun reports whether write commands are suppressed.
+func (c *AeroSpaceClient) IsDryRun() bool {
+	return c.dryRun
 }
 
 func (c *AeroSpaceClient) Connection() client.AeroSpaceConnection {

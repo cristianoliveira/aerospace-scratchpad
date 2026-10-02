@@ -112,6 +112,10 @@ func TestMoveCmd(t *testing.T) {
 		focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: ".scratchpad", MonitorID: 1},
+		})
 		// allow FocusNextTilingWindow to run without mocking Connection details
 		// Connection() is handled by routing connection, no need to mock
 		gomock.InOrder(
@@ -184,6 +188,7 @@ func TestMoveCmd(t *testing.T) {
 		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
 			{Workspace: "ws1", MonitorID: 2},
 			{Workspace: "1", MonitorID: 1},
+			{Workspace: ".scratchpad.2", MonitorID: 2},
 		})
 
 		gomock.InOrder(
@@ -254,6 +259,10 @@ func TestMoveCmd(t *testing.T) {
 		focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: ".scratchpad", MonitorID: 1},
+		})
 		// allow FocusNextTilingWindow to run without mocking Connection details
 		// Connection() is handled by routing connection, no need to mock
 		gomock.InOrder(
@@ -372,6 +381,10 @@ func TestMoveCmd(t *testing.T) {
 		notepadWindow := matchedWindows[0]
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: ".scratchpad", MonitorID: 1},
+		})
 		// allow FocusNextTilingWindow to run without mocking Connection details
 		// Connection() is handled by routing connection, no need to mock
 		gomock.InOrder(
@@ -415,6 +428,448 @@ func TestMoveCmd(t *testing.T) {
 		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
 	})
 
+	t.Run("routes by source monitor when another monitor is focused", func(t *testing.T) {
+		command := "move"
+		args := []string{command, ""}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows: []windows.Window{
+					{AppName: "Finder", WindowID: 5678},
+				},
+				Workspace:       &workspaces.Workspace{Workspace: "ws1"},
+				FocusedWindowID: 5678,
+			},
+		}
+		allWindows := testutils.ExtractAllWindows(tree)
+		focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 2, MonitorName: "HDMI"})
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: "ws2", MonitorID: 2},
+			{Workspace: ".scratchpad", MonitorID: 1},
+		})
+
+		gomock.InOrder(
+			aerospaceClient.GetWindowsMock().EXPECT().
+				GetFocusedWindow().
+				Return(focusedWindow, nil).
+				Times(1),
+
+			aerospaceClient.GetWindowsMock().EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil).
+				Times(1),
+
+			aerospaceClient.GetWorkspacesMock().EXPECT().
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{
+						WorkspaceName: ".scratchpad",
+					},
+					workspaces.MoveWindowToWorkspaceOpts{
+						WindowID: &focusedWindow.WindowID,
+					},
+				).
+				Return(nil).
+				Times(1),
+
+			aerospaceClient.GetLayoutMock().EXPECT().
+				SetLayout(
+					[]string{"floating"},
+					layout.SetLayoutOpts{
+						WindowID: &focusedWindow.WindowID,
+					},
+				).
+				Return(nil).
+				Times(1),
+		)
+
+		cmd := cmd.RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
+		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
+	})
+
+	t.Run("moves each matched window to its own monitor scratchpad", func(t *testing.T) {
+		command := "move"
+		args := []string{command, "", "--all-matching"}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows: []windows.Window{
+					{AppName: "Finder", WindowID: 1111},
+				},
+				Workspace:       &workspaces.Workspace{Workspace: "ws1"},
+				FocusedWindowID: 1111,
+			},
+			{
+				Windows: []windows.Window{
+					{AppName: "Finder", WindowID: 2222},
+				},
+				Workspace: &workspaces.Workspace{Workspace: "ws2"},
+			},
+		}
+		allWindows := testutils.ExtractAllWindows(tree)
+		focusedWindow := testutils.ExtractFocusedWindow(tree)
+		windowID1 := 1111
+		windowID2 := 2222
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 1, MonitorName: "HDMI"})
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: "ws2", MonitorID: 2},
+			{Workspace: ".scratchpad", MonitorID: 1},
+			{Workspace: ".scratchpad.2", MonitorID: 2},
+		})
+
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetFocusedWindow().
+			Return(focusedWindow, nil)
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetAllWindows().
+			Return(allWindows, nil)
+
+		// Window on monitor 1 goes to monitor 1's scratchpad.
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(
+				workspaces.MoveWindowToWorkspaceArgs{
+					WorkspaceName: ".scratchpad",
+				},
+				workspaces.MoveWindowToWorkspaceOpts{
+					WindowID: &windowID1,
+				},
+			).
+			Return(nil)
+		aerospaceClient.GetLayoutMock().EXPECT().
+			SetLayout(
+				[]string{"floating"},
+				layout.SetLayoutOpts{WindowID: &windowID1},
+			).
+			Return(nil)
+
+		// Window on monitor 2 goes to monitor 2's scratchpad, not the focused monitor's.
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(
+				workspaces.MoveWindowToWorkspaceArgs{
+					WorkspaceName: ".scratchpad.2",
+				},
+				workspaces.MoveWindowToWorkspaceOpts{
+					WindowID: &windowID2,
+				},
+			).
+			Return(nil)
+		aerospaceClient.GetLayoutMock().EXPECT().
+			SetLayout(
+				[]string{"floating"},
+				layout.SetLayoutOpts{WindowID: &windowID2},
+			).
+			Return(nil)
+
+		cmd := cmd.RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
+		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
+	})
+
+	t.Run("fails closed when scratchpad target is attached to another monitor", func(t *testing.T) {
+		command := "move"
+		args := []string{command, ""}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows: []windows.Window{
+					{AppName: "Finder", WindowID: 5678},
+				},
+				Workspace:       &workspaces.Workspace{Workspace: "ws2"},
+				FocusedWindowID: 5678,
+			},
+		}
+		allWindows := testutils.ExtractAllWindows(tree)
+		focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		// Stale state from the incident: focused monitor 2 with .scratchpad.2 attached to monitor 1.
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 2, MonitorName: "HDMI"})
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws2", MonitorID: 2},
+			{Workspace: ".scratchpad.2", MonitorID: 1},
+		})
+
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetFocusedWindow().
+			Return(focusedWindow, nil).
+			Times(1)
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetAllWindows().
+			Return(allWindows, nil).
+			Times(1)
+
+		// The window must stay where it is: no move, no layout change.
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+		aerospaceClient.GetLayoutMock().EXPECT().
+			SetLayout(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+
+		cmd := cmd.RootCmd(aerospaceClient)
+		_, err := testutils.CmdExecute(cmd, args...)
+		if err == nil {
+			t.Errorf("Expected error, got nil")
+		}
+	})
+
+	t.Run("fails closed when window workspace is missing from monitor mapping", func(t *testing.T) {
+		command := "move"
+		args := []string{command, ""}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows: []windows.Window{
+					{AppName: "Finder", WindowID: 5678},
+				},
+				Workspace:       &workspaces.Workspace{Workspace: "ghost-ws"},
+				FocusedWindowID: 5678,
+			},
+		}
+		allWindows := testutils.ExtractAllWindows(tree)
+		focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 1, MonitorName: "HDMI"})
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+		})
+
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetFocusedWindow().
+			Return(focusedWindow, nil).
+			Times(1)
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetAllWindows().
+			Return(allWindows, nil).
+			Times(1)
+
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+		aerospaceClient.GetLayoutMock().EXPECT().
+			SetLayout(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+
+		cmd := cmd.RootCmd(aerospaceClient)
+		_, err := testutils.CmdExecute(cmd, args...)
+		if err == nil {
+			t.Errorf("Expected error, got nil")
+		}
+	})
+
+	t.Run("[dry-run] resolves per-window targets across monitors", func(t *testing.T) {
+		command := "move"
+		args := []string{command, "", "--all-matching", "--dry-run"}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows: []windows.Window{
+					{AppName: "Finder", WindowID: 1111},
+				},
+				Workspace:       &workspaces.Workspace{Workspace: "ws1"},
+				FocusedWindowID: 1111,
+			},
+			{
+				Windows: []windows.Window{
+					{AppName: "Finder", WindowID: 2222},
+				},
+				Workspace: &workspaces.Workspace{Workspace: "ws2"},
+			},
+		}
+		allWindows := testutils.ExtractAllWindows(tree)
+		focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 1, MonitorName: "HDMI"})
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: "ws2", MonitorID: 2},
+			{Workspace: ".scratchpad", MonitorID: 1},
+			{Workspace: ".scratchpad.2", MonitorID: 2},
+		})
+
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetFocusedWindow().
+			Return(focusedWindow, nil).
+			Times(1)
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetAllWindows().
+			Return(allWindows, nil).
+			Times(1)
+
+		// Dry-run resolves each window's target without mutating anything.
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+		aerospaceClient.GetLayoutMock().EXPECT().
+			SetLayout(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+
+		cmd := cmd.RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
+		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
+	})
+
+	t.Run("[dry-run] provisions absent scratchpad without writing", func(t *testing.T) {
+		command := "move"
+		args := []string{command, "", "--dry-run"}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows: []windows.Window{
+					{AppName: "Spotify", WindowID: 5678},
+				},
+				Workspace:       &workspaces.Workspace{Workspace: "ws2"},
+				FocusedWindowID: 5678,
+			},
+		}
+		allWindows := testutils.ExtractAllWindows(tree)
+		focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 1, MonitorName: "HDMI"})
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: "ws2", MonitorID: 2},
+		})
+
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetFocusedWindow().
+			Return(focusedWindow, nil).
+			Times(1)
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetAllWindows().
+			Return(allWindows, nil).
+			Times(1)
+
+		// Dry-run must not write anything.
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+		aerospaceClient.GetLayoutMock().EXPECT().
+			SetLayout(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+		aerospaceClient.GetFocusMock().EXPECT().
+			SetFocusByWindowID(gomock.Any()).
+			Return(nil).
+			Times(0)
+
+		cmd := cmd.RootCmd(aerospaceClient)
+		out, err := testutils.CmdExecute(cmd, args...)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if summoned := aerospaceClient.GetSummonedWorkspaces(); len(summoned) != 0 {
+			t.Errorf("expected no summon in dry-run, got %v", summoned)
+		}
+
+		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
+		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
+	})
+
+	t.Run("[dry-run] fails closed on cross-monitor target", func(t *testing.T) {
+		command := "move"
+		args := []string{command, "", "--dry-run"}
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows: []windows.Window{
+					{AppName: "Finder", WindowID: 5678},
+				},
+				Workspace:       &workspaces.Workspace{Workspace: "ws2"},
+				FocusedWindowID: 5678,
+			},
+		}
+		allWindows := testutils.ExtractAllWindows(tree)
+		focusedWindow := testutils.ExtractFocusedWindow(tree)
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		// Stale state: focused monitor 2 with .scratchpad.2 attached to monitor 1.
+		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 2, MonitorName: "HDMI"})
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws2", MonitorID: 2},
+			{Workspace: ".scratchpad.2", MonitorID: 1},
+		})
+
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetFocusedWindow().
+			Return(focusedWindow, nil).
+			Times(1)
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetAllWindows().
+			Return(allWindows, nil).
+			Times(1)
+
+		// Dry-run still validates the target: no move, no layout, no output.
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+		aerospaceClient.GetLayoutMock().EXPECT().
+			SetLayout(gomock.Any(), gomock.Any()).
+			Return(nil).
+			Times(0)
+
+		cmd := cmd.RootCmd(aerospaceClient)
+		_, err := testutils.CmdExecute(cmd, args...)
+		if err == nil {
+			t.Errorf("Expected error, got nil")
+		}
+	})
+
 	t.Run("fails when moving a window to scratchpad", func(t *testing.T) {
 		command := "move"
 		args := []string{command, "Finder"}
@@ -445,6 +900,10 @@ func TestMoveCmd(t *testing.T) {
 		focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: ".scratchpad", MonitorID: 1},
+		})
 		// allow FocusNextTilingWindow to run without mocking Connection details
 		// Connection() is handled by routing connection, no need to mock
 		gomock.InOrder(
@@ -522,6 +981,10 @@ func TestMoveCmd(t *testing.T) {
 		notepadWindow := matchedWindows[0]
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: ".scratchpad", MonitorID: 1},
+		})
 		// allow wrapper.FocusNextTilingWindow in dry-run (will not call Connection)
 		// Connection() is handled by routing connection, no need to mock
 		gomock.InOrder(
@@ -593,6 +1056,10 @@ func TestMoveCmd(t *testing.T) {
 			focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 			aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+			aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+				{Workspace: "ws1", MonitorID: 1},
+				{Workspace: ".scratchpad", MonitorID: 1},
+			})
 			// allow FocusNextTilingWindow to run without mocking Connection details
 			// Connection() is handled by routing connection, no need to mock
 
@@ -672,11 +1139,13 @@ func TestMoveCmd(t *testing.T) {
 			AppName:      "Terminal",
 			WindowID:     1111,
 			WindowLayout: "floating",
+			Workspace:    ".scratchpad",
 		}
 		floatingWindow2 := windows.Window{
 			AppName:      "Calculator",
 			WindowID:     2222,
 			WindowLayout: "floating",
+			Workspace:    ".scratchpad.2",
 		}
 		tilingWindow := windows.Window{
 			AppName:      "Notepad",
@@ -691,6 +1160,12 @@ func TestMoveCmd(t *testing.T) {
 		}
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		// Floating windows live on per-monitor scratchpads; each is routed by its
+		// own monitor, never by the focused monitor.
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: ".scratchpad", MonitorID: 1},
+			{Workspace: ".scratchpad.2", MonitorID: 2},
+		})
 		// allow FocusNextTilingWindow to run without mocking Connection details
 		gomock.InOrder(
 			aerospaceClient.GetWindowsMock().EXPECT().
@@ -731,7 +1206,7 @@ func TestMoveCmd(t *testing.T) {
 			aerospaceClient.GetWorkspacesMock().EXPECT().
 				MoveWindowToWorkspaceWithOpts(
 					workspaces.MoveWindowToWorkspaceArgs{
-						WorkspaceName: constants.DefaultScratchpadWorkspaceName,
+						WorkspaceName: ".scratchpad.2",
 					},
 					workspaces.MoveWindowToWorkspaceOpts{
 						WindowID: &floatingWindow2.WindowID,
@@ -829,6 +1304,10 @@ func TestMoveCmd(t *testing.T) {
 			focusedWindow := testutils.ExtractFocusedWindow(tree)
 
 			aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+			aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+				{Workspace: "ws1", MonitorID: 1},
+				{Workspace: ".scratchpad", MonitorID: 1},
+			})
 			// allow wrapper.FocusNextTilingWindow in dry-run (will not call Connection)
 			// Connection() is handled by routing connection, no need to mock
 			gomock.InOrder(
@@ -878,11 +1357,15 @@ func TestMoveCmd(t *testing.T) {
 			AppName:      "Terminal",
 			WindowID:     1111,
 			WindowLayout: "floating",
+			Workspace:    ".scratchpad",
 		}
 
 		allWindows := []windows.Window{floatingWindow}
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: ".scratchpad", MonitorID: 1},
+		})
 		gomock.InOrder(
 			aerospaceClient.GetWindowsMock().EXPECT().
 				GetAllWindows().

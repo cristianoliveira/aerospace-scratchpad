@@ -137,7 +137,9 @@ func ScratchpadWorkspaceNameForMonitor(monitorID int, monitorCount int) string {
 // ResolveScratchpadWorkspaceNameForMonitor returns the scratchpad workspace
 // name for the provided monitor. If an existing scratchpad workspace is already
 // attached to the monitor, it is returned; otherwise the name is derived from
-// the monitor ID.
+// the monitor ID. When the derived name is currently attached to a different
+// monitor, it fails closed: returning that name would move windows across
+// monitors.
 func ResolveScratchpadWorkspaceNameForMonitor(
 	cli AeroSpaceWMClient,
 	monitorID int,
@@ -175,7 +177,66 @@ func ResolveScratchpadWorkspaceNameForMonitor(
 		return foundWorkspace, nil
 	}
 
+	// The expected name has no scratchpad attached to this monitor. If it is
+	// currently attached to a different monitor, using it would move the window
+	// across monitors: fail closed instead.
+	for _, workspaceMonitor := range workspaces {
+		if workspaceMonitor.Workspace == expectedName &&
+			workspaceMonitor.MonitorID != monitorID {
+			return "", fmt.Errorf(
+				"scratchpad workspace '%s' is attached to monitor %d, not monitor %d; refusing cross-monitor move",
+				expectedName,
+				workspaceMonitor.MonitorID,
+				monitorID,
+			)
+		}
+	}
+
 	return expectedName, nil
+}
+
+// ResolveSourceMonitorForWorkspace returns the monitor the workspace is
+// currently attached to. It fails closed when the workspace is missing or
+// ambiguous in the workspace-to-monitor mapping, as the source monitor cannot
+// be trusted.
+func ResolveSourceMonitorForWorkspace(
+	cli AeroSpaceWMClient,
+	workspace string,
+) (int, error) {
+	if workspace == "" {
+		return 0, errors.New(
+			"window has no workspace; unable to determine source monitor",
+		)
+	}
+
+	workspaces, err := ListWorkspacesWithMonitors(cli)
+	if err != nil {
+		return 0, err
+	}
+
+	var sourceMonitorID int
+	for _, workspaceMonitor := range workspaces {
+		if workspaceMonitor.Workspace != workspace {
+			continue
+		}
+		if sourceMonitorID != 0 && sourceMonitorID != workspaceMonitor.MonitorID {
+			return 0, fmt.Errorf(
+				"workspace '%s' is ambiguously attached to monitors %d and %d; unable to determine source monitor",
+				workspace,
+				sourceMonitorID,
+				workspaceMonitor.MonitorID,
+			)
+		}
+		sourceMonitorID = workspaceMonitor.MonitorID
+	}
+	if sourceMonitorID != 0 {
+		return sourceMonitorID, nil
+	}
+
+	return 0, fmt.Errorf(
+		"workspace '%s' not found in monitor mapping; unable to determine source monitor",
+		workspace,
+	)
 }
 
 // ListScratchpadWorkspaceNames returns the unique scratchpad workspace names

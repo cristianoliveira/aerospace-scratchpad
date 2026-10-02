@@ -97,6 +97,59 @@ func TestSummonCmd(t *testing.T) {
 		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
 	})
 
+	t.Run("still brings a matching window from another monitor", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		tree := []testutils.AeroSpaceTree{
+			{
+				Windows:   []windows.Window{{AppName: "Notepad", WindowID: 1234}},
+				Workspace: &workspaces.Workspace{Workspace: "ws1"},
+			},
+			{
+				Windows:         []windows.Window{{AppName: "Terminal", WindowID: 5678}},
+				Workspace:       &workspaces.Workspace{Workspace: "ws2"},
+				FocusedWindowID: 5678,
+			},
+		}
+		allWindows := testutils.ExtractAllWindows(tree)
+		matchedWindows := testutils.ExtractWindowsByName(tree, "Notepad")
+		if len(matchedWindows) != 1 {
+			t.Fatalf("expected one matching window, got %d", len(matchedWindows))
+		}
+		window := matchedWindows[0]
+		focusedWorkspace := &workspaces.Workspace{Workspace: "ws2"}
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		// Bringing from monitor 1 to the focused workspace on monitor 2 is allowed.
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: "ws1", MonitorID: 1},
+			{Workspace: "ws2", MonitorID: 2},
+		})
+		gomock.InOrder(
+			aerospaceClient.GetWorkspacesMock().EXPECT().
+				GetFocusedWorkspace().
+				Return(focusedWorkspace, nil),
+			aerospaceClient.GetWindowsMock().EXPECT().
+				GetAllWindows().
+				Return(allWindows, nil),
+			aerospaceClient.GetWorkspacesMock().EXPECT().
+				MoveWindowToWorkspaceWithOpts(
+					workspaces.MoveWindowToWorkspaceArgs{WorkspaceName: "ws2"},
+					workspaces.MoveWindowToWorkspaceOpts{WindowID: &window.WindowID},
+				).
+				Return(nil),
+			aerospaceClient.GetFocusMock().EXPECT().
+				SetFocusByWindowID(window.WindowID).
+				Return(nil),
+		)
+
+		_, err := testutils.CmdExecute(cmd.RootCmd(aerospaceClient), "summon", "Notepad")
+		if err != nil {
+			t.Fatalf("expected success, got %v", err)
+		}
+	})
+
 	t.Run("fails when pattern is omitted", func(t *testing.T) {
 		command := "summon"
 		args := []string{command}

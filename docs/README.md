@@ -7,6 +7,8 @@ Here you will find extensive documentation about the CLI.
 Move the currently focused window to the scratchpad workspace (`.scratchpad` or `.scratchpad.<monitor-id>`). The window will be hidden until you show it again.
 You can actually see this in your workspace list, but it can be ignored—it's just used to store windows that are "hidden".
 
+When **sending a window into the scratchpad** (`move`, or the hide/toggle path in `show`), each window is routed to the scratchpad attached to **its own source monitor** — the monitor of the workspace the window currently lives in — never to the globally focused monitor. When a safe same-monitor scratchpad target cannot be established, the command fails for that window and leaves it where it is instead of moving it across monitors. This covers an unknown source monitor and a target scratchpad attached to another monitor. A missing target is provisioned automatically on the source monitor (empty workspace only); if provisioning or its placement verification fails, the send fails closed and the window stays. This never-cross constraint applies only to sending into the scratchpad: bringing a window out with `show`, `summon`, or `hook pull-window` may move it to another monitor by design. The check is performed just before the move over separate IPC calls and is not race-free.
+
 ### USAGE
 
 `pattern` is a regex pattern to match the app name.
@@ -56,7 +58,7 @@ aerospace-scratchpad move --all-floating
 
 This command will:
 - Find all windows with `WindowLayout == "floating"`
-- Move each floating window to a scratchpad workspace (`.scratchpad` or `.scratchpad.<monitor-id>`)
+- Move each floating window to the scratchpad workspace attached to that window's own source monitor (`.scratchpad` or `.scratchpad.<monitor-id>`)
 - Ensure they remain floating
 
 See more [flags](#flags).
@@ -252,9 +254,15 @@ aerospace-scratchpad hook pull-window --help
 
 It will send the window to a "special" workspace called `.scratchpad` (or `.scratchpad.<monitor-id>` for multi-monitor setups). This workspace is like any other workspace, but can be ignored. The window will be hidden until you show it again.
 
-When you have multiple monitors, each monitor can have its own scratchpad workspace (e.g., `.scratchpad.1`, `.scratchpad.2`). Windows are moved to the scratchpad workspace attached to the **currently focused monitor** when the command is executed. This ensures scratchpad windows are organized by the monitor you're actively using.
+When you have multiple monitors, each monitor can have its own scratchpad workspace (e.g., `.scratchpad.1`, `.scratchpad.2`). When **sending a window into the scratchpad** with `move` or the hide/toggle path in `show`, the destination is the scratchpad attached to that window's source monitor (the monitor of the workspace it currently lives in), resolved independently per window. If a same-monitor destination cannot be verified — unknown source monitor, destination attached to another monitor — the send fails for that window and leaves it where it is. A destination that does not exist yet is provisioned automatically on the source monitor (see the provisioning flow in the Multi-Monitor Configuration section); if provisioning or its placement verification fails, the send fails closed and the window stays. This no-cross-monitor guarantee applies only when sending into the scratchpad; bringing a window out with `show`, `summon`, or `hook pull-window` may move it to a workspace on another monitor. Note the guard is check-then-move validation over separate IPC calls: it is enforced at validation time and is not race-free against concurrent workspace changes.
 
 For single-monitor setups, the default `.scratchpad` workspace is used for backward compatibility.
+
+#### Limitations
+
+The same-monitor guard is a preflight check followed by a separate move command (two IPC calls). Workspaces can change in between — focus switches, `workspace-to-monitor-force-assignment` edits, or a workspace being removed — so affinity is best-effort against the state observed at validation time, not an atomic guarantee.
+
+Provisioning an absent scratchpad temporarily switches focus (to the sending window's monitor, then back) and runs `summon-workspace` followed by a placement verification; provisioning and verification are separate IPC calls and are not race-free. If focus restoration fails, your focus may be left on the source monitor, or — in the failure case — the newly created empty scratchpad may remain the visible workspace there (AeroSpace has no workspace delete).
 
 ### Multi-Monitor Configuration
 
@@ -268,7 +276,11 @@ For optimal multi-monitor scratchpad experience:
    }
    ```
 
-2. **Monitor-aware commands**: `list` defaults to all monitors; use `--monitor` to narrow its results. `next` defaults to the current monitor:
+2. **Pre-create per-monitor scratchpads (or let `move` do it)**: when sending a window to a scratchpad that does not exist yet in a multi-monitor setup, `move` provisions it automatically: it focuses the sending window's monitor, creates the empty scratchpad there (`summon-workspace`), verifies the placement, moves the window, then restores the previous focus and the monitor's visible workspace. It never summons an existing scratchpad (that would relocate it with all its windows), and it fails closed — without moving the window — if creation or placement verification fails. Manual pre-creation is still possible: verify absence with `aerospace list-workspaces --all --format '%{workspace} %{monitor-id}'`, focus a window on the intended monitor, run `aerospace summon-workspace .scratchpad.2`, and re-verify the attachment. **Never** run `summon-workspace` on a scratchpad name that already exists with windows in it — it relocates the entire workspace, windows included, to the focused monitor.
+
+   Then pin it with `workspace-to-monitor-force-assignment` above.
+
+3. **Monitor-aware commands**: `list` defaults to all monitors; use `--monitor` to narrow its results. `next` defaults to the current monitor:
    ```bash
    # List scratchpad windows on current monitor
    aerospace-scratchpad list --monitor current

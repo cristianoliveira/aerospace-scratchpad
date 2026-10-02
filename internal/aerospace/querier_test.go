@@ -774,6 +774,121 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		},
 	)
 
+	t.Run(
+		"ResolveScratchpadWorkspaceNameForMonitor fails closed on cross-monitor name",
+		func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+			socket.EXPECT().
+				SendCommand(
+					"list-workspaces",
+					[]string{"--all", "--json", "--format", "%{workspace} %{monitor-id}"},
+				).
+				Return(&client.Response{
+					ExitCode: 0,
+					StdOut:   `[{"workspace":".scratchpad.2","monitor-id":1},{"workspace":"work","monitor-id":2}]`,
+				}, nil).
+				Times(1)
+
+			name, err := aerospace.ResolveScratchpadWorkspaceNameForMonitor(
+				&mockConnectionAeroSpaceClient{conn: socket},
+				2,
+			)
+			if err == nil {
+				t.Fatalf("expected error for cross-monitor scratchpad attachment")
+			}
+			if name != "" {
+				t.Fatalf("expected empty workspace name on failure, got %s", name)
+			}
+		},
+	)
+
+	t.Run("ResolveSourceMonitorForWorkspace returns monitor for workspace", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+		socket.EXPECT().
+			SendCommand(
+				"list-workspaces",
+				[]string{"--all", "--json", "--format", "%{workspace} %{monitor-id}"},
+			).
+			Return(&client.Response{
+				ExitCode: 0,
+				StdOut:   `[{"workspace":"1","monitor-id":1},{"workspace":"work","monitor-id":2}]`,
+			}, nil).
+			Times(1)
+
+		monitorID, err := aerospace.ResolveSourceMonitorForWorkspace(
+			&mockConnectionAeroSpaceClient{conn: socket},
+			"work",
+		)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if monitorID != 2 {
+			t.Fatalf("expected monitor 2, got %d", monitorID)
+		}
+	})
+
+	t.Run("ResolveSourceMonitorForWorkspace fails closed on ambiguous mapping", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+		socket.EXPECT().
+			SendCommand(
+				"list-workspaces",
+				[]string{"--all", "--json", "--format", "%{workspace} %{monitor-id}"},
+			).
+			Return(&client.Response{
+				ExitCode: 0,
+				StdOut:   `[{"workspace":"work","monitor-id":1},{"workspace":"work","monitor-id":2}]`,
+			}, nil).
+			Times(1)
+
+		monitorID, err := aerospace.ResolveSourceMonitorForWorkspace(
+			&mockConnectionAeroSpaceClient{conn: socket},
+			"work",
+		)
+		if err == nil {
+			t.Fatalf("expected error for ambiguous workspace mapping")
+		}
+		if monitorID != 0 {
+			t.Fatalf("expected zero monitor on failure, got %d", monitorID)
+		}
+	})
+
+	t.Run("ResolveSourceMonitorForWorkspace fails closed on unknown ws", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+		socket.EXPECT().
+			SendCommand(
+				"list-workspaces",
+				[]string{"--all", "--json", "--format", "%{workspace} %{monitor-id}"},
+			).
+			Return(&client.Response{
+				ExitCode: 0,
+				StdOut:   `[{"workspace":"1","monitor-id":1}]`,
+			}, nil).
+			Times(1)
+
+		monitorID, err := aerospace.ResolveSourceMonitorForWorkspace(
+			&mockConnectionAeroSpaceClient{conn: socket},
+			"ghost-workspace",
+		)
+		if err == nil {
+			t.Fatalf("expected error for workspace missing from monitor mapping")
+		}
+		if monitorID != 0 {
+			t.Fatalf("expected zero monitor on failure, got %d", monitorID)
+		}
+	})
+
 	t.Run("ListScratchpadWorkspaceNames returns detected scratchpads", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()

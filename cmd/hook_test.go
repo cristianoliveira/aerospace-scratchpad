@@ -68,6 +68,11 @@ func TestHookPullWindow(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		// Pulling a scratchpad window to another monitor remains allowed.
+		mockClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: constants.DefaultScratchpadWorkspaceName, MonitorID: 1},
+			{Workspace: "prev-ws", MonitorID: 2},
+		})
 		focusedWindow := &windows.Window{
 			WindowID:  99,
 			Workspace: constants.DefaultScratchpadWorkspaceName,
