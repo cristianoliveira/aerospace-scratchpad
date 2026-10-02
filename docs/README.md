@@ -258,6 +258,10 @@ When you have multiple monitors, each monitor can have its own scratchpad worksp
 
 For single-monitor setups, the default `.scratchpad` workspace is used for backward compatibility.
 
+#### Limitations
+
+The same-monitor guard is a preflight check followed by a separate move command (two IPC calls). Workspaces can change in between — focus switches, `workspace-to-monitor-force-assignment` edits, or a workspace being removed — so affinity is best-effort against the state observed at validation time, not an atomic guarantee.
+
 ### Multi-Monitor Configuration
 
 For optimal multi-monitor scratchpad experience:
