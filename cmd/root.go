@@ -98,8 +98,8 @@ func enableOutputFlag(command *cobra.Command) *cobra.Command {
 
 func enableMonitorFlag(command *cobra.Command) *cobra.Command {
 	command.Flags().StringP(
-		"monitor", "m", "current",
-		`Monitor filter: "current" (default) for current monitor, "all" for all monitors, or a monitor ID (e.g., 1)`,
+		"monitor", "m", "all",
+		`Monitor filter: "all" (default) for all monitors, "current" for the current monitor, or a monitor ID (e.g., 1)`,
 	)
 	return command
 }

@@ -103,9 +103,10 @@ See also [flags](#flags).
 
 ## Command: `next`
 
-This command cycles through scratchpad windows on the selected monitor (`current` by default).
-Windows are ordered by window ID. If the focused window belongs to that set, `next` selects its
-successor and wraps after the last window; otherwise, it selects the first window.
+This command cycles through scratchpad windows across all monitors by default. Use `--monitor current`
+or `--monitor <ID>` to restrict the candidate set. Windows are ordered by window ID. If the focused
+window belongs to that set, `next` selects its successor and wraps after the last window; otherwise,
+it selects the first window.
 
 The selected window moves to the current workspace and receives focus. That focus acts as the cursor
 for the next invocation, so cycling works across separate CLI processes without persisted state.
@@ -115,7 +116,14 @@ or floating windows.
 ### USAGE
 
 ```bash
+# Cycle scratchpad windows across all monitors (default)
 aerospace-scratchpad next
+
+# Restrict cycling to the current monitor
+aerospace-scratchpad next --monitor current
+
+# Restrict cycling to monitor 2
+aerospace-scratchpad next --monitor 2
 ```
 
 ## Command: `list` / `ls`
@@ -287,19 +295,19 @@ For optimal multi-monitor scratchpad experience:
 
    Then pin it with `workspace-to-monitor-force-assignment` above.
 
-3. **Monitor-aware commands**: `list` defaults to all monitors; use `--monitor` to narrow its results. `next` defaults to the current monitor:
+3. **Monitor-aware commands**: `list` and `next` default to all monitors; use `--monitor` to narrow their candidates:
    ```bash
-   # List scratchpad windows on current monitor
+   # List scratchpad windows on the current monitor
    aerospace-scratchpad list --monitor current
-   
-   # List all scratchpad windows across all monitors  
-   aerospace-scratchpad list --monitor all
-   
-   # List scratchpad windows on monitor 2
-   aerospace-scratchpad list --monitor 2
+
+   # Cycle scratchpad windows across all monitors (default)
+   aerospace-scratchpad next
+
+   # Cycle scratchpad windows on monitor 2
+   aerospace-scratchpad next --monitor 2
    ```
 
-3. **Hook integration**: The `hook pull-window` command automatically handles both `.scratchpad` and `.scratchpad.<monitor-id>` workspaces.
+4. **Hook integration**: The `hook pull-window` command automatically handles both `.scratchpad` and `.scratchpad.<monitor-id>` workspaces.
 
 ### Communication with AeroSpaceWM
 
