@@ -386,3 +386,29 @@ Output:
   error: ""
 
 ---
+
+[TestMoveCmd/[dry-run]_resolves_per-window_targets_across_monitors - 1]
+Context:
+  workspaces:
+  - workspace: ws1
+    focused-window-id: 1111
+  - workspace: ws2
+  windows:
+  - window-id: 1111
+    app-name: Finder
+  - window-id: 2222
+    app-name: Finder
+Command: |
+  $ aerospace-scratchpad move  --all-matching --dry-run
+Output:
+  status: success
+  stdout: |
+    [dry-run] MoveWindowToWorkspace(windowID=1111, workspace=.scratchpad)
+    [dry-run] SetLayout(windowID=1111, layout=floating)
+    command=move action=to-scratchpad window_id=1111 app_name=Finder workspace=ws1 target_workspace=.scratchpad result=ok message=""
+    [dry-run] MoveWindowToWorkspace(windowID=2222, workspace=.scratchpad.2)
+    [dry-run] SetLayout(windowID=2222, layout=floating)
+    command=move action=to-scratchpad window_id=2222 app_name=Finder workspace=ws2 target_workspace=.scratchpad.2 result=ok message=""
+  error: ""
+
+---
