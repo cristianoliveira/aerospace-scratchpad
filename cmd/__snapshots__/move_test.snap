@@ -426,12 +426,10 @@ Command: |
 Output:
   status: success
   stdout: |
-    [dry-run] SetFocusByWindowID(5678)
+    [dry-run] FocusMonitor(2)
     [dry-run] SummonWorkspace(.scratchpad.2)
-    [dry-run] WorkspaceBackAndForth()
     [dry-run] MoveWindowToWorkspace(windowID=5678, workspace=.scratchpad.2)
     [dry-run] SetLayout(windowID=5678, layout=floating)
-    [dry-run] WorkspaceBackAndForth()
     command=move action=to-scratchpad window_id=5678 app_name=Spotify workspace=ws2 target_workspace=.scratchpad.2 result=ok message=""
   error: ""
 

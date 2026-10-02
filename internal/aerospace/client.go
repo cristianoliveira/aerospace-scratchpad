@@ -3,6 +3,7 @@ package aerospace
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/focus"
@@ -153,15 +154,49 @@ func (c *AeroSpaceClient) SummonWorkspace(name string) error {
 	return nil
 }
 
-// WorkspaceBackAndForth switches the visible workspace back and forth
-// (workspace-back-and-forth), used to restore a monitor's visible workspace
-// after provisioning.
-func (c *AeroSpaceClient) WorkspaceBackAndForth() error {
+// FocusMonitor focuses the given monitor (focus-monitor), making it the
+// target for workspace creation.
+func (c *AeroSpaceClient) FocusMonitor(monitorID int) error {
 	if c.dryRun {
-		fmt.Fprintln(os.Stdout, "[dry-run] WorkspaceBackAndForth()")
+		fmt.Fprintf(os.Stdout, "[dry-run] FocusMonitor(%d)\n", monitorID)
 		return nil
 	}
-	return c.client.Workspaces().MoveBackAndForth()
+	response, err := c.Connection().SendCommand(
+		"focus-monitor",
+		[]string{strconv.Itoa(monitorID)},
+	)
+	if err != nil {
+		return fmt.Errorf("unable to focus monitor %d: %w", monitorID, err)
+	}
+	if response.ExitCode != 0 {
+		return fmt.Errorf(
+			"unable to focus monitor %d: %s",
+			monitorID,
+			response.StdErr,
+		)
+	}
+	return nil
+}
+
+// SwitchWorkspace focuses the named workspace (workspace command), used to
+// restore a monitor's active workspace after provisioning.
+func (c *AeroSpaceClient) SwitchWorkspace(name string) error {
+	if c.dryRun {
+		fmt.Fprintf(os.Stdout, "[dry-run] SwitchWorkspace(%s)\n", name)
+		return nil
+	}
+	response, err := c.Connection().SendCommand("workspace", []string{name})
+	if err != nil {
+		return fmt.Errorf("unable to switch to workspace '%s': %w", name, err)
+	}
+	if response.ExitCode != 0 {
+		return fmt.Errorf(
+			"unable to switch to workspace '%s': %s",
+			name,
+			response.StdErr,
+		)
+	}
+	return nil
 }
 
 // IsDryRun reports whether write commands are suppressed.

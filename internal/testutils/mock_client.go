@@ -161,6 +161,22 @@ func (m *MockAeroSpaceWM) GetWorkspaceBackAndForthCalls() int {
 	return m.routingConn.backAndForthCalls
 }
 
+// GetFocusMonitorCalls returns how many focus-monitor commands were issued.
+func (m *MockAeroSpaceWM) GetFocusMonitorCalls() int {
+	return m.routingConn.focusMonitorCalls
+}
+
+// GetWorkspaceSwitchCalls returns the workspace names passed to the
+// workspace (switch) command.
+func (m *MockAeroSpaceWM) GetWorkspaceSwitchCalls() []string {
+	return m.routingConn.workspaceSwitchCalls
+}
+
+// SetWorkspaceSwitchError injects a failure for workspace switch commands.
+func (m *MockAeroSpaceWM) SetWorkspaceSwitchError(err error) {
+	m.routingConn.workspaceSwitchErr = err
+}
+
 const (
 	minArgsForMoveCommand = 3
 	windowIDFlag          = "--window-id"
@@ -181,6 +197,9 @@ type routingConnection struct {
 	summonPlacementOverride int
 	backAndForthCalls       int
 	backAndForthErr         error
+	focusMonitorCalls       int
+	workspaceSwitchCalls    []string
+	workspaceSwitchErr      error
 	ctrl                    *gomock.Controller
 }
 
@@ -203,6 +222,10 @@ func (r *routingConnection) SendCommand(command string, args []string) (*client.
 		return r.handleSummonWorkspace(args)
 	case "workspace-back-and-forth":
 		return r.handleWorkspaceBackAndForth(args)
+	case "focus-monitor":
+		return r.handleFocusMonitor(args)
+	case "workspace":
+		return r.handleWorkspaceSwitch(args)
 	default:
 		return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
 	}
@@ -252,6 +275,39 @@ func (r *routingConnection) handleWorkspaceBackAndForth(_ []string) (*client.Res
 		}, r.backAndForthErr
 	}
 	r.backAndForthCalls++
+	return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
+}
+
+// handleFocusMonitor models AeroSpace focus-monitor: the monitor becomes the
+// focused one (affecting summon placement) and the focused window tracking is
+// invalidated.
+func (r *routingConnection) handleFocusMonitor(args []string) (*client.Response, error) {
+	if len(args) < 1 {
+		return &client.Response{ExitCode: 1, StdOut: "", StdErr: "invalid focus-monitor command"}, nil
+	}
+	r.focusMonitorCalls++
+	monitorID, convErr := strconv.Atoi(args[0])
+	if convErr != nil {
+		return &client.Response{ExitCode: 1, StdOut: "", StdErr: convErr.Error()}, convErr
+	}
+	r.focusedMonitor = &aerospace.MonitorInfo{MonitorID: monitorID}
+	r.focusedWindowID = 0
+	return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
+}
+
+// handleWorkspaceSwitch models AeroSpace workspace <name>: it records the
+// switch so tests can assert restoration, with injectable failure.
+func (r *routingConnection) handleWorkspaceSwitch(args []string) (*client.Response, error) {
+	if len(args) < 1 {
+		return &client.Response{ExitCode: 1, StdOut: "", StdErr: "invalid workspace command"}, nil
+	}
+	if r.workspaceSwitchErr != nil {
+		return &client.Response{
+			ExitCode: 1,
+			StdErr:   r.workspaceSwitchErr.Error(),
+		}, r.workspaceSwitchErr
+	}
+	r.workspaceSwitchCalls = append(r.workspaceSwitchCalls, args[0])
 	return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
 }
 

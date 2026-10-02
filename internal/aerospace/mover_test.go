@@ -220,8 +220,8 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		prevFocused := windows.Window{AppName: "Finder", WindowID: 999, Workspace: "ws1"}
 
 		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
-		// User focus is on monitor 1; Spotify lives on monitor 2 with no
-		// scratchpad provisioned yet.
+		// User focus is on monitor 1; Spotify lives on monitor 2 workspace ws2
+		// with no scratchpad provisioned yet.
 		aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 1, MonitorName: "HDMI"})
 		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
 			{Workspace: "ws1", MonitorID: 1},
@@ -239,18 +239,17 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 			}).
 			AnyTimes()
 
-		// Focus the source window for placement, then restore the user focus.
-		aerospaceClient.GetFocusMock().EXPECT().
-			SetFocusByWindowID(111).
-			Return(nil).
+		// Focus monitor 2, capture its active workspace for restoration.
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			GetFocusedWorkspace().
+			Return(&workspaces.Workspace{Workspace: "ws2"}, nil).
 			Times(1)
+
+		// Restore the user's focused window afterwards.
 		aerospaceClient.GetFocusMock().EXPECT().
 			SetFocusByWindowID(999).
 			Return(nil).
 			Times(1)
-
-		// Restore the source monitor's visible workspace after the move.
-		// (workspace-back-and-forth is tracked as harness state.)
 
 		aerospaceClient.GetWorkspacesMock().EXPECT().
 			MoveWindowToWorkspaceWithOpts(
@@ -268,12 +267,12 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 					t.Errorf("expected window %d to be moved", window.WindowID)
 				}
 				// Order guard: summon must precede the move; the
-				// visible-workspace restore must follow it.
+				// active-workspace restore must follow it.
 				if summoned := aerospaceClient.GetSummonedWorkspaces(); len(summoned) != 1 {
 					t.Errorf("expected summon before move, got %v", summoned)
 				}
-				if got := aerospaceClient.GetWorkspaceBackAndForthCalls(); got != 0 {
-					t.Errorf("expected restore after move, got %d calls", got)
+				if switched := aerospaceClient.GetWorkspaceSwitchCalls(); len(switched) != 0 {
+					t.Errorf("expected workspace restore after move, got %v", switched)
 				}
 				return nil
 			}).
@@ -300,8 +299,11 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		if len(summoned) != 1 || summoned[0] != ".scratchpad.2" {
 			t.Fatalf("expected summon of .scratchpad.2, got %v", summoned)
 		}
-		if got := aerospaceClient.GetWorkspaceBackAndForthCalls(); got != 1 {
-			t.Fatalf("expected workspace-back-and-forth restore, got %d calls", got)
+		if got := aerospaceClient.GetFocusMonitorCalls(); got != 1 {
+			t.Fatalf("expected focus-monitor on source monitor, got %d calls", got)
+		}
+		if switched := aerospaceClient.GetWorkspaceSwitchCalls(); len(switched) != 1 || switched[0] != "ws2" {
+			t.Fatalf("expected workspace restore to ws2, got %v", switched)
 		}
 	})
 
@@ -330,16 +332,14 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 			}).
 			AnyTimes()
 
-		aerospaceClient.GetFocusMock().EXPECT().
-			SetFocusByWindowID(222).
-			Return(nil).
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			GetFocusedWorkspace().
+			Return(&workspaces.Workspace{Workspace: "ws2"}, nil).
 			Times(1)
 		aerospaceClient.GetFocusMock().EXPECT().
 			SetFocusByWindowID(999).
 			Return(nil).
 			Times(1)
-		// workspace-back-and-forth restoration is asserted via harness state
-		// after the call (GetWorkspaceBackAndForthCalls).
 
 		aerospaceClient.GetWorkspacesMock().EXPECT().
 			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
@@ -354,8 +354,8 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		if _, err := mover.MoveWindowToScratchpadForMonitor(window, 2); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if got := aerospaceClient.GetWorkspaceBackAndForthCalls(); got != 1 {
-			t.Fatalf("expected workspace-back-and-forth restore, got %d calls", got)
+		if switched := aerospaceClient.GetWorkspaceSwitchCalls(); len(switched) != 1 || switched[0] != "ws2" {
+			t.Fatalf("expected workspace restore to ws2, got %v", switched)
 		}
 	})
 
@@ -391,7 +391,7 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		}
 	})
 
-	t.Run("fails closed and restores focus when summon fails", func(t *testing.T) {
+	t.Run("fails closed and restores state when summon fails", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 
@@ -417,9 +417,9 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 			}).
 			AnyTimes()
 
-		aerospaceClient.GetFocusMock().EXPECT().
-			SetFocusByWindowID(333).
-			Return(nil).
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			GetFocusedWorkspace().
+			Return(&workspaces.Workspace{Workspace: "ws2"}, nil).
 			Times(1)
 		// Focus must be restored even on failure.
 		aerospaceClient.GetFocusMock().EXPECT().
@@ -439,6 +439,9 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 		if _, err := mover.MoveWindowToScratchpadForMonitor(window, 2); err == nil {
 			t.Fatalf("expected error when summon fails")
+		}
+		if switched := aerospaceClient.GetWorkspaceSwitchCalls(); len(switched) != 1 || switched[0] != "ws2" {
+			t.Fatalf("expected source workspace restore on failure, got %v", switched)
 		}
 	})
 
@@ -469,9 +472,9 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 			}).
 			AnyTimes()
 
-		aerospaceClient.GetFocusMock().EXPECT().
-			SetFocusByWindowID(444).
-			Return(nil).
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			GetFocusedWorkspace().
+			Return(&workspaces.Workspace{Workspace: "ws2"}, nil).
 			Times(1)
 		aerospaceClient.GetFocusMock().EXPECT().
 			SetFocusByWindowID(999).
@@ -518,17 +521,16 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 			}).
 			AnyTimes()
 
-		aerospaceClient.GetFocusMock().EXPECT().
-			SetFocusByWindowID(555).
-			Return(nil).
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			GetFocusedWorkspace().
+			Return(&workspaces.Workspace{Workspace: "ws2"}, nil).
 			Times(1)
+
 		// The moved window must NOT be re-focused inside the scratchpad.
 		aerospaceClient.GetFocusMock().EXPECT().
 			SetFocusByWindowID(555).
 			Return(nil).
 			Times(0)
-		// workspace-back-and-forth restoration is asserted via harness state
-		// after the call (GetWorkspaceBackAndForthCalls).
 
 		aerospaceClient.GetWorkspacesMock().EXPECT().
 			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
@@ -543,8 +545,8 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		if _, err := mover.MoveWindowToScratchpadForMonitor(window, 2); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if got := aerospaceClient.GetWorkspaceBackAndForthCalls(); got != 1 {
-			t.Fatalf("expected workspace-back-and-forth restore, got %d calls", got)
+		if switched := aerospaceClient.GetWorkspaceSwitchCalls(); len(switched) != 1 || switched[0] != "ws2" {
+			t.Fatalf("expected workspace restore to ws2, got %v", switched)
 		}
 	})
 
@@ -573,9 +575,9 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 			}).
 			AnyTimes()
 
-		aerospaceClient.GetFocusMock().EXPECT().
-			SetFocusByWindowID(666).
-			Return(nil).
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			GetFocusedWorkspace().
+			Return(&workspaces.Workspace{Workspace: "ws2"}, nil).
 			Times(1)
 		// Cleanup must run even though the move failed.
 		aerospaceClient.GetFocusMock().EXPECT().
@@ -596,8 +598,8 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		if _, err := mover.MoveWindowToScratchpadForMonitor(window, 2); err == nil {
 			t.Fatalf("expected move error to surface")
 		}
-		if got := aerospaceClient.GetWorkspaceBackAndForthCalls(); got != 1 {
-			t.Fatalf("expected workspace restore on move failure, got %d calls", got)
+		if got := aerospaceClient.GetWorkspaceSwitchCalls(); len(got) != 1 {
+			t.Fatalf("expected source workspace restore on move failure, got %d calls", len(got))
 		}
 	})
 
@@ -626,11 +628,11 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 			}).
 			AnyTimes()
 
-		aerospaceClient.GetFocusMock().EXPECT().
-			SetFocusByWindowID(777).
-			Return(nil).
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			GetFocusedWorkspace().
+			Return(&workspaces.Workspace{Workspace: "ws2"}, nil).
 			Times(1)
-		// User focus restore is still attempted when the visible-workspace
+		// User focus restore is still attempted when the active-workspace
 		// restore fails.
 		aerospaceClient.GetFocusMock().EXPECT().
 			SetFocusByWindowID(999).
@@ -646,8 +648,8 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 			Return(nil).
 			Times(1)
 
-		// Inject workspace-back-and-forth failure through the harness.
-		aerospaceClient.SetWorkspaceBackAndForthError(errors.New("restore rejected"))
+		// Inject the workspace restore failure through the harness.
+		aerospaceClient.SetWorkspaceSwitchError(errors.New("restore rejected"))
 
 		mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 		_, err := mover.MoveWindowToScratchpadForMonitor(window, 2)
