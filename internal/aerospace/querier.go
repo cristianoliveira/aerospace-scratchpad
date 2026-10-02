@@ -33,7 +33,8 @@ type Querier interface {
 	// GetNextScratchpadWindow returns the next scratchpad window in the workspace
 	GetNextScratchpadWindow() (*windows.Window, error)
 
-	// GetNextScratchpadWindowForMonitor returns the next scratchpad window filtered by monitor.
+	// GetNextScratchpadWindowForMonitor returns the focused window's successor
+	// from the scratchpad windows filtered by monitor, wrapping at the end.
 	// monitorID can be:
 	//   -1 for all monitors (same as GetNextScratchpadWindow)
 	//   -2 for current monitor
@@ -98,17 +99,11 @@ type MonitorInfo struct {
 	MonitorName string `json:"monitor-name"`
 }
 
-// nextState tracks the last used window ID for round‑robin cycling.
-type nextState struct {
-	LastWindowID int `json:"lastWindowId"`
-}
-
 const (
 	listWorkspacesMonitorFormat = "%{workspace} %{monitor-id}"
 	focusedMonitorFormat        = "%{monitor-id} %{monitor-name}"
 	jsonFlag                    = "--json"
 	formatFlag                  = "--format"
-	nextStateFileName           = "next-state.json"
 	filterLogPrefix             = "FILTER: "
 	floatingLayout              = "floating"
 )
@@ -463,30 +458,23 @@ func (a *QueryMaker) GetNextScratchpadWindowForMonitor(monitorID int) (*windows.
 	if len(scratchpadWindows) == 0 {
 		return nil, errors.New("no scratchpad windows found")
 	}
-	// Read state
-	state, err := readState()
+
+	focusedWindow, err := a.cli.Windows().GetFocusedWindow()
 	if err != nil {
-		// If we can't read state, fallback to first window
-		//nolint:nilerr // fallback to first window on state read error
-		return &scratchpadWindows[0], nil
+		return nil, fmt.Errorf("unable to get focused window: %w", err)
 	}
-	// Find index of last used window ID
-	lastIndex := -1
-	for i, w := range scratchpadWindows {
-		if w.WindowID == state.LastWindowID {
-			lastIndex = i
-			break
+
+	nextIndex := 0
+	if focusedWindow != nil {
+		for index := range scratchpadWindows {
+			if scratchpadWindows[index].WindowID == focusedWindow.WindowID {
+				nextIndex = (index + 1) % len(scratchpadWindows)
+				break
+			}
 		}
 	}
-	nextIndex := 0
-	if lastIndex >= 0 {
-		nextIndex = (lastIndex + 1) % len(scratchpadWindows)
-	}
-	nextWindow := scratchpadWindows[nextIndex]
-	// Update state with new window ID (ignore write errors)
-	state.LastWindowID = nextWindow.WindowID
-	_ = writeState(state)
-	return &nextWindow, nil
+
+	return &scratchpadWindows[nextIndex], nil
 }
 
 // Filter represents a filter with property and regex pattern.
@@ -826,16 +814,6 @@ func ApplyFilters(window windows.Window, filters []Filter) (bool, error) {
 	}
 
 	return true, nil
-}
-
-// readState reads the round‑robin state from disk (always returns error to disable state).
-func readState() (*nextState, error) {
-	return nil, errors.New("state tracking disabled")
-}
-
-// writeState writes the round‑robin state to disk (no‑op).
-func writeState(state *nextState) error {
-	return nil
 }
 
 // NewAerospaceQuerier creates a new AerospaceQuerier.

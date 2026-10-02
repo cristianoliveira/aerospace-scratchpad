@@ -2,11 +2,13 @@ package cmd_test
 
 import (
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 
 	"go.uber.org/mock/gomock"
 
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/focus"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-scratchpad/cmd"
@@ -17,6 +19,7 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
+//nolint:gocognit // Test function aggregates command scenarios and dynamic state transitions.
 func TestNextCmd(t *testing.T) {
 	logger.SetDefaultLogger(&logger.EmptyLogger{})
 	stderr.SetBehavior(false)
@@ -83,6 +86,10 @@ func TestNextCmd(t *testing.T) {
 				GetAllWindowsByWorkspace(constants.DefaultScratchpadWorkspaceName).
 				Return(scratchpadWindows.Windows, nil).
 				Times(1),
+			aerospaceClient.GetWindowsMock().EXPECT().
+				GetFocusedWindow().
+				Return(testutils.ExtractFocusedWindow(tree), nil).
+				Times(1),
 			aerospaceClient.GetWorkspacesMock().EXPECT().
 				MoveWindowToWorkspaceWithOpts(
 					workspaces.MoveWindowToWorkspaceArgs{
@@ -114,6 +121,126 @@ func TestNextCmd(t *testing.T) {
 
 		cmdAsString := "aerospace-scratchpad " + strings.Join(args, " ")
 		testutils.MatchSnapshot(t, tree, cmdAsString, out, err)
+	})
+
+	t.Run("successive calls cycle from the focused window", func(t *testing.T) {
+		tests := []struct {
+			name              string
+			monitorID         int
+			workspaceMonitors []aerospace.WorkspaceMonitor
+			windows           []windows.Window
+			wantWindowIDs     []int
+		}{
+			{
+				name:      "single monitor",
+				monitorID: 1,
+				workspaceMonitors: []aerospace.WorkspaceMonitor{
+					{Workspace: ".scratchpad", MonitorID: 1},
+					{Workspace: "work", MonitorID: 1},
+				},
+				windows: []windows.Window{
+					{WindowID: 300, WindowLayout: "floating", Workspace: ".scratchpad"},
+					{WindowID: 100, WindowLayout: "floating", Workspace: ".scratchpad"},
+					{WindowID: 200, WindowLayout: "floating", Workspace: ".scratchpad"},
+				},
+				wantWindowIDs: []int{100, 200, 300, 100},
+			},
+			{
+				name:      "multiple monitors",
+				monitorID: 2,
+				workspaceMonitors: []aerospace.WorkspaceMonitor{
+					{Workspace: ".scratchpad.1", MonitorID: 1},
+					{Workspace: ".scratchpad.2", MonitorID: 2},
+					{Workspace: "work", MonitorID: 2},
+				},
+				windows: []windows.Window{
+					{WindowID: 300, WindowLayout: "floating", Workspace: ".scratchpad.2"},
+					{WindowID: 100, WindowLayout: "floating", Workspace: ".scratchpad.1"},
+					{WindowID: 200, WindowLayout: "floating", Workspace: ".scratchpad.2"},
+				},
+				wantWindowIDs: []int{200, 300, 200},
+			},
+		}
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				ctrl := gomock.NewController(t)
+				aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+				aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{
+					MonitorID: test.monitorID,
+				})
+				aerospaceClient.SetWorkspaceMonitors(test.workspaceMonitors)
+
+				currentWindows := slices.Clone(test.windows)
+				focusedWindowID := 999
+				var movedWindowIDs []int
+
+				aerospaceClient.GetWorkspacesMock().EXPECT().
+					GetFocusedWorkspace().
+					Return(&workspaces.Workspace{Workspace: "work"}, nil).
+					Times(len(test.wantWindowIDs))
+				aerospaceClient.GetWindowsMock().EXPECT().
+					GetAllWindows().
+					DoAndReturn(func() ([]windows.Window, error) {
+						return slices.Clone(currentWindows), nil
+					}).
+					Times(len(test.wantWindowIDs))
+				aerospaceClient.GetWindowsMock().EXPECT().
+					GetAllWindowsByWorkspace(gomock.Any()).
+					DoAndReturn(func(workspace string) ([]windows.Window, error) {
+						var matching []windows.Window
+						for _, window := range currentWindows {
+							if window.Workspace == workspace {
+								matching = append(matching, window)
+							}
+						}
+						return matching, nil
+					}).
+					AnyTimes()
+				aerospaceClient.GetWindowsMock().EXPECT().
+					GetFocusedWindow().
+					DoAndReturn(func() (*windows.Window, error) {
+						return &windows.Window{WindowID: focusedWindowID}, nil
+					}).
+					Times(len(test.wantWindowIDs))
+				aerospaceClient.GetWorkspacesMock().EXPECT().
+					MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(
+						args workspaces.MoveWindowToWorkspaceArgs,
+						opts workspaces.MoveWindowToWorkspaceOpts,
+					) error {
+						if opts.WindowID == nil {
+							t.Fatal("expected window ID for move")
+						}
+						movedWindowIDs = append(movedWindowIDs, *opts.WindowID)
+						for index := range currentWindows {
+							if currentWindows[index].WindowID == *opts.WindowID {
+								currentWindows[index].Workspace = args.WorkspaceName
+							}
+						}
+						return nil
+					}).
+					Times(len(test.wantWindowIDs))
+				aerospaceClient.GetFocusMock().EXPECT().
+					SetFocusByWindowID(gomock.Any()).
+					DoAndReturn(func(windowID int, _ ...focus.SetFocusOpts) error {
+						focusedWindowID = windowID
+						return nil
+					}).
+					Times(len(test.wantWindowIDs))
+
+				for range test.wantWindowIDs {
+					root := cmd.RootCmd(aerospaceClient)
+					if _, err := testutils.CmdExecute(root, "next"); err != nil {
+						t.Fatalf("next command failed: %v", err)
+					}
+				}
+
+				if !slices.Equal(movedWindowIDs, test.wantWindowIDs) {
+					t.Fatalf("moved windows %v, want %v", movedWindowIDs, test.wantWindowIDs)
+				}
+			})
+		}
 	})
 
 	t.Run(
@@ -223,6 +350,10 @@ func TestNextCmd(t *testing.T) {
 				aerospaceClient.GetWindowsMock().EXPECT().
 					GetAllWindowsByWorkspace(constants.DefaultScratchpadWorkspaceName).
 					Return(scratchpadWindows, nil).
+					Times(1),
+				aerospaceClient.GetWindowsMock().EXPECT().
+					GetFocusedWindow().
+					Return(&windows.Window{WindowID: 7777}, nil).
 					Times(1),
 				aerospaceClient.GetWorkspacesMock().EXPECT().
 					MoveWindowToWorkspaceWithOpts(

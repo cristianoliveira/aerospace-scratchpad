@@ -103,7 +103,14 @@ See also [flags](#flags).
 
 ## Command: `next`
 
-This command cycles through scratchpad windows and summons the next one to the current workspace.
+This command cycles through scratchpad windows on the selected monitor (`current` by default).
+Windows are ordered by window ID. If the focused window belongs to that set, `next` selects its
+successor and wraps after the last window; otherwise, it selects the first window.
+
+The selected window moves to the current workspace and receives focus. That focus acts as the cursor
+for the next invocation, so cycling works across separate CLI processes without persisted state.
+The candidate set uses the same scratchpad definition as `list`: windows in a scratchpad workspace
+or floating windows.
 
 ### USAGE
 
