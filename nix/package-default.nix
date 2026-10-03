@@ -1,16 +1,16 @@
 { pkgs, ... }:
   pkgs.buildGoModule rec {
     name = "aerospace-scratchpad";
-    version = "v0.6.0";
+    version = "v0.7.0";
 
     src = pkgs.fetchFromGitHub {
       owner = "cristianoliveira";
       repo = "aerospace-scratchpad";
       rev = version;
-      sha256 = "sha256-BOy4wTvqWCgNxqKybLAl3iVe0T+P9Y9JcbupXb3KhyM=";
+      sha256 = "sha256-KTzRJeHuJB1zODWDOM/iKFT6cZ6UkKDSmKJw94gQZE4=";
     };
 
-    vendorHash = "sha256-jYCA3DNoi9Mj55t6ru76voENM8VSJt7Gp74JV7Vq19k=";
+    vendorHash = "sha256-3GiKZiWUG6W+qbtGkDPjxRu2L/pZeqHkGtyWXMOyP9o=";
 
     ldflags = [
       "-s" "-w"
