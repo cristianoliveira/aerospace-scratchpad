@@ -7,11 +7,11 @@
     # sources that will be used for our derivation.
     src = ../.;
 
-    vendorHash = "sha256-7O1Yl9bSCy+cyeMy2KgMifXXyudNQk0HbYws8RyJJ5M=";
+    vendorHash = "sha256-3GiKZiWUG6W+qbtGkDPjxRu2L/pZeqHkGtyWXMOyP9o=";
 
     ldflags = [
       "-s" "-w"
-      "-X main.VERSION=${version}"
+      "-X github.com/cristianoliveira/aerospace-scratchpad/cmd.VERSION=${version}"
     ];
 
     meta = with pkgs.lib; {
