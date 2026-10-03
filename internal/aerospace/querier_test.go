@@ -624,14 +624,16 @@ func TestAeroSpaceQuerier(t *testing.T) {
 			).
 			Return(&client.Response{
 				ExitCode: 1,
+				StdOut:   "[]",
 				StdErr:   "boom",
 			}, nil).
 			Times(1)
 
-		if _, err := aerospace.ListWorkspacesWithMonitors(
+		_, err := aerospace.ListWorkspacesWithMonitors(
 			&mockConnectionAeroSpaceClient{conn: socket},
-		); err == nil {
-			t.Fatalf("expected error when command fails")
+		)
+		if err == nil || !strings.Contains(err.Error(), "boom") {
+			t.Fatalf("expected command failure, got %v", err)
 		}
 	})
 

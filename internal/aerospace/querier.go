@@ -1,6 +1,7 @@
 package aerospace
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -258,9 +259,47 @@ func ListScratchpadWorkspaceNames(cli AeroSpaceWMClient) ([]string, error) {
 
 // ListWorkspacesWithMonitors returns all workspaces and their monitor IDs.
 func ListWorkspacesWithMonitors(cli AeroSpaceWMClient) ([]WorkspaceMonitor, error) {
-	workspaceMappings, err := cli.Workspaces().GetAllWorkspacesWithMonitors()
+	// Safety exception for aerospace-ipc v0.5.0: its
+	// Workspaces.GetAllWorkspacesWithMonitors method parses stdout without
+	// checking Response.ExitCode. Keep this single checked raw query until the
+	// upstream method is fixed:
+	// https://github.com/cristianoliveira/aerospace-ipc/blob/v0.5.0/pkg/aerospace/workspaces/workspaces.go.
+	response, err := cli.Connection().SendCommand(
+		"list-workspaces",
+		[]string{"--all", "--json", "--format", "%{workspace} %{monitor-id}"},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to list workspaces with monitors: %w", err)
+	}
+	if response.ExitCode != 0 {
+		return nil, fmt.Errorf(
+			"unable to list workspaces with monitors: %s",
+			response.StdErr,
+		)
+	}
+
+	var workspaceMappings []WorkspaceMonitor
+	if parseErr := json.Unmarshal([]byte(response.StdOut), &workspaceMappings); parseErr != nil {
+		return nil, fmt.Errorf("unable to parse workspaces with monitors: %w", parseErr)
+	}
+	if workspaceMappings == nil {
+		return nil, errors.New(
+			"unable to parse workspaces with monitors: expected a JSON array",
+		)
+	}
+	for i, mapping := range workspaceMappings {
+		if strings.TrimSpace(mapping.Workspace) == "" {
+			return nil, fmt.Errorf(
+				"invalid workspace monitor mapping at index %d: workspace name is blank",
+				i,
+			)
+		}
+		if mapping.MonitorID <= 0 {
+			return nil, fmt.Errorf(
+				"invalid workspace monitor mapping at index %d: monitor ID must be positive",
+				i,
+			)
+		}
 	}
 
 	var sample []string

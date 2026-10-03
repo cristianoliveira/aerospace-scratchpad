@@ -137,6 +137,11 @@ func (m *MockAeroSpaceWM) SetWorkspaceMonitors(monitors []aerospace.WorkspaceMon
 	m.routingConn.workspaceMonitors = monitors
 }
 
+// SetWorkspaceListResponse overrides list-workspaces --all responses.
+func (m *MockAeroSpaceWM) SetWorkspaceListResponse(response client.Response) {
+	m.routingConn.workspaceListResponse = &response
+}
+
 // SetFocusedMonitor configures the focused monitor returned by list-monitors.
 func (m *MockAeroSpaceWM) SetFocusedMonitor(monitor aerospace.MonitorInfo) {
 	m.routingConn.focusedMonitor = &monitor
@@ -200,6 +205,7 @@ type routingConnection struct {
 	focusMock               *focus_mock.MockFocusService
 	layoutMock              *layout_mock.MockLayoutService
 	workspaceMonitors       []aerospace.WorkspaceMonitor
+	workspaceListResponse   *client.Response
 	focusedMonitor          *aerospace.MonitorInfo
 	focusedWindowID         int
 	summonCalls             []string
@@ -454,6 +460,10 @@ func (r *routingConnection) handleListWorkspaces(args []string) (*client.Respons
 		}
 
 		if arg == "--all" {
+			if r.workspaceListResponse != nil {
+				response := *r.workspaceListResponse
+				return &response, nil
+			}
 			jsonData, _ := json.Marshal(r.workspaceMonitors)
 			return &client.Response{ExitCode: 0, StdOut: string(jsonData), StdErr: ""}, nil
 		}
