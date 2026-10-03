@@ -17,11 +17,12 @@ import (
 func NextCmd(aerospaceClient *aerospace.AeroSpaceClient) *cobra.Command {
 	nextCmd := &cobra.Command{
 		Use:   "next",
-		Short: "Shows the next scratchpad window",
-		Long: `Shows the next scratchpad window in the current workspace.
+		Short: "Cycles through scratchpad windows",
+		Long: `Cycles through scratchpad windows on the selected monitor.
 
-This command cycles through the scratchpad windows, displaying them in the current workspace.
-It does not send the windows back to the scratchpad, but rather focuses the next available scratchpad window.
+Scratchpad windows are ordered by window ID. If the focused window is in that set, next selects
+its successor and wraps after the last window; otherwise, it selects the first window. The selected
+window moves to the current workspace and becomes the cursor for the next invocation.
 		`,
 		Run: func(cmd *cobra.Command, args []string) {
 			outputFormat, err := cmd.Flags().GetString("output")

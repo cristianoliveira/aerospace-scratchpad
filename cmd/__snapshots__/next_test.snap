@@ -1,5 +1,5 @@
 
-[TestNextCmd/summon_next_window_from_scratchpad - 1]
+[TestNextCmd/summons_first_scratchpad_window_when_no_window_is_focused - 1]
 Context:
   workspaces:
   - workspace: ws1
