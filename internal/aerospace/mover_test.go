@@ -12,6 +12,7 @@ import (
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/layout"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/client"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
@@ -209,6 +210,57 @@ func TestMoverAeroSpaceMoveWindowToScratchpadForMonitor(t *testing.T) {
 		)
 		if _, err := mover.MoveWindowToScratchpadForMonitor(window, 1); err == nil {
 			t.Fatalf("expected error when workspace query fails")
+		}
+	})
+
+	t.Run("non-zero workspace mapping response prevents summon and move", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		window := windows.Window{AppName: "Spotify", WindowID: 667, Workspace: "ws2"}
+		prevFocused := windows.Window{AppName: "Finder", WindowID: 999, Workspace: "ws2"}
+
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetWorkspaceListResponse(client.Response{
+			ExitCode: 1,
+			StdOut:   "[]",
+			StdErr:   "mapping unavailable",
+		})
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetFocusedWindow().
+			Return(&prevFocused, nil).
+			AnyTimes()
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			GetFocusedWorkspace().
+			Return(&workspaces.Workspace{Workspace: "ws2"}, nil).
+			AnyTimes()
+		aerospaceClient.GetFocusMock().EXPECT().
+			SetFocusByWindowID(prevFocused.WindowID).
+			Return(nil).
+			AnyTimes()
+
+		moveCalls := 0
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(
+				workspaces.MoveWindowToWorkspaceArgs,
+				workspaces.MoveWindowToWorkspaceOpts,
+			) error {
+				moveCalls++
+				return nil
+			}).
+			AnyTimes()
+
+		mover := aerospace.NewAeroSpaceMover(aerospaceClient)
+		_, err := mover.MoveWindowToScratchpadForMonitor(window, 2)
+		if err == nil || !strings.Contains(err.Error(), "mapping unavailable") {
+			t.Fatalf("expected workspace mapping failure, got %v", err)
+		}
+		if summoned := aerospaceClient.GetSummonedWorkspaces(); len(summoned) != 0 {
+			t.Fatalf("expected no summon after mapping failure, got %v", summoned)
+		}
+		if moveCalls != 0 {
+			t.Fatalf("expected no move after mapping failure, got %d calls", moveCalls)
 		}
 	})
 

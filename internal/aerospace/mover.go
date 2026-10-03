@@ -3,7 +3,6 @@ package aerospace
 import (
 	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/layout"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
@@ -434,19 +433,8 @@ func (a *MoverAeroSpace) focusMonitor(monitorID int) error {
 	if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
 		return wrapper.FocusMonitor(monitorID)
 	}
-	response, err := a.aerospace.Connection().SendCommand(
-		"focus-monitor",
-		[]string{strconv.Itoa(monitorID)},
-	)
-	if err != nil {
+	if err := a.aerospace.Focus().FocusMonitorByOrdinal(monitorID); err != nil {
 		return fmt.Errorf("unable to focus monitor %d: %w", monitorID, err)
-	}
-	if response.ExitCode != 0 {
-		return fmt.Errorf(
-			"unable to focus monitor %d: %s",
-			monitorID,
-			response.StdErr,
-		)
 	}
 	return nil
 }
@@ -455,19 +443,8 @@ func (a *MoverAeroSpace) switchToWorkspace(name string) error {
 	if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
 		return wrapper.SwitchWorkspace(name)
 	}
-	response, err := a.aerospace.Connection().SendCommand(
-		"workspace",
-		[]string{name},
-	)
-	if err != nil {
+	if err := a.aerospace.Workspaces().FocusWorkspace(name); err != nil {
 		return fmt.Errorf("unable to switch to workspace '%s': %w", name, err)
-	}
-	if response.ExitCode != 0 {
-		return fmt.Errorf(
-			"unable to switch to workspace '%s': %s",
-			name,
-			response.StdErr,
-		)
 	}
 	return nil
 }
@@ -476,19 +453,11 @@ func (a *MoverAeroSpace) summonWorkspace(name string) error {
 	if wrapper, ok := a.aerospace.(*AeroSpaceClient); ok {
 		return wrapper.SummonWorkspace(name)
 	}
-	response, err := a.aerospace.Connection().SendCommand(
-		"summon-workspace",
-		[]string{name},
-	)
-	if err != nil {
+	if err := a.aerospace.Workspaces().SummonWorkspace(
+		workspaces.SummonWorkspaceArgs{WorkspaceName: name},
+		workspaces.SummonWorkspaceOpts{},
+	); err != nil {
 		return fmt.Errorf("unable to summon workspace '%s': %w", name, err)
-	}
-	if response.ExitCode != 0 {
-		return fmt.Errorf(
-			"unable to summon workspace '%s': %s",
-			name,
-			response.StdErr,
-		)
 	}
 	return nil
 }

@@ -12,6 +12,7 @@ import (
 	workspaces_mock "github.com/cristianoliveira/aerospace-ipc/mocks/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/focus"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/layout"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/monitors"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/client"
@@ -31,6 +32,7 @@ type MockAeroSpaceWM struct {
 	workspacesSvc     *workspaces.Service
 	focusSvc          *focus.Service
 	layoutSvc         *layout.Service
+	monitorsSvc       *monitors.Service
 }
 
 // NewMockAeroSpaceWM creates a new mock AeroSpaceWM instance.
@@ -57,6 +59,7 @@ func NewMockAeroSpaceWM(ctrl *gomock.Controller) *MockAeroSpaceWM {
 	workspacesSvc := workspaces.NewService(routingConn)
 	focusSvc := focus.NewService(routingConn)
 	layoutSvc := layout.NewService(routingConn)
+	monitorsSvc := monitors.NewService(routingConn)
 
 	return &MockAeroSpaceWM{
 		conn:              routingConn,
@@ -69,6 +72,7 @@ func NewMockAeroSpaceWM(ctrl *gomock.Controller) *MockAeroSpaceWM {
 		workspacesSvc:     workspacesSvc,
 		focusSvc:          focusSvc,
 		layoutSvc:         layoutSvc,
+		monitorsSvc:       monitorsSvc,
 	}
 }
 
@@ -90,6 +94,11 @@ func (m *MockAeroSpaceWM) Focus() *focus.Service {
 // Layout returns the layout service (which routes to the mock via connection).
 func (m *MockAeroSpaceWM) Layout() *layout.Service {
 	return m.layoutSvc
+}
+
+// Monitors returns the monitors service (which routes to the mock via connection).
+func (m *MockAeroSpaceWM) Monitors() *monitors.Service {
+	return m.monitorsSvc
 }
 
 // Connection returns the routing connection that delegates to mocks.
@@ -126,6 +135,11 @@ func (m *MockAeroSpaceWM) GetLayoutMock() *layout_mock.MockLayoutService {
 // list-workspaces calls.
 func (m *MockAeroSpaceWM) SetWorkspaceMonitors(monitors []aerospace.WorkspaceMonitor) {
 	m.routingConn.workspaceMonitors = monitors
+}
+
+// SetWorkspaceListResponse overrides list-workspaces --all responses.
+func (m *MockAeroSpaceWM) SetWorkspaceListResponse(response client.Response) {
+	m.routingConn.workspaceListResponse = &response
 }
 
 // SetFocusedMonitor configures the focused monitor returned by list-monitors.
@@ -178,8 +192,9 @@ func (m *MockAeroSpaceWM) SetWorkspaceSwitchError(err error) {
 }
 
 const (
-	minArgsForMoveCommand = 3
-	windowIDFlag          = "--window-id"
+	minArgsForMoveCommand  = 3
+	windowIDFlag           = "--window-id"
+	focusFollowsWindowFlag = "--focus-follows-window"
 )
 
 // routingConnection is a connection that routes Service method calls to the appropriate mocks
@@ -190,6 +205,7 @@ type routingConnection struct {
 	focusMock               *focus_mock.MockFocusService
 	layoutMock              *layout_mock.MockLayoutService
 	workspaceMonitors       []aerospace.WorkspaceMonitor
+	workspaceListResponse   *client.Response
 	focusedMonitor          *aerospace.MonitorInfo
 	focusedWindowID         int
 	summonCalls             []string
@@ -246,7 +262,13 @@ func (r *routingConnection) handleSummonWorkspace(args []string) (*client.Respon
 		return &client.Response{ExitCode: 1, StdOut: "", StdErr: r.summonErr.Error()}, r.summonErr
 	}
 
-	name := args[0]
+	name := args[len(args)-1]
+	if name == "--" {
+		return &client.Response{
+			ExitCode: 1,
+			StdErr:   "invalid summon-workspace command",
+		}, nil
+	}
 	placedOn := 0
 	if r.summonPlacementOverride >= 0 {
 		placedOn = r.summonPlacementOverride
@@ -311,7 +333,11 @@ func (r *routingConnection) handleWorkspaceSwitch(args []string) (*client.Respon
 			StdErr:   r.workspaceSwitchErr.Error(),
 		}, r.workspaceSwitchErr
 	}
-	r.workspaceSwitchCalls = append(r.workspaceSwitchCalls, args[0])
+	name := args[len(args)-1]
+	if name == "--" {
+		return &client.Response{ExitCode: 1, StdOut: "", StdErr: "invalid workspace command"}, nil
+	}
+	r.workspaceSwitchCalls = append(r.workspaceSwitchCalls, name)
 	return &client.Response{ExitCode: 0, StdOut: "", StdErr: ""}, nil
 }
 
@@ -434,6 +460,10 @@ func (r *routingConnection) handleListWorkspaces(args []string) (*client.Respons
 		}
 
 		if arg == "--all" {
+			if r.workspaceListResponse != nil {
+				response := *r.workspaceListResponse
+				return &response, nil
+			}
 			jsonData, _ := json.Marshal(r.workspaceMonitors)
 			return &client.Response{ExitCode: 0, StdOut: string(jsonData), StdErr: ""}, nil
 		}
@@ -457,6 +487,14 @@ func (r *routingConnection) handleMoveNodeToWorkspace(args []string) (*client.Re
 		return &client.Response{ExitCode: 1, StdOut: "", StdErr: "invalid move command"}, nil
 	}
 	workspace := args[0]
+	focusFollowsWindow := false
+	for _, arg := range args {
+		if arg == focusFollowsWindowFlag {
+			focusFollowsWindow = true
+			break
+		}
+	}
+
 	for i, arg := range args {
 		if arg == windowIDFlag && i+1 < len(args) {
 			windowID, _ := strconv.Atoi(args[i+1])
@@ -466,7 +504,8 @@ func (r *routingConnection) handleMoveNodeToWorkspace(args []string) (*client.Re
 					WorkspaceName: workspace,
 				},
 				workspaces.MoveWindowToWorkspaceOpts{
-					WindowID: windowIDPtr,
+					WindowID:           windowIDPtr,
+					FocusFollowsWindow: focusFollowsWindow,
 				},
 			)
 			if err != nil {

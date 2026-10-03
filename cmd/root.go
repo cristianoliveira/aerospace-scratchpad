@@ -65,7 +65,7 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 		enableListMonitorFlag,
 	}, ListCmd(customClient)))
 	rootCmd.AddCommand(InfoCmd(aerospaceClient))
-	rootCmd.AddCommand(HookCmd(aerospaceClient))
+	rootCmd.AddCommand(HookCmd(customClient))
 
 	return rootCmd
 }

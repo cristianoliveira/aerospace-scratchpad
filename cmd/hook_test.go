@@ -81,7 +81,10 @@ func TestHookPullWindow(t *testing.T) {
 			mockClient.GetWindowsMock().EXPECT().GetFocusedWindow().Return(focusedWindow, nil),
 			mockClient.GetWorkspacesMock().EXPECT().MoveWindowToWorkspaceWithOpts(
 				workspaces.MoveWindowToWorkspaceArgs{WorkspaceName: "prev-ws"},
-				workspaces.MoveWindowToWorkspaceOpts{WindowID: &focusedWindow.WindowID},
+				workspaces.MoveWindowToWorkspaceOpts{
+					WindowID:           &focusedWindow.WindowID,
+					FocusFollowsWindow: true,
+				},
 			).Return(nil),
 		)
 
@@ -150,7 +153,8 @@ func TestHookPullWindowScenarios(t *testing.T) {
 						WorkspaceName: "prev-ws",
 					},
 					workspaces.MoveWindowToWorkspaceOpts{
-						WindowID: &focusedWindow.WindowID,
+						WindowID:           &focusedWindow.WindowID,
+						FocusFollowsWindow: true,
 					},
 				).
 				Return(nil).
@@ -170,6 +174,82 @@ func TestHookPullWindowScenarios(t *testing.T) {
 
 		if err != nil {
 			t.Fatalf("expected success, got error %v", err)
+		}
+	})
+
+	t.Run("dry-run does not move the focused window", func(t *testing.T) {
+		cleanupMarkerFile(t)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		focusedWindow := &windows.Window{
+			WindowID:  99,
+			Workspace: constants.DefaultScratchpadWorkspaceName,
+		}
+		mockClient.GetWindowsMock().EXPECT().
+			GetFocusedWindow().
+			Return(focusedWindow, nil).
+			Times(1)
+		mockClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+			Times(0)
+
+		_, err := testutils.CmdExecute(
+			cmd.RootCmd(mockClient),
+			"hook",
+			"pull-window",
+			"prev-ws",
+			constants.DefaultScratchpadWorkspaceName,
+			"--dry-run",
+		)
+		if err != nil {
+			t.Fatalf("expected success, got error %v", err)
+		}
+	})
+
+	t.Run("dry-run preserves an existing moving marker", func(t *testing.T) {
+		cleanupMarkerFile(t)
+		writeErr := os.WriteFile(
+			constants.TempScratchpadMovingFile,
+			[]byte("moving"),
+			0o600,
+		)
+		if writeErr != nil {
+			t.Fatalf("failed to create marker file: %v", writeErr)
+		}
+		t.Cleanup(func() { cleanupMarkerFile(t) })
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockClient := testutils.NewMockAeroSpaceWM(ctrl)
+		focusedWindow := &windows.Window{
+			WindowID:  99,
+			Workspace: constants.DefaultScratchpadWorkspaceName,
+		}
+		mockClient.GetWindowsMock().EXPECT().
+			GetFocusedWindow().
+			Return(focusedWindow, nil).
+			Times(1)
+		mockClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+			Times(0)
+
+		_, err := testutils.CmdExecute(
+			cmd.RootCmd(mockClient),
+			"hook",
+			"pull-window",
+			"prev-ws",
+			constants.DefaultScratchpadWorkspaceName,
+			"--dry-run",
+		)
+		if err != nil {
+			t.Fatalf("expected success, got error %v", err)
+		}
+		if _, statErr := os.Stat(constants.TempScratchpadMovingFile); statErr != nil {
+			t.Fatalf("expected dry-run to preserve the moving marker: %v", statErr)
 		}
 	})
 
@@ -292,7 +372,8 @@ func TestHookPullWindowScenarios(t *testing.T) {
 							WorkspaceName: "prev-ws",
 						},
 						workspaces.MoveWindowToWorkspaceOpts{
-							WindowID: &focusedWindow.WindowID,
+							WindowID:           &focusedWindow.WindowID,
+							FocusFollowsWindow: true,
 						},
 					).
 					Return(errors.New("mocked_move_error")).
@@ -347,7 +428,8 @@ func TestHookPullWindowPerMonitor(t *testing.T) {
 								WorkspaceName: "prev-ws",
 							},
 							workspaces.MoveWindowToWorkspaceOpts{
-								WindowID: &focusedWindow.WindowID,
+								WindowID:           &focusedWindow.WindowID,
+								FocusFollowsWindow: true,
 							},
 						).
 						Return(nil).

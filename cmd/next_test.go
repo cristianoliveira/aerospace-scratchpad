@@ -186,7 +186,8 @@ func TestNextCmd(t *testing.T) {
 				ctrl := gomock.NewController(t)
 				aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
 				aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{
-					MonitorID: test.monitorID,
+					MonitorID:   test.monitorID,
+					MonitorName: "test-monitor",
 				})
 				aerospaceClient.SetWorkspaceMonitors(test.workspaceMonitors)
 
@@ -289,7 +290,10 @@ func TestNextCmd(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				ctrl := gomock.NewController(t)
 				aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
-				aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{MonitorID: 1})
+				aerospaceClient.SetFocusedMonitor(aerospace.MonitorInfo{
+					MonitorID:   1,
+					MonitorName: "test-monitor",
+				})
 				aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
 					{Workspace: ".scratchpad.1", MonitorID: 1},
 					{Workspace: ".scratchpad.2", MonitorID: 2},
