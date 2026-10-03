@@ -1,7 +1,6 @@
 package aerospace
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -9,7 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/monitors"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/logger"
 )
@@ -88,25 +89,15 @@ func (a *QueryMaker) resolveMonitorID(monitorID int) (int, error) {
 }
 
 // WorkspaceMonitor describes a workspace and its monitor attachment.
-type WorkspaceMonitor struct {
-	Workspace string `json:"workspace"`
-	MonitorID int    `json:"monitor-id"`
-}
+type WorkspaceMonitor = workspaces.WorkspaceMonitor
 
 // MonitorInfo captures monitor identifiers returned by AeroSpace.
-type MonitorInfo struct {
-	MonitorID   int    `json:"monitor-id"`
-	MonitorName string `json:"monitor-name"`
-}
+type MonitorInfo = monitors.Monitor
 
 const (
-	listWorkspacesMonitorFormat = "%{workspace} %{monitor-id}"
-	focusedMonitorFormat        = "%{monitor-id} %{monitor-name}"
-	jsonFlag                    = "--json"
-	formatFlag                  = "--format"
-	noFocusedWindowError        = "no windows focused found"
-	filterLogPrefix             = "FILTER: "
-	floatingLayout              = "floating"
+	noFocusedWindowError = "no windows focused found"
+	filterLogPrefix      = "FILTER: "
+	floatingLayout       = "floating"
 )
 
 var scratchpadWorkspacePattern = regexp.MustCompile(
@@ -267,116 +258,58 @@ func ListScratchpadWorkspaceNames(cli AeroSpaceWMClient) ([]string, error) {
 
 // ListWorkspacesWithMonitors returns all workspaces and their monitor IDs.
 func ListWorkspacesWithMonitors(cli AeroSpaceWMClient) ([]WorkspaceMonitor, error) {
-	response, err := cli.Connection().SendCommand(
-		"list-workspaces",
-		[]string{
-			"--all",
-			jsonFlag,
-			formatFlag,
-			listWorkspacesMonitorFormat,
-		},
-	)
+	workspaceMappings, err := cli.Workspaces().GetAllWorkspacesWithMonitors()
 	if err != nil {
 		return nil, fmt.Errorf("unable to list workspaces with monitors: %w", err)
 	}
 
-	if response.ExitCode != 0 {
-		return nil, fmt.Errorf(
-			"unable to list workspaces with monitors: %s",
-			response.StdErr,
-		)
-	}
-
-	var workspaces []WorkspaceMonitor
-	if err = json.Unmarshal([]byte(response.StdOut), &workspaces); err != nil {
-		return nil, fmt.Errorf("unable to parse workspaces with monitors: %w", err)
-	}
-
-	// Debug logging
 	var sample []string
-	for i := 0; i < len(workspaces) && i < 5; i++ {
-		sample = append(sample, workspaces[i].Workspace)
+	for i := 0; i < len(workspaceMappings) && i < 5; i++ {
+		sample = append(sample, workspaceMappings[i].Workspace)
 	}
 	logger.GetDefaultLogger().LogDebug(
 		"workspaces with monitors listed",
-		"count", len(workspaces),
+		"count", len(workspaceMappings),
 		"sample", sample,
 	)
 
-	return workspaces, nil
+	return workspaceMappings, nil
 }
 
 // GetFocusedMonitor returns the currently focused monitor metadata.
 func GetFocusedMonitor(cli AeroSpaceWMClient) (*MonitorInfo, error) {
-	response, err := cli.Connection().SendCommand(
-		"list-monitors",
-		[]string{
-			"--focused",
-			jsonFlag,
-			formatFlag,
-			focusedMonitorFormat,
-		},
-	)
+	monitor, err := cli.Monitors().GetFocusedMonitor()
 	if err != nil {
 		return nil, fmt.Errorf("unable to list monitors: %w", err)
-	}
-
-	if response.ExitCode != 0 {
-		return nil, fmt.Errorf("unable to list monitors: %s", response.StdErr)
-	}
-
-	var monitors []MonitorInfo
-	if err = json.Unmarshal([]byte(response.StdOut), &monitors); err != nil {
-		return nil, fmt.Errorf("unable to parse monitors: %w", err)
-	}
-	if len(monitors) == 0 {
-		return nil, errors.New("no focused monitor found")
 	}
 
 	logger.GetDefaultLogger().LogDebug(
 		"focused monitor retrieved",
-		"monitorID", monitors[0].MonitorID,
-		"monitorName", monitors[0].MonitorName,
+		"monitorID", monitor.MonitorID,
+		"monitorName", monitor.MonitorName,
 	)
 
-	return &monitors[0], nil
+	return monitor, nil
 }
 
 // ListMonitors returns all monitors.
 func ListMonitors(cli AeroSpaceWMClient) ([]MonitorInfo, error) {
-	response, err := cli.Connection().SendCommand(
-		"list-monitors",
-		[]string{
-			jsonFlag,
-			formatFlag,
-			focusedMonitorFormat,
-		},
-	)
+	monitorList, err := cli.Monitors().GetAllMonitors()
 	if err != nil {
 		return nil, fmt.Errorf("unable to list monitors: %w", err)
 	}
 
-	if response.ExitCode != 0 {
-		return nil, fmt.Errorf("unable to list monitors: %s", response.StdErr)
-	}
-
-	var monitors []MonitorInfo
-	if err = json.Unmarshal([]byte(response.StdOut), &monitors); err != nil {
-		return nil, fmt.Errorf("unable to parse monitors: %w", err)
-	}
-
-	// Debug logging
 	var monitorIDs []int
-	for _, m := range monitors {
-		monitorIDs = append(monitorIDs, m.MonitorID)
+	for _, monitor := range monitorList {
+		monitorIDs = append(monitorIDs, monitor.MonitorID)
 	}
 	logger.GetDefaultLogger().LogDebug(
 		"monitors listed",
-		"count", len(monitors),
+		"count", len(monitorList),
 		"monitorIDs", monitorIDs,
 	)
 
-	return monitors, nil
+	return monitorList, nil
 }
 func countUniqueMonitors(workspaces []WorkspaceMonitor) int {
 	seen := make(map[int]struct{})

@@ -8,6 +8,7 @@ import (
 	aerospacecli "github.com/cristianoliveira/aerospace-ipc/pkg/aerospace"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/focus"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/layout"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/monitors"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/client"
@@ -66,6 +67,11 @@ func (c *AeroSpaceClient) Layout() *layout.Service {
 	return c.client.Layout()
 }
 
+// Monitors returns the monitors service.
+func (c *AeroSpaceClient) Monitors() *monitors.Service {
+	return c.client.Monitors()
+}
+
 // GetAllWindows retrieves all windows managed by AeroSpaceWM.
 func (c *AeroSpaceClient) GetAllWindows() ([]windows.Window, error) {
 	return c.client.Windows().GetAllWindows()
@@ -97,23 +103,31 @@ func (c *AeroSpaceClient) MoveWindowToWorkspace(
 	windowID int,
 	workspaceName string,
 ) error {
+	return c.MoveWindowToWorkspaceWithOpts(
+		workspaces.MoveWindowToWorkspaceArgs{WorkspaceName: workspaceName},
+		workspaces.MoveWindowToWorkspaceOpts{WindowID: &windowID},
+	)
+}
+
+// MoveWindowToWorkspaceWithOpts moves a window unless dry-run is enabled.
+func (c *AeroSpaceClient) MoveWindowToWorkspaceWithOpts(
+	args workspaces.MoveWindowToWorkspaceArgs,
+	opts workspaces.MoveWindowToWorkspaceOpts,
+) error {
 	if c.dryRun {
+		windowID := "focused"
+		if opts.WindowID != nil {
+			windowID = strconv.Itoa(*opts.WindowID)
+		}
 		fmt.Fprintf(
 			os.Stdout,
-			"[dry-run] MoveWindowToWorkspace(windowID=%d, workspace=%s)\n",
+			"[dry-run] MoveWindowToWorkspace(windowID=%s, workspace=%s)\n",
 			windowID,
-			workspaceName,
+			args.WorkspaceName,
 		)
 		return nil
 	}
-	return c.client.Workspaces().MoveWindowToWorkspaceWithOpts(
-		workspaces.MoveWindowToWorkspaceArgs{
-			WorkspaceName: workspaceName,
-		},
-		workspaces.MoveWindowToWorkspaceOpts{
-			WindowID: &windowID,
-		},
-	)
+	return c.client.Workspaces().MoveWindowToWorkspaceWithOpts(args, opts)
 }
 
 func (c *AeroSpaceClient) SetLayout(windowID int, layoutName string) error {
@@ -140,16 +154,12 @@ func (c *AeroSpaceClient) SummonWorkspace(name string) error {
 		fmt.Fprintf(os.Stdout, "[dry-run] SummonWorkspace(%s)\n", name)
 		return nil
 	}
-	response, err := c.Connection().SendCommand("summon-workspace", []string{name})
+	err := c.client.Workspaces().SummonWorkspace(
+		workspaces.SummonWorkspaceArgs{WorkspaceName: name},
+		workspaces.SummonWorkspaceOpts{},
+	)
 	if err != nil {
 		return fmt.Errorf("unable to summon workspace '%s': %w", name, err)
-	}
-	if response.ExitCode != 0 {
-		return fmt.Errorf(
-			"unable to summon workspace '%s': %s",
-			name,
-			response.StdErr,
-		)
 	}
 	return nil
 }
@@ -161,19 +171,8 @@ func (c *AeroSpaceClient) FocusMonitor(monitorID int) error {
 		fmt.Fprintf(os.Stdout, "[dry-run] FocusMonitor(%d)\n", monitorID)
 		return nil
 	}
-	response, err := c.Connection().SendCommand(
-		"focus-monitor",
-		[]string{strconv.Itoa(monitorID)},
-	)
-	if err != nil {
+	if err := c.client.Focus().FocusMonitorByOrdinal(monitorID); err != nil {
 		return fmt.Errorf("unable to focus monitor %d: %w", monitorID, err)
-	}
-	if response.ExitCode != 0 {
-		return fmt.Errorf(
-			"unable to focus monitor %d: %s",
-			monitorID,
-			response.StdErr,
-		)
 	}
 	return nil
 }
@@ -185,16 +184,8 @@ func (c *AeroSpaceClient) SwitchWorkspace(name string) error {
 		fmt.Fprintf(os.Stdout, "[dry-run] SwitchWorkspace(%s)\n", name)
 		return nil
 	}
-	response, err := c.Connection().SendCommand("workspace", []string{name})
-	if err != nil {
+	if err := c.client.Workspaces().FocusWorkspace(name); err != nil {
 		return fmt.Errorf("unable to switch to workspace '%s': %w", name, err)
-	}
-	if response.ExitCode != 0 {
-		return fmt.Errorf(
-			"unable to switch to workspace '%s': %s",
-			name,
-			response.StdErr,
-		)
 	}
 	return nil
 }
@@ -225,12 +216,13 @@ func (c *AeroSpaceClient) CloseConnection() error {
 	return c.ogClient.CloseConnection()
 }
 
-// AeroSpaceWMClient defines the interface for clients that provide Windows(), Workspaces(), Focus(), and Layout() services.
+// AeroSpaceWMClient defines the AeroSpace services used by the application.
 type AeroSpaceWMClient interface {
 	Windows() *windows.Service
 	Workspaces() *workspaces.Service
 	Focus() *focus.Service
 	Layout() *layout.Service
+	Monitors() *monitors.Service
 	Connection() client.AeroSpaceConnection
 }
 

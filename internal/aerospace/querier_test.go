@@ -2,12 +2,14 @@ package aerospace_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"go.uber.org/mock/gomock"
 
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/focus"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/layout"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/monitors"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/client"
@@ -586,6 +588,30 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		}
 	})
 
+	t.Run("ListWorkspacesWithMonitors rejects an invalid SDK mapping", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+		socket.EXPECT().
+			SendCommand(
+				"list-workspaces",
+				[]string{"--all", "--json", "--format", "%{workspace} %{monitor-id}"},
+			).
+			Return(&client.Response{
+				ExitCode: 0,
+				StdOut:   `[{"workspace":" ","monitor-id":1}]`,
+			}, nil).
+			Times(1)
+
+		_, err := aerospace.ListWorkspacesWithMonitors(
+			&mockConnectionAeroSpaceClient{conn: socket},
+		)
+		if err == nil || !strings.Contains(err.Error(), "workspace name is blank") {
+			t.Fatalf("expected SDK mapping validation, got %v", err)
+		}
+	})
+
 	t.Run("ListWorkspacesWithMonitors returns error on non-zero exit", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -631,6 +657,30 @@ func TestAeroSpaceQuerier(t *testing.T) {
 		}
 		if monitor.MonitorID != 2 || monitor.MonitorName != "DELL U2720" {
 			t.Fatalf("unexpected monitor info: %+v", monitor)
+		}
+	})
+
+	t.Run("GetFocusedMonitor rejects multiple focused monitors", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		socket := client_mock.NewMockAeroSpaceConnection(ctrl)
+		socket.EXPECT().
+			SendCommand(
+				"list-monitors",
+				[]string{"--focused", "--json", "--format", "%{monitor-id} %{monitor-name}"},
+			).
+			Return(&client.Response{
+				ExitCode: 0,
+				StdOut:   `[{"monitor-id":1,"monitor-name":"Built-in"},{"monitor-id":2,"monitor-name":"DELL"}]`,
+			}, nil).
+			Times(1)
+
+		_, err := aerospace.GetFocusedMonitor(
+			&mockConnectionAeroSpaceClient{conn: socket},
+		)
+		if err == nil || !strings.Contains(err.Error(), "expected one focused monitor, got 2") {
+			t.Fatalf("expected SDK focused monitor validation, got %v", err)
 		}
 	})
 
@@ -944,7 +994,7 @@ func TestAeroSpaceQuerier(t *testing.T) {
 	})
 }
 
-// mockConnectionAeroSpaceClient implements AeroSpaceWMClient by exposing only the raw connection.
+// mockConnectionAeroSpaceClient exposes SDK services backed by the mock connection.
 type mockConnectionAeroSpaceClient struct {
 	conn client.AeroSpaceConnection
 }
@@ -954,7 +1004,7 @@ func (m *mockConnectionAeroSpaceClient) Windows() *windows.Service {
 }
 
 func (m *mockConnectionAeroSpaceClient) Workspaces() *workspaces.Service {
-	return nil
+	return workspaces.NewService(m.conn)
 }
 
 func (m *mockConnectionAeroSpaceClient) Focus() *focus.Service {
@@ -963,6 +1013,10 @@ func (m *mockConnectionAeroSpaceClient) Focus() *focus.Service {
 
 func (m *mockConnectionAeroSpaceClient) Layout() *layout.Service {
 	return nil
+}
+
+func (m *mockConnectionAeroSpaceClient) Monitors() *monitors.Service {
+	return monitors.NewService(m.conn)
 }
 
 func (m *mockConnectionAeroSpaceClient) Connection() client.AeroSpaceConnection {

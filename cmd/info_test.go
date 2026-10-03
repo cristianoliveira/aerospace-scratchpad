@@ -10,6 +10,7 @@ import (
 
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/focus"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/layout"
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/monitors"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/windows"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-ipc/pkg/client"
@@ -35,6 +36,10 @@ func (m *infoAeroSpaceClient) Focus() *focus.Service {
 }
 
 func (m *infoAeroSpaceClient) Layout() *layout.Service {
+	return nil
+}
+
+func (m *infoAeroSpaceClient) Monitors() *monitors.Service {
 	return nil
 }
 

@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"strconv"
 
 	"github.com/spf13/cobra"
 
+	"github.com/cristianoliveira/aerospace-ipc/pkg/aerospace/workspaces"
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/aerospace"
 
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/constants"
@@ -170,6 +170,10 @@ func (h *hookHandler) clearMovingMarker() (bool, error) {
 		return false, err
 	}
 
+	if wrapper, ok := h.client.(*aerospace.AeroSpaceClient); ok && wrapper.IsDryRun() {
+		return true, nil
+	}
+
 	if removeErr := os.Remove(constants.TempScratchpadMovingFile); removeErr != nil {
 		return true, removeErr
 	}
@@ -178,29 +182,23 @@ func (h *hookHandler) clearMovingMarker() (bool, error) {
 }
 
 func (h *hookHandler) moveWindowToWorkspace(windowID int, workspace string) error {
-	client := h.client.Connection()
+	args := workspaces.MoveWindowToWorkspaceArgs{WorkspaceName: workspace}
+	opts := workspaces.MoveWindowToWorkspaceOpts{
+		WindowID:           &windowID,
+		FocusFollowsWindow: true,
+	}
 
-	response, err := client.SendCommand(
-		"move-node-to-workspace",
-		[]string{
-			workspace,
-			"--window-id", strconv.Itoa(windowID),
-			"--focus-follows-window",
-		},
-	)
+	var err error
+	if wrapper, ok := h.client.(*aerospace.AeroSpaceClient); ok {
+		err = wrapper.MoveWindowToWorkspaceWithOpts(args, opts)
+	} else {
+		err = h.client.Workspaces().MoveWindowToWorkspaceWithOpts(args, opts)
+	}
 	if err != nil {
 		return h.fail(
 			fmt.Sprintf("Error: unable to move window %d to workspace %s", windowID, workspace),
 			err,
 			"HOOK: unable to move window to workspace",
-		)
-	}
-
-	if response.ExitCode != 0 {
-		return h.fail(
-			fmt.Sprintf("Error: unable to move window %d to workspace %s", windowID, workspace),
-			errors.New(response.StdErr),
-			"HOOK: unable to move window to workspace - non-zero exit",
 		)
 	}
 

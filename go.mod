@@ -3,7 +3,7 @@ module github.com/cristianoliveira/aerospace-scratchpad
 go 1.26.0
 
 require (
-	github.com/cristianoliveira/aerospace-ipc v0.4.0
+	github.com/cristianoliveira/aerospace-ipc v0.5.0
 	github.com/gkampitakis/go-snaps v0.5.23
 	github.com/goccy/go-yaml v1.19.2
 	github.com/spf13/cobra v1.10.2
