@@ -360,6 +360,10 @@ func TestNextCmd(t *testing.T) {
 				name:             "focus remains on the last candidate",
 				focusedWindowIDs: []int{5240, 5240},
 			},
+			{
+				name:             "focus follows the moved candidate",
+				focusedWindowIDs: []int{5240, 48},
+			},
 		}
 
 		for _, test := range tests {
