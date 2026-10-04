@@ -20,10 +20,10 @@ func NextCmd(aerospaceClient *aerospace.AeroSpaceClient) *cobra.Command {
 		Short: "Cycles through scratchpad windows",
 		Long: `Cycles through scratchpad windows on the selected monitor.
 
-Scratchpad windows are ordered by window ID. If the focused window is in that set, next selects
-its successor and wraps after the last window. Without a usable focus cursor, next prefers the first
-window outside the current workspace to avoid repeating a no-op. The selected window moves to the
-current workspace and becomes the cursor for the next invocation.
+Scratchpad windows are ordered by window ID. Starting after the focused window, next prefers the
+first window outside the current workspace to avoid repeating a no-op. If all candidates are already
+there, it uses normal successor-and-wrap order, starting at the first window without a focus cursor.
+The selected window moves to the current workspace and becomes the cursor for the next invocation.
 		`,
 		Run: func(cmd *cobra.Command, args []string) {
 			outputFormat, err := cmd.Flags().GetString("output")
