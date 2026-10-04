@@ -21,8 +21,9 @@ func NextCmd(aerospaceClient *aerospace.AeroSpaceClient) *cobra.Command {
 		Long: `Cycles through scratchpad windows on the selected monitor.
 
 Scratchpad windows are ordered by window ID. If the focused window is in that set, next selects
-its successor and wraps after the last window; otherwise, it selects the first window. The selected
-window moves to the current workspace and becomes the cursor for the next invocation.
+its successor and wraps after the last window. Without a usable focus cursor, next prefers the first
+window outside the current workspace to avoid repeating a no-op. The selected window moves to the
+current workspace and becomes the cursor for the next invocation.
 		`,
 		Run: func(cmd *cobra.Command, args []string) {
 			outputFormat, err := cmd.Flags().GetString("output")
@@ -54,7 +55,10 @@ window moves to the current workspace and becomes the cursor for the next invoca
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
 			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
 
-			window, err := querier.GetNextScratchpadWindowForMonitor(monitorID)
+			window, err := querier.GetNextScratchpadWindowForMonitor(
+				monitorID,
+				focusedWorkspace.Workspace,
+			)
 			if err != nil {
 				stderr.Println("Error: %v", err)
 				return

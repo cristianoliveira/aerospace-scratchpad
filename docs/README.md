@@ -105,8 +105,9 @@ See also [flags](#flags).
 
 This command cycles through scratchpad windows across all monitors by default. Use `--monitor current`
 or `--monitor <ID>` to restrict the candidate set. Windows are ordered by window ID. If the focused
-window belongs to that set, `next` selects its successor and wraps after the last window; otherwise,
-it selects the first window.
+window belongs to that set, `next` selects its successor and wraps after the last window. Without a
+usable focus cursor, it prefers the first candidate outside the current workspace to avoid repeating
+a no-op; if all candidates are already there, it selects the first one.
 
 The selected window moves to the current workspace and receives focus. That focus acts as the cursor
 for the next invocation, so cycling works across separate CLI processes without persisted state.

@@ -19,7 +19,7 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
-//nolint:gocognit // Test function aggregates command scenarios and dynamic state transitions.
+//nolint:gocognit,gocyclo // Test function aggregates command scenarios and dynamic state transitions.
 func TestNextCmd(t *testing.T) {
 	logger.SetDefaultLogger(&logger.EmptyLogger{})
 	stderr.SetBehavior(false)
@@ -260,6 +260,90 @@ func TestNextCmd(t *testing.T) {
 					t.Fatalf("moved windows %v, want %v", movedWindowIDs, test.wantWindowIDs)
 				}
 			})
+		}
+	})
+
+	t.Run("skips repeated no-op when the focus cursor is unavailable", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+		aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+			{Workspace: ".scratchpad.2", MonitorID: 2},
+			{Workspace: "1", MonitorID: 1},
+			{Workspace: "2", MonitorID: 2},
+		})
+
+		currentWindows := []windows.Window{
+			{WindowID: 48, WindowLayout: "floating", Workspace: ".scratchpad.2"},
+			{WindowID: 188, WindowLayout: "floating", Workspace: "2"},
+			{WindowID: 3007, WindowLayout: "floating", Workspace: "2"},
+			{WindowID: 4897, WindowLayout: "floating", Workspace: "1"},
+			{WindowID: 5240, WindowLayout: "floating", Workspace: ".scratchpad.2"},
+		}
+		var movedWindowIDs []int
+
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			GetFocusedWorkspace().
+			Return(&workspaces.Workspace{Workspace: "2"}, nil).
+			Times(2)
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetAllWindows().
+			DoAndReturn(func() ([]windows.Window, error) {
+				return slices.Clone(currentWindows), nil
+			}).
+			Times(2)
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetAllWindowsByWorkspace(gomock.Any()).
+			DoAndReturn(func(workspace string) ([]windows.Window, error) {
+				var matching []windows.Window
+				for _, window := range currentWindows {
+					if window.Workspace == workspace {
+						matching = append(matching, window)
+					}
+				}
+				return matching, nil
+			}).
+			AnyTimes()
+		focusQueries := 0
+		aerospaceClient.GetWindowsMock().EXPECT().
+			GetFocusedWindow().
+			DoAndReturn(func() (*windows.Window, error) {
+				focusQueries++
+				if focusQueries == 1 {
+					return &windows.Window{WindowID: 999}, nil
+				}
+				return nil, errors.New("no windows focused found")
+			}).
+			Times(2)
+		aerospaceClient.GetWorkspacesMock().EXPECT().
+			MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(
+				args workspaces.MoveWindowToWorkspaceArgs,
+				opts workspaces.MoveWindowToWorkspaceOpts,
+			) error {
+				movedWindowIDs = append(movedWindowIDs, *opts.WindowID)
+				for index := range currentWindows {
+					if currentWindows[index].WindowID == *opts.WindowID {
+						currentWindows[index].Workspace = args.WorkspaceName
+					}
+				}
+				return nil
+			}).
+			Times(2)
+		aerospaceClient.GetFocusMock().EXPECT().
+			SetFocusByWindowID(gomock.Any()).
+			Return(nil).
+			Times(2)
+
+		for range 2 {
+			root := cmd.RootCmd(aerospaceClient)
+			if _, err := testutils.CmdExecute(root, "next"); err != nil {
+				t.Fatalf("next command failed: %v", err)
+			}
+		}
+
+		wantWindowIDs := []int{48, 4897}
+		if !slices.Equal(movedWindowIDs, wantWindowIDs) {
+			t.Fatalf("moved windows %v, want %v", movedWindowIDs, wantWindowIDs)
 		}
 	})
 

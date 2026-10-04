@@ -37,11 +37,16 @@ type Querier interface {
 
 	// GetNextScratchpadWindowForMonitor returns the focused window's successor
 	// from the scratchpad windows filtered by monitor, wrapping at the end.
+	// Without a usable focus cursor, it avoids candidates already in the target
+	// workspace while another candidate can make progress.
 	// monitorID can be:
 	//   -1 for all monitors (same as GetNextScratchpadWindow)
 	//   -2 for current monitor
 	//   >=0 for specific monitor ID
-	GetNextScratchpadWindowForMonitor(monitorID int) (*windows.Window, error)
+	GetNextScratchpadWindowForMonitor(
+		monitorID int,
+		targetWorkspace string,
+	) (*windows.Window, error)
 
 	// GetFilteredWindows returns all windows that match the given filters
 	GetFilteredWindows(
@@ -423,7 +428,10 @@ func (a *QueryMaker) GetNextScratchpadWindow() (*windows.Window, error) {
 	return &scratchpadWindows[0], nil
 }
 
-func (a *QueryMaker) GetNextScratchpadWindowForMonitor(monitorID int) (*windows.Window, error) {
+func (a *QueryMaker) GetNextScratchpadWindowForMonitor(
+	monitorID int,
+	targetWorkspace string,
+) (*windows.Window, error) {
 	scratchpadWindows, err := a.GetScratchpadWindowsForMonitor(monitorID)
 	if err != nil {
 		return nil, err
@@ -437,17 +445,22 @@ func (a *QueryMaker) GetNextScratchpadWindowForMonitor(monitorID int) (*windows.
 		return nil, fmt.Errorf("unable to get focused window: %w", err)
 	}
 
-	nextIndex := 0
 	if focusedWindow != nil {
 		for index := range scratchpadWindows {
 			if scratchpadWindows[index].WindowID == focusedWindow.WindowID {
-				nextIndex = (index + 1) % len(scratchpadWindows)
-				break
+				nextIndex := (index + 1) % len(scratchpadWindows)
+				return &scratchpadWindows[nextIndex], nil
 			}
 		}
 	}
 
-	return &scratchpadWindows[nextIndex], nil
+	for index := range scratchpadWindows {
+		if scratchpadWindows[index].Workspace != targetWorkspace {
+			return &scratchpadWindows[index], nil
+		}
+	}
+
+	return &scratchpadWindows[0], nil
 }
 
 // Filter represents a filter with property and regex pattern.
