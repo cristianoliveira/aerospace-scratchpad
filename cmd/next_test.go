@@ -19,6 +19,90 @@ import (
 	"github.com/cristianoliveira/aerospace-scratchpad/internal/testutils"
 )
 
+func runRepeatedNextScenario(t *testing.T, focusedWindowIDs []int) []int {
+	t.Helper()
+
+	ctrl := gomock.NewController(t)
+	aerospaceClient := testutils.NewMockAeroSpaceWM(ctrl)
+	aerospaceClient.SetWorkspaceMonitors([]aerospace.WorkspaceMonitor{
+		{Workspace: ".scratchpad.2", MonitorID: 2},
+		{Workspace: "1", MonitorID: 1},
+		{Workspace: "2", MonitorID: 2},
+	})
+
+	currentWindows := []windows.Window{
+		{WindowID: 48, WindowLayout: "floating", Workspace: ".scratchpad.2"},
+		{WindowID: 188, WindowLayout: "floating", Workspace: "2"},
+		{WindowID: 3007, WindowLayout: "floating", Workspace: "2"},
+		{WindowID: 4897, WindowLayout: "floating", Workspace: "1"},
+		{WindowID: 5240, WindowLayout: "floating", Workspace: ".scratchpad.2"},
+	}
+	var movedWindowIDs []int
+
+	aerospaceClient.GetWorkspacesMock().EXPECT().
+		GetFocusedWorkspace().
+		Return(&workspaces.Workspace{Workspace: "2"}, nil).
+		Times(len(focusedWindowIDs))
+	aerospaceClient.GetWindowsMock().EXPECT().
+		GetAllWindows().
+		DoAndReturn(func() ([]windows.Window, error) {
+			return slices.Clone(currentWindows), nil
+		}).
+		Times(len(focusedWindowIDs))
+	aerospaceClient.GetWindowsMock().EXPECT().
+		GetAllWindowsByWorkspace(gomock.Any()).
+		DoAndReturn(func(workspace string) ([]windows.Window, error) {
+			var matching []windows.Window
+			for _, window := range currentWindows {
+				if window.Workspace == workspace {
+					matching = append(matching, window)
+				}
+			}
+			return matching, nil
+		}).
+		AnyTimes()
+	focusQuery := 0
+	aerospaceClient.GetWindowsMock().EXPECT().
+		GetFocusedWindow().
+		DoAndReturn(func() (*windows.Window, error) {
+			windowID := focusedWindowIDs[focusQuery]
+			focusQuery++
+			if windowID == 0 {
+				return nil, errors.New("no windows focused found")
+			}
+			return &windows.Window{WindowID: windowID}, nil
+		}).
+		Times(len(focusedWindowIDs))
+	aerospaceClient.GetWorkspacesMock().EXPECT().
+		MoveWindowToWorkspaceWithOpts(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			args workspaces.MoveWindowToWorkspaceArgs,
+			opts workspaces.MoveWindowToWorkspaceOpts,
+		) error {
+			movedWindowIDs = append(movedWindowIDs, *opts.WindowID)
+			for index := range currentWindows {
+				if currentWindows[index].WindowID == *opts.WindowID {
+					currentWindows[index].Workspace = args.WorkspaceName
+				}
+			}
+			return nil
+		}).
+		Times(len(focusedWindowIDs))
+	aerospaceClient.GetFocusMock().EXPECT().
+		SetFocusByWindowID(gomock.Any()).
+		Return(nil).
+		Times(len(focusedWindowIDs))
+
+	for range focusedWindowIDs {
+		root := cmd.RootCmd(aerospaceClient)
+		if _, err := testutils.CmdExecute(root, "next"); err != nil {
+			t.Fatalf("next command failed: %v", err)
+		}
+	}
+
+	return movedWindowIDs
+}
+
 //nolint:gocognit // Test function aggregates command scenarios and dynamic state transitions.
 func TestNextCmd(t *testing.T) {
 	logger.SetDefaultLogger(&logger.EmptyLogger{})
@@ -258,6 +342,36 @@ func TestNextCmd(t *testing.T) {
 
 				if !slices.Equal(movedWindowIDs, test.wantWindowIDs) {
 					t.Fatalf("moved windows %v, want %v", movedWindowIDs, test.wantWindowIDs)
+				}
+			})
+		}
+	})
+
+	t.Run("skips repeated no-op while another window can move", func(t *testing.T) {
+		tests := []struct {
+			name             string
+			focusedWindowIDs []int
+		}{
+			{
+				name:             "focus cursor is outside then missing",
+				focusedWindowIDs: []int{999, 0},
+			},
+			{
+				name:             "focus remains on the last candidate",
+				focusedWindowIDs: []int{5240, 5240},
+			},
+			{
+				name:             "focus follows the moved candidate",
+				focusedWindowIDs: []int{5240, 48},
+			},
+		}
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				movedWindowIDs := runRepeatedNextScenario(t, test.focusedWindowIDs)
+				wantWindowIDs := []int{48, 4897}
+				if !slices.Equal(movedWindowIDs, wantWindowIDs) {
+					t.Fatalf("moved windows %v, want %v", movedWindowIDs, wantWindowIDs)
 				}
 			})
 		}

@@ -37,11 +37,16 @@ type Querier interface {
 
 	// GetNextScratchpadWindowForMonitor returns the focused window's successor
 	// from the scratchpad windows filtered by monitor, wrapping at the end.
+	// Starting at that successor, it skips candidates already in the target
+	// workspace while another candidate can make progress.
 	// monitorID can be:
 	//   -1 for all monitors (same as GetNextScratchpadWindow)
 	//   -2 for current monitor
 	//   >=0 for specific monitor ID
-	GetNextScratchpadWindowForMonitor(monitorID int) (*windows.Window, error)
+	GetNextScratchpadWindowForMonitor(
+		monitorID int,
+		targetWorkspace string,
+	) (*windows.Window, error)
 
 	// GetFilteredWindows returns all windows that match the given filters
 	GetFilteredWindows(
@@ -423,7 +428,10 @@ func (a *QueryMaker) GetNextScratchpadWindow() (*windows.Window, error) {
 	return &scratchpadWindows[0], nil
 }
 
-func (a *QueryMaker) GetNextScratchpadWindowForMonitor(monitorID int) (*windows.Window, error) {
+func (a *QueryMaker) GetNextScratchpadWindowForMonitor(
+	monitorID int,
+	targetWorkspace string,
+) (*windows.Window, error) {
 	scratchpadWindows, err := a.GetScratchpadWindowsForMonitor(monitorID)
 	if err != nil {
 		return nil, err
@@ -444,6 +452,13 @@ func (a *QueryMaker) GetNextScratchpadWindowForMonitor(monitorID int) (*windows.
 				nextIndex = (index + 1) % len(scratchpadWindows)
 				break
 			}
+		}
+	}
+
+	for offset := range scratchpadWindows {
+		index := (nextIndex + offset) % len(scratchpadWindows)
+		if scratchpadWindows[index].Workspace != targetWorkspace {
+			return &scratchpadWindows[index], nil
 		}
 	}
 
