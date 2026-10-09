@@ -64,6 +64,14 @@ https://i3wm.org/docs/userguide.html#_scratchpad
 		enableFilterFlag,
 		enableListMonitorFlag,
 	}, ListCmd(customClient)))
+	rootCmd.AddCommand(compose([]flagsFn{
+		enableOutputFlag,
+		enableFilterFlag,
+	}, PinCmd(customClient)))
+	rootCmd.AddCommand(compose([]flagsFn{
+		enableOutputFlag,
+		enableFilterFlag,
+	}, UnpinCmd(customClient)))
 	rootCmd.AddCommand(InfoCmd(aerospaceClient))
 	rootCmd.AddCommand(HookCmd(customClient))
 

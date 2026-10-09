@@ -43,6 +43,14 @@ The selected window moves to the current workspace and becomes the cursor for th
 				return
 			}
 
+			currentMonitorID := 0
+			monitor, monitorErr := aerospace.GetFocusedMonitor(
+				aerospaceClient.GetUnderlyingClient(),
+			)
+			if monitorErr == nil {
+				currentMonitorID = monitor.MonitorID
+			}
+
 			focusedWorkspace, err := aerospaceClient.GetFocusedWorkspace()
 			if err != nil {
 				stderr.Println(
@@ -61,6 +69,21 @@ The selected window moves to the current workspace and becomes the cursor for th
 			)
 			if err != nil {
 				stderr.Println("Error: %v", err)
+				return
+			}
+
+			handled, err := focusPinnedWindowOnOtherMonitor(
+				commandNext,
+				aerospaceClient,
+				formatter,
+				*window,
+				currentMonitorID,
+			)
+			if err != nil {
+				stderr.Println("Error: %v", err)
+				return
+			}
+			if handled {
 				return
 			}
 

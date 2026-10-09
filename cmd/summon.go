@@ -75,6 +75,14 @@ Use "next" to cycle through scratchpad windows without specifying a pattern.
 				return
 			}
 
+			currentMonitorID := 0
+			monitor, monitorErr := aerospace.GetFocusedMonitor(
+				aerospaceClient.GetUnderlyingClient(),
+			)
+			if monitorErr == nil {
+				currentMonitorID = monitor.MonitorID
+			}
+
 			// Filter windows using the shared querier
 			querier := aerospace.NewAerospaceQuerier(aerospaceClient.GetUnderlyingClient())
 			mover := aerospace.NewAeroSpaceMover(aerospaceClient)
@@ -94,6 +102,21 @@ Use "next" to cycle through scratchpad windows without specifying a pattern.
 			}
 
 			for _, window := range windows {
+				handled, pinnedErr := focusPinnedWindowOnOtherMonitor(
+					commandSummon,
+					aerospaceClient,
+					formatter,
+					window,
+					currentMonitorID,
+				)
+				if pinnedErr != nil {
+					stderr.Println("Error: %v", pinnedErr)
+					return
+				}
+				if handled {
+					continue
+				}
+
 				setFocus := true
 				moveErr := mover.MoveWindowToWorkspace(
 					&window,
